@@ -746,3 +746,193 @@ function isPresetPayloadObject(value){
                 }
             });
         }
+
+
+// ========== 预设诊断中心：只读静态检查，不修改预设 ==========
+function analyzePresetDiagnostics(data){
+    const issues=[];
+    const add=(severity,category,target,title,detail,promptIndex=null)=>{
+        issues.push({severity,category,target:String(target||''),title,detail,promptIndex});
+    };
+    if(!data||typeof data!=='object'||Array.isArray(data)){
+        add('error','预设结构','','当前没有可检查的预设','请先导入预设或创建空白预设。');
+        return issues;
+    }
+    const numericRules=[
+        ['temperature','p_temp','Temperature',0,2],
+        ['top_p','p_top_p','Top P',0,1],
+        ['top_k','p_top_k','Top K',0,null],
+        ['min_p','p_min_p','Min P',0,1],
+        ['top_a','p_top_a','Top A',0,null],
+        ['typical_p','p_typical_p','Typical P',0,1],
+        ['tfs','p_tfs','TFS',0,1],
+        ['max_tokens','p_max_tokens','Max Tokens',0,null],
+        ['max_length','p_max_tokens','Max Length',0,null],
+        ['repetition_penalty','p_rep_pen','Repetition Penalty',0.000001,null],
+        ['rep_pen','p_rep_pen','Rep Pen',0.000001,null],
+        ['presence_penalty','p_pres_pen','Presence Penalty',null,null],
+        ['frequency_penalty','p_freq_pen','Frequency Penalty',null,null],
+        ['smoothing_factor','p_smooth','Smoothing Factor',0,null],
+        ['mirostat_mode','p_mirostat','Mirostat Mode',0,2],
+        ['seed','p_seed','Seed',null,null]
+    ];
+    const seenNumeric=new Set();
+    numericRules.forEach(([key,target,label,min,max])=>{
+        if(!Object.prototype.hasOwnProperty.call(data,key)||seenNumeric.has(key))return;
+        seenNumeric.add(key);
+        const raw=data[key];
+        if(raw===null||raw===''||!Number.isFinite(Number(raw))){
+            add('error','参数类型',target,label+' 不是有效数字','当前值：'+String(raw));
+            return;
+        }
+        const value=Number(raw);
+        if((min!==null&&value<min)||(max!==null&&value>max)){
+            const range=min===null?'不大于 '+max:max===null?'不小于 '+min:min+'–'+max;
+            add('warning','参数范围',target,label+' 超出常见范围','当前值：'+String(raw)+'；常见范围为 '+range+'。不同 API 后端可能采用不同约束，请以实际服务文档为准。');
+        }
+        if(key==='mirostat_mode'&&!Number.isInteger(value))add('warning','参数格式',target,'Mirostat Mode 不是整数','该参数通常使用 0、1 或 2。');
+        if(key==='seed'&&!Number.isInteger(value))add('warning','参数格式',target,'Seed 不是整数','Seed 通常使用整数；-1 常用于随机种子。');
+    });
+    const aliasGroups=[
+        {keys:['name','preset_name'],label:'预设名称'},
+        {keys:['max_tokens','max_length'],label:'最大生成长度'},
+        {keys:['repetition_penalty','rep_pen'],label:'重复惩罚'},
+        {keys:['main_prompt','prompt','mainPrompt'],label:'Main Prompt'},
+        {keys:['jailbreak_prompt','jailbreak','jb'],label:'Jailbreak Prompt'},
+        {keys:['system_prompt','system'],label:'System Prompt'},
+        {keys:['stream','streaming'],label:'Streaming'}
+    ];
+    aliasGroups.forEach(group=>{
+        const present=group.keys.filter(key=>Object.prototype.hasOwnProperty.call(data,key));
+        if(present.length<2)return;
+        const values=present.map(key=>data[key]);
+        const normalized=values.map(value=>typeof value==='string'&&['true','false'].includes(value.toLowerCase())?value.toLowerCase():JSON.stringify(value));
+        if(new Set(normalized).size>1)add('warning','字段一致性',group.keys[0]==='name'?'p_name':'secOverview',group.label+' 存在别名冲突','同时存在 '+present.join(' / ')+'，但数值或内容不一致。不同导入器可能读取不同字段；请确认要保留的值。');
+    });
+    const stopKeys=['stop_sequence','stop_sequences','stop'];
+    const stopPresent=stopKeys.filter(key=>Object.prototype.hasOwnProperty.call(data,key));
+    if(stopPresent.length>1){
+        const normalized=stopPresent.map(key=>{
+            const value=data[key];
+            return JSON.stringify((Array.isArray(value)?value:String(value??'').split(/[\n,，]/)).map(item=>String(item).trim()).filter(Boolean));
+        });
+        if(new Set(normalized).size>1)add('warning','字段一致性','p_stop','Stop Sequences 存在别名冲突','stop_sequence、stop_sequences 或 stop 的内容不一致，请确认目标后端实际读取的字段。');
+    }
+    ['stream','streaming','nsfw','nsfw_filter'].forEach(key=>{
+        if(!Object.prototype.hasOwnProperty.call(data,key))return;
+        const value=data[key];
+        const valid=typeof value==='boolean'||value===0||value===1||value==='0'||value==='1'||(typeof value==='string'&&['true','false'].includes(value.toLowerCase()));
+        if(!valid)add('warning','参数类型',key==='stream'||key==='streaming'?'p_stream':'p_nsfw',key+' 不是常见布尔值','当前值：'+String(value)+'；请确认目标预设格式是否支持该类型。');
+    });
+    const stopValue=stopPresent.length?data[stopPresent[0]]:undefined;
+    if(stopValue!==undefined&&!Array.isArray(stopValue)&&typeof stopValue!=='string')add('warning','参数类型','p_stop','Stop Sequences 类型异常','应为字符串或字符串数组，当前类型为 '+(stopValue===null?'null':typeof stopValue)+'。');
+    if(Array.isArray(stopValue)&&stopValue.some(item=>typeof item!=='string'))add('warning','参数类型','p_stop','Stop Sequences 含非字符串元素','请检查数组中的元素类型。');
+
+    const prompts=data.prompts;
+    const promptIds=new Map();
+    if(prompts!==undefined&&!Array.isArray(prompts)){
+        add('error','提示词结构','secPromptItems','prompts 不是数组','提示词条目无法按常见预设结构读取。');
+    }else if(Array.isArray(prompts)){
+        prompts.forEach((prompt,index)=>{
+            const target='prompt-item-'+index;
+            if(!prompt||typeof prompt!=='object'||Array.isArray(prompt)){
+                add('error','提示词结构',target,'提示词条目不是对象','第 '+(index+1)+' 个 prompts 元素不是 JSON 对象。',index);
+                return;
+            }
+            const id=typeof prompt.identifier==='string'?prompt.identifier.trim():'';
+            const enabled=prompt.enabled!==false;
+            if(!id)add('warning','提示词标识符',target,'提示词缺少 identifier','第 '+(index+1)+' 个条目没有唯一标识符；prompt_order 无法稳定引用它。',index);
+            else{
+                if(!promptIds.has(id))promptIds.set(id,[]);
+                promptIds.get(id).push(index);
+            }
+            if(enabled&&typeof prompt.content==='string'&&!prompt.content.trim())add('warning','提示词内容',target,'启用的提示词正文为空','「'+String(prompt.name||id||('提示词 '+(index+1)))+'」已启用，但 content 为空。',index);
+            if(prompt.content!==undefined&&typeof prompt.content!=='string')add('warning','提示词类型',target,'提示词 content 不是字符串','当前类型为 '+(prompt.content===null?'null':typeof prompt.content)+'；请确认导入格式。',index);
+        });
+        promptIds.forEach((indexes,id)=>{
+            if(indexes.length>1)indexes.forEach(index=>add('error','提示词标识符','prompt-item-'+index,'identifier 重复','标识符「'+id+'」同时用于第 '+indexes.map(i=>i+1).join('、')+' 个提示词条目。',index));
+        });
+    }
+
+    if(data.prompt_order!==undefined){
+        if(!Array.isArray(data.prompt_order)){
+            add('error','提示词排序','secPromptOrder','prompt_order 不是数组','常见酒馆预设使用数组保存一个或多个排序组。');
+        }else{
+            data.prompt_order.forEach((group,groupIndex)=>{
+                if(!group||typeof group!=='object'||Array.isArray(group)||!Array.isArray(group.order)){
+                    add('error','提示词排序','secPromptOrder','排序组结构异常','第 '+(groupIndex+1)+' 个排序组缺少有效的 order 数组。');
+                    return;
+                }
+                const seen=new Set();
+                group.order.forEach((entry,entryIndex)=>{
+                    if(!entry||typeof entry!=='object'||Array.isArray(entry)||typeof entry.identifier!=='string'||!entry.identifier.trim()){
+                        add('warning','提示词排序','secPromptOrder','排序项缺少 identifier','第 '+(groupIndex+1)+' 组的第 '+(entryIndex+1)+' 项无法关联到提示词条目。');
+                        return;
+                    }
+                    const id=entry.identifier.trim();
+                    if(seen.has(id))add('warning','提示词排序','secPromptOrder','同一排序组中 identifier 重复','标识符「'+id+'」在第 '+(groupIndex+1)+' 个排序组中出现多次。');
+                    seen.add(id);
+                    if(Array.isArray(prompts)&&!promptIds.has(id))add('warning','提示词排序','secPromptOrder','排序表引用了不存在的提示词','标识符「'+id+'」未在 prompts 列表中找到。');
+                });
+            });
+        }
+    }
+    const rank={error:0,warning:1,info:2};
+    issues.sort((a,b)=>rank[a.severity]-rank[b.severity]||a.category.localeCompare(b.category,'zh-CN'));
+    return issues;
+}
+function closePresetDiagnostics(){
+    document.getElementById('presetDiagnosticsModal')?.classList.remove('show');
+}
+function openPresetDiagnostics(){
+    const modal=document.getElementById('presetDiagnosticsModal');
+    if(!modal)return;
+    modal.classList.add('show');
+    runPresetDiagnostics();
+}
+function runPresetDiagnostics(){
+    const summary=document.getElementById('presetDiagnosticsSummary');
+    const results=document.getElementById('presetDiagnosticsResults');
+    if(!summary||!results)return [];
+    const issues=analyzePresetDiagnostics(presetData);
+    const prompts=Array.isArray(presetData?.prompts)?presetData.prompts.length:0;
+    const counts={error:issues.filter(item=>item.severity==='error').length,warning:issues.filter(item=>item.severity==='warning').length,info:issues.filter(item=>item.severity==='info').length};
+    summary.innerHTML='<div class="diagnostics-stat"><strong>'+prompts+'</strong><span>提示词条目</span></div><div class="diagnostics-stat is-error"><strong>'+counts.error+'</strong><span>错误</span></div><div class="diagnostics-stat is-warning"><strong>'+counts.warning+'</strong><span>警告</span></div><div class="diagnostics-stat"><strong>'+counts.info+'</strong><span>提示</span></div>';
+    if(!issues.length){
+        results.innerHTML='<div class="diagnostics-empty"><strong>没有发现明显问题</strong><span>这只是静态结构检查，不代表所有 API 后端都会接受这些参数，也不会模拟酒馆实际提示词构建流程。</span></div>';
+        return issues;
+    }
+    results.innerHTML=issues.map(issue=>{
+        const label=issue.severity==='error'?'错误':issue.severity==='warning'?'警告':'提示';
+        return '<button class="diagnostic-issue severity-'+issue.severity+'" data-action="jump-preset-diagnostic" data-target-id="'+escapeHtml(issue.target)+'" data-prompt-index="'+(issue.promptIndex===null?'':issue.promptIndex)+'"><span class="diagnostic-issue-top"><span class="diagnostic-severity">'+label+'</span><span class="diagnostic-category">'+escapeHtml(issue.category)+'</span></span><strong>'+escapeHtml(issue.title)+'</strong><span>'+escapeHtml(issue.detail)+'</span><small>点击定位到相关设置</small></button>';
+    }).join('');
+    return issues;
+}
+function jumpToPresetDiagnostic(targetId,promptIndex){
+    closePresetDiagnostics();
+    const sec=document.getElementById('secPrompts');
+    if(sec)sec.classList.remove('collapsed');
+    if(promptIndex!==null&&promptIndex!==undefined&&promptIndex!==''&&Number.isInteger(Number(promptIndex))){
+        const item=document.getElementById('prompt-item-'+Number(promptIndex));
+        const itemsSection=document.getElementById('secPromptItems');
+        if(itemsSection)itemsSection.classList.remove('collapsed');
+        if(item){
+            document.querySelectorAll('.prompt-item-card.prompt-editor-expanded').forEach(card=>{
+                card.classList.remove('prompt-editor-expanded');
+                const button=card.querySelector('[data-action="toggle-prompt-editor"]');
+                if(button)button.textContent='展开编辑';
+            });
+            item.classList.add('prompt-editor-expanded');
+            const button=item.querySelector('[data-action="toggle-prompt-editor"]');
+            if(button)button.textContent='收起编辑';
+            document.body.classList.add('prompt-editor-open');
+            item.scrollIntoView({behavior:'smooth',block:'center'});
+            return;
+        }
+    }
+    const target=document.getElementById(String(targetId||''));
+    if(target){
+        target.scrollIntoView({behavior:'smooth',block:'center'});
+        if(target.matches('input,textarea,select'))target.focus({preventScroll:true});
+    }
+}
