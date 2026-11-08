@@ -249,3 +249,16 @@ The character-card workspace now provides read-only previews for resources alrea
 These panels are inspection-only. They do not import, copy, overwrite, or merge embedded resources into the standalone worldbook or preset workspaces. The original character-card object remains the source of truth, and JSON / PNG exports continue to use that retained object.
 
 This phase was checked with source-level assertions and JavaScript syntax parsing. It was not tested through browser interaction or against a broad corpus of real-world character cards.
+
+## Character-card resource associations
+
+The character-card workspace can now link the currently loaded card to the currently loaded standalone worldbook and/or preset. This is an association layer, not a merge/import workflow:
+
+- The user explicitly clicks the association action for the active worldbook or preset. The tool records only a display name, a small count summary, a content fingerprint, and a timestamp in a separate localStorage key (`tavern_character_card_resource_links_v1`).
+- No worldbook entries, preset prompts, card fields, embedded `character_book`, or V3 assets are copied or modified by creating or removing a link.
+- When the card workspace is opened again, the saved fingerprint is compared with the currently loaded resource. A changed or unavailable resource is marked as stale/unavailable; the tool does not silently relink or sync it.
+- Re-associating explicitly replaces the reference metadata with the currently loaded resource. Unlinking removes only the association record.
+- Association records are local to the browser profile and are not included in character-card JSON/PNG exports, preset exports, or worldbook exports.
+- The card association key is derived from the card's name, creator, character version, creation date, and imported filename. Cards sharing all of those identity fields may share an association key; users should avoid relying on the association layer as a globally unique identifier.
+
+This first linking phase supports the currently loaded worldbook and preset only. It does not yet provide a multi-file resource library, file picker for previously imported resources, bundle export, or automatic synchronization. Source-level checks and JavaScript syntax parsing are required before treating the phase as complete; no browser interaction or multi-card collision test is claimed.
