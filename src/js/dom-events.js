@@ -176,6 +176,9 @@ document.addEventListener('click', (event) => {
         case 'bulk-extension-action':
             window.bulkExtensionAction(target.dataset.kind,target.dataset.bulkAction);
             break;
+        case 'set-extension-cards':
+            window.setExtensionCardsCollapsed(target.dataset.kind,target.dataset.collapsed==='true');
+            break;
         case 'toggle-script-disabled':
             window.toggleScriptDisabled(Number(target.dataset.index));
             break;
