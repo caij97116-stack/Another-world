@@ -8,6 +8,8 @@ export type {
 export type {
   PresetRecord,
   PresetArrayPath,
+  PresetArrayPathMap,
+  PresetEnvelope,
   PresetStateContract,
   PresetStorageKeys
 } from "./preset";
