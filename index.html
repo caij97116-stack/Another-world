@@ -15,7 +15,7 @@
     <div class="bg-orb bg-orb-1"></div><div class="bg-orb bg-orb-2"></div><div class="bg-orb bg-orb-3"></div>
     <header class="toolbar" id="toolbar">
         <div style="display:flex;align-items:center;gap:4px">
-            <button class="mobile-toggle" id="btnSidebarToggle" onclick="toggleSidebar()" style="display:none">☰</button>
+            <button class="mobile-toggle" id="btnSidebarToggle" data-action="toggle-sidebar" style="display:none">☰</button>
             <div class="brand">
                 <div class="brand-icon" id="brandIcon">📘</div>
                 <span class="toolbar-title-text" id="toolbarTitle">世界书编辑器</span>
@@ -28,7 +28,7 @@
         <!-- 世界书页面 -->
         <div class="page active" id="page-worldbook">
             <div class="wb-container" id="wbContainer">
-                <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+                <div class="sidebar-overlay" id="sidebarOverlay" data-action="close-sidebar"></div>
                 <aside class="sidebar" id="sidebar">
                     <div class="sidebar-header">
                         <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" class="search-input" id="searchInput" placeholder="搜索名称 / 关键词 / 标签..." oninput="renderEntryList()"></div>
@@ -258,8 +258,8 @@
     </div>
 
     <nav class="bottom-nav">
-        <button class="nav-item active" data-page="worldbook" onclick="switchPage('worldbook')"><span class="nav-icon">📘</span><span>世界书</span></button>
-        <button class="nav-item" data-page="preset" onclick="switchPage('preset')"><span class="nav-icon">⚙️</span><span>预设</span></button>
+        <button class="nav-item active" data-page="worldbook" data-action="switch-page"><span class="nav-icon">📘</span><span>世界书</span></button>
+        <button class="nav-item" data-page="preset" data-action="switch-page"><span class="nav-icon">⚙️</span><span>预设</span></button>
     </nav>
 
     <div class="modal-mask" id="importModal">
@@ -285,6 +285,7 @@
     <script src="./src/js/preset-logic.js"></script>
     <script src="./src/js/preset-ui.js"></script>
     <script src="./src/js/ui-utils.js"></script>
+    <script src="./src/js/dom-events.js"></script>
     <script src="./src/js/app.js"></script>
 </body>
 </html>
