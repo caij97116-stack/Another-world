@@ -132,3 +132,5 @@ A compatibility bridge, `src/ts/utils/legacy-bridge.ts`, now provides `installLe
 - Consolidated nested preset array-path validation and lookup into `preset-items.ts`, alongside the existing regex/script array alias handling. The previous separate `preset-paths.ts` file duplicated the same path-resolution responsibility.
 - Kept the public helper names exported through `state/index.ts` so future imports can use one consistent state entry point.
 - Removed the two redundant files. This is a source-organization change only; the live classic-script entrypoint and runtime behavior remain unchanged.
+
+- Further consolidated `preset-import.ts` into `preset.ts`: wrapper recognition, unwrapping, and export-envelope reconstruction belong with the preset contracts and envelope metadata. The public exports remain available from `state/index.ts`.
