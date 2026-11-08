@@ -306,6 +306,15 @@
                     <div class="panel-header"><h3>角色内容</h3></div>
                     <div id="characterCardFields"></div>
                 </div>
+                <details class="character-card-section character-card-raw">
+                    <summary>高级 JSON 编辑 <span>完整数据 / 未知字段</span></summary>
+                    <p class="tool-help">这里可以直接编辑整张角色卡，包括 alternate_greetings、character_book、extensions 和 V3 资源字段。应用前会先检查 JSON 语法和角色名称；未知字段不会被自动删除。</p>
+                    <textarea id="characterCardRawJson" rows="18" spellcheck="false" aria-label="角色卡完整 JSON"></textarea>
+                    <div class="character-card-raw-actions">
+                        <button class="btn btn-sm btn-primary" type="button" data-action="apply-character-card-json">校验并应用 JSON</button>
+                        <span id="characterCardRawStatus" class="tool-help">修改不会自动应用</span>
+                    </div>
+                </details>
                 <div class="character-card-section">
                     <div class="panel-header"><h3>附带资源</h3></div>
                     <p class="tool-help" id="characterCardBookStatus"></p>
