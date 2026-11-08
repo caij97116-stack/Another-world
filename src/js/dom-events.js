@@ -68,6 +68,9 @@ document.addEventListener('click', (event) => {
         case 'export-character-card-png':
             window.exportCharacterCardPng();
             break;
+        case 'apply-character-card-json':
+            window.applyCharacterCardRawJson();
+            break;
         case 'test-regex-script':
             window.testRegexScript(Number(target.dataset.index));
             break;
