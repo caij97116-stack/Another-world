@@ -684,64 +684,142 @@ function isPresetPayloadObject(value){
                 showToast('备份无法读取或内容无效，未执行恢复','error');
             }
         }
-        function exportPreset(){
-            if(!presetData){showToast('请先导入或新建预设','error');return}
-            syncPreset();
-            presetVersion+=1;
-            updateToolbar();
-            // 版本号由后续自动保存统一写入；缓存不可用时也不能阻断文件导出。
-
-            // 按开关过滤正则/脚本
-            const includeDisRegex = presetData._exportIncludeDisabledRegex !== false;
-            const includeDisScripts = presetData._exportIncludeDisabledScripts !== false;
-            const includeMeta = presetData._exportMeta !== false;
-
-            const exportObj = Object.assign({}, presetData);
-            // 按原始存储路径过滤，兼容顶层别名及 extensions / TavernHelper 等嵌套结构。
-            function filterExportArrayAtPath(root, path, includeDisabled){
+        function countPresetJsonNodes(value){
+            if(value===null||typeof value!=='object')return 1;
+            if(Array.isArray(value))return 1+value.reduce((sum,item)=>sum+countPresetJsonNodes(item),0);
+            return 1+Object.keys(value).reduce((sum,key)=>sum+countPresetJsonNodes(value[key]),0);
+        }
+        function countPresetExportPath(root,path){
+            let value=root;
+            for(const key of path)value=value&&typeof value==='object'?value[key]:undefined;
+            return Array.isArray(value)?value.length:0;
+        }
+        function inspectPresetExportRoundTrip(value){
+            let serialized;
+            try{serialized=JSON.stringify(value,null,2)}
+            catch(error){return {serialized:null,issues:[{path:'$',reason:'无法序列化：'+(error&&error.message?error.message:String(error))}],beforeNodes:countPresetJsonNodes(value),afterNodes:0}}
+            let parsed;
+            try{parsed=JSON.parse(serialized)}
+            catch(error){return {serialized:null,issues:[{path:'$',reason:'序列化结果无法重新解析'}],beforeNodes:countPresetJsonNodes(value),afterNodes:0}}
+            const issues=[];
+            function compare(before,after,path){
+                if(issues.length>=30)return;
+                if(before===after)return;
+                if(before===null||after===null||typeof before!=='object'||typeof after!=='object'){
+                    if(typeof before==='number'&&!Number.isFinite(before)&&after===null)return issues.push({path,reason:'非有限数字将变为 null'});
+                    issues.push({path,reason:'值或类型在 JSON 往返后发生变化'});return;
+                }
+                const beforeArray=Array.isArray(before),afterArray=Array.isArray(after);
+                if(beforeArray!==afterArray){issues.push({path,reason:'对象与数组类型发生变化'});return}
+                if(beforeArray){
+                    if(before.length!==after.length)issues.push({path,reason:'数组长度 '+before.length+' → '+after.length});
+                    const limit=Math.min(before.length,after.length);
+                    for(let i=0;i<limit&&issues.length<30;i++)compare(before[i],after[i],path+'['+i+']');
+                    return;
+                }
+                const beforeKeys=Object.keys(before),afterKeys=Object.keys(after);
+                for(const key of beforeKeys){
+                    if(!Object.prototype.hasOwnProperty.call(after,key)){
+                        issues.push({path:path+'.'+key,reason:'字段在 JSON 导出时丢失'});
+                        if(issues.length>=30)return;
+                    }else compare(before[key],after[key],path+'.'+key);
+                }
+                for(const key of afterKeys){
+                    if(!Object.prototype.hasOwnProperty.call(before,key)){
+                        issues.push({path:path+'.'+key,reason:'序列化后出现额外字段'});
+                        if(issues.length>=30)return;
+                    }
+                }
+            }
+            compare(value,parsed,'$');
+            return {serialized,issues,beforeNodes:countPresetJsonNodes(value),afterNodes:countPresetJsonNodes(parsed),parsed};
+        }
+        function buildPresetExportSnapshot(){
+            const includeDisRegex=presetData._exportIncludeDisabledRegex!==false;
+            const includeDisScripts=presetData._exportIncludeDisabledScripts!==false;
+            const includeMeta=presetData._exportMeta!==false;
+            const exportObj=Object.assign({},presetData);
+            function filterExportArrayAtPath(root,path,includeDisabled){
                 let source=root;
                 for(let i=0;i<path.length-1;i++){
-                    if(!source || typeof source!=='object' || !source[path[i]] || typeof source[path[i]]!=='object') return;
+                    if(!source||typeof source!=='object'||!source[path[i]]||typeof source[path[i]]!=='object')return;
                     const key=path[i];
                     const cloned=Array.isArray(source[key])?source[key].slice():Object.assign({},source[key]);
-                    source[key]=cloned;
-                    source=cloned;
+                    source[key]=cloned;source=cloned;
                 }
-                if(!source || typeof source!=='object') return;
+                if(!source||typeof source!=='object')return;
                 const key=path[path.length-1];
-                if(!Array.isArray(source[key])) return;
-                source[key]=includeDisabled
-                    ? source[key].slice()
-                    : source[key].filter(item=>!item || !parseEntryBoolean(item.disabled,false));
+                if(!Array.isArray(source[key]))return;
+                source[key]=includeDisabled?source[key].slice():source[key].filter(item=>!item||!parseEntryBoolean(item.disabled,false));
             }
-            const regexExportPaths=[
-                ['regex_scripts'],['regexScripts'],['regex'],['regexes'],
-                ['extensions','regex_scripts'],['extensions','regexScripts'],
-                ['tavernhelper','regex_scripts'],['TavernHelper','regex_scripts']
-            ];
-            const scriptExportPaths=[
-                ['scripts'],['tavern_helper_scripts'],['tavernhelper_scripts'],['tavernHelperScripts'],
-                ['extensions','scripts'],['extensions','tavern_helper_scripts'],
-                ['tavernhelper','scripts'],['TavernHelper','scripts'],['mjs_scripts']
-            ];
-            regexExportPaths.forEach(path=>filterExportArrayAtPath(exportObj,path,includeDisRegex));
-            scriptExportPaths.forEach(path=>filterExportArrayAtPath(exportObj,path,includeDisScripts));
-            // 不把内部导出开关写进文件（可选保留也可去掉）
+            const regexPaths=[['regex_scripts'],['regexScripts'],['regex'],['regexes'],['extensions','regex_scripts'],['extensions','regexScripts'],['tavernhelper','regex_scripts'],['TavernHelper','regex_scripts']];
+            const scriptPaths=[['scripts'],['tavern_helper_scripts'],['tavernhelper_scripts'],['tavernHelperScripts'],['extensions','scripts'],['extensions','tavern_helper_scripts'],['tavernhelper','scripts'],['TavernHelper','scripts'],['mjs_scripts']];
+            regexPaths.forEach(path=>filterExportArrayAtPath(exportObj,path,includeDisRegex));
+            scriptPaths.forEach(path=>filterExportArrayAtPath(exportObj,path,includeDisScripts));
             delete exportObj._exportIncludeDisabledRegex;
             delete exportObj._exportIncludeDisabledScripts;
             delete exportObj._exportMeta;
-
-            if(includeMeta){
-                exportObj._editorVersion = presetVersion;
-                exportObj._exportedAt = new Date().toISOString();
-            }
-
+            const nextVersion=presetVersion+1;
+            if(includeMeta){exportObj._editorVersion=nextVersion;exportObj._exportedAt=new Date().toISOString()}
             const finalExportObj=buildPresetExportObject(exportObj);
-            const blob=new Blob([JSON.stringify(finalExportObj,null,2)],{type:'application/json;charset=utf-8'});
-            const url=URL.createObjectURL(blob);const a=document.createElement('a');
-            a.href=url;a.download=`Preset_${(getStr(presetData,'name','preset_name')||'unnamed').replace(/[\\/:*?"<>|]/g,'_')}_v${presetVersion}.json`;
-            document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
-            schedulePresetSave();showToast(`已导出预设 v${presetVersion}`,'success');
+            const checked=inspectPresetExportRoundTrip(finalExportObj);
+            const stats={
+                topLevelFields:Object.keys(exportObj).length,
+                prompts:Array.isArray(exportObj.prompts)?exportObj.prompts.length:0,
+                promptOrder:Array.isArray(exportObj.prompt_order)?exportObj.prompt_order.length:0,
+                regex:regexPaths.reduce((sum,path)=>sum+countPresetExportPath(exportObj,path),0),
+                scripts:scriptPaths.reduce((sum,path)=>sum+countPresetExportPath(exportObj,path),0)
+            };
+            return {version:nextVersion,filename:'Preset_'+(getStr(presetData,'name','preset_name')||'unnamed').replace(/[\\/:*?"<>|]/g,'_')+'_v'+nextVersion+'.json',checked,stats};
+        }
+        function closePresetExportPreview(){
+            document.getElementById('presetExportPreviewModal')?.classList.remove('show');
+            pendingPresetExport=null;
+        }
+        function renderPresetExportPreview(snapshot){
+            const target=document.getElementById('presetExportPreviewContent');
+            if(!target)return;
+            const s=snapshot.stats,issues=snapshot.checked.issues;
+            const rows=[
+                ['顶层字段',s.topLevelFields],['提示词',s.prompts],['提示词顺序组',s.promptOrder],['正则',s.regex],['脚本',s.scripts],
+                ['JSON 节点',snapshot.checked.beforeNodes+' → '+snapshot.checked.afterNodes]
+            ];
+            target.innerHTML='<div class="preset-import-stats">'+rows.map(([label,value])=>'<div><strong>'+escapeHtml(String(value))+'</strong><span>'+escapeHtml(label)+'</span></div>').join('')+'</div>'+
+                (issues.length?'<div class="preset-import-warnings"><strong>发现 '+issues.length+(issues.length>=30?' 项或更多':' 项')+' 往返差异</strong>'+issues.map(item=>'<p><code>'+escapeHtml(item.path)+'</code>：'+escapeHtml(item.reason)+'</p>').join('')+'</div>':'<div class="preset-export-pass">JSON 序列化与重新解析检查通过，未发现字段丢失或值变化。</div>')+
+                '<p class="tool-help">文件名：'+escapeHtml(snapshot.filename)+'。检查只针对最终导出副本，不会删改当前预设。若你关闭此窗口，本次不会下载文件。</p>';
+        }
+        function exportPreset(){
+            if(!presetData){showToast('请先导入或新建预设','error');return}
+            syncPreset();
+            try{
+                const snapshot=buildPresetExportSnapshot();
+                if(!snapshot.checked.serialized)throw new Error(snapshot.checked.issues[0]?.reason||'无法生成 JSON');
+                pendingPresetExport=snapshot;
+                renderPresetExportPreview(snapshot);
+                document.getElementById('presetExportPreviewModal')?.classList.add('show');
+            }catch(error){
+                console.error('预设导出完整性检查失败',error);
+                showToast('导出检查失败：'+(error.message||'未知错误')+'；未生成文件','error');
+            }
+        }
+        function confirmPresetExport(){
+            if(!pendingPresetExport||!pendingPresetExport.checked.serialized)return;
+            const snapshot=pendingPresetExport;
+            try{
+                presetVersion=snapshot.version;
+                updateToolbar();
+                const blob=new Blob([snapshot.checked.serialized],{type:'application/json;charset=utf-8'});
+                const url=URL.createObjectURL(blob),a=document.createElement('a');
+                a.href=url;a.download=snapshot.filename;
+                document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+                closePresetExportPreview();
+                schedulePresetSave();
+                if(snapshot.checked.issues.length)showToast('已导出，但请留意完整性检查报告中的差异','warning');
+                else showToast('预设导出成功，JSON 往返检查通过','success');
+            }catch(error){
+                console.error('预设文件导出失败',error);
+                showToast('文件导出失败，请稍后重试','error');
+            }
         }
 
         function updateCharCounts(){
