@@ -341,3 +341,14 @@ The Preset Studio now includes a read-only diagnostics center. It checks common 
 Findings are grouped as errors or warnings and can navigate to the related parameter control, prompt item, or prompt-order section. The scanner does not repair data, rewrite identifiers, reorder prompts, or change export content. A warning about a parameter range is advisory rather than a guarantee of backend rejection: API providers and compatible preset formats can differ.
 
 This is static JSON inspection only. It does not emulate a particular Tavern version's prompt assembly, provider-side parameter validation, script execution, or the active chat context. The diagnostics scanner has isolated Node tests for malformed structures, alias conflicts, identifier references, empty enabled prompts, and read-only behavior.
+
+
+## Preset import preview and rollback
+
+Preset JSON imports are now staged before application. Selecting a file parses it locally and opens a preview showing the file name and size, preset name, outer-wrapper recognition, top-level field count, prompt count, enabled prompt count, and detected regex/script array counts. A few structural cautions are displayed when the payload does not match common preset signatures or when prompt/order collections appear incomplete. Previewing does not replace the active preset or execute imported script data.
+
+The user must explicitly confirm the import. Before applying it, the editor serializes a snapshot of the current preset data and its associated metadata (outer wrapper, editor version, and original regex/script array paths) to the dedicated localStorage key `tavern_preset_editor_import_backup`. If this backup cannot be written, the import is cancelled rather than replacing the current preset without a rollback point.
+
+After a successful import, the preset status area exposes `撤销上次导入`. Undo requires confirmation and restores the prior preset snapshot, including wrapper and array-path metadata; if there was no preset before import, undo returns the editor to its empty state. The backup is one-level and is cleared after a successful undo; a subsequent import replaces the previous rollback point. The backup is browser-local and is not included in preset exports.
+
+The preview is a structural summary, not a full schema validator. Provider-specific fields and nested extension data are preserved as-is. LocalStorage quota or browser storage restrictions can prevent backup creation; in that case the import is blocked and the existing preset remains active. Browser UI interaction and real Tavern compatibility still require separate testing.
