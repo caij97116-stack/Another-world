@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const source = await readFile(new URL('../src/js/character-card.js', import.meta.url), 'utf8');
 const exposed = source.replace(/\}\)\(\);\s*$/, `
-    window.__test = { getCardData, parsePng, importCharacterCard, stageCharacterResourceBundle, restoreStagedBundleResource, restoreLastBundleBackup, exportCharacterResourceBundle, exportCharacterCardPng, setExportState: (card, key, png) => { currentCard = card; currentCardLinkKey = key; currentPngBuffer = png || null; }, getStagedBundle: () => stagedResourceBundle };
+    window.__test = { getCardData, parsePng, importCharacterCard, stageCharacterResourceBundle, restoreStagedBundleResource, restoreLastBundleBackup, exportCharacterResourceBundle, exportCharacterCardPng, updateCharacterCardField, applyCharacterCardRawJson, setExportState: (card, key, png) => { currentCard = card; currentCardLinkKey = key; currentPngBuffer = png || null; currentCardFile = { name: 'synthetic.json', type: 'application/json' }; }, getStagedBundle: () => stagedResourceBundle };
 })();
 `);
 assert.notEqual(exposed, source, 'test seam must match the character-card IIFE');
@@ -13,10 +13,12 @@ assert.notEqual(exposed, source, 'test seam must match the character-card IIFE')
 const messages = [];
 const downloads = [];
 const preview = { hidden: true, innerHTML: '' };
+const elements = new Map();
+const getElement = id => elements.get(id) || null;
 const windowStub = {};
 const context = {
   window: windowStub,
-  document: { getElementById: id => id === 'characterCardBundleImportPreview' ? preview : null, createElement: () => ({ click: () => {}, remove: () => {} }), body: { appendChild: () => {} } },
+  document: { getElementById: id => id === 'characterCardBundleImportPreview' ? preview : getElement(id), createElement: () => ({ click: () => {}, remove: () => {} }), body: { appendChild: () => {} } },
   localStorage: (() => {
     const values = new Map();
     return { getItem: key => values.has(key) ? values.get(key) : null,
@@ -356,4 +358,44 @@ test('rejects oversized card and resource-bundle files before reading their cont
   await assert.rejects(() => api.importCharacterCard(oversized), /超过 100 MB/);
   assert.throws(() => api.stageCharacterResourceBundle(oversized), /超过 100 MB/);
   assert.equal(reads, 0, 'oversized files must be rejected before text or binary reads');
+});
+
+
+test('structured character-card edits update tags and preserve unrelated nested fields', () => {
+  const card = { spec: 'chara_card_v3', spec_version: '3.0', data: {
+    name: 'Editable Card', tags: ['old'], description: 'before',
+    extensions: { vendor: { nested: ['keep'] } }, character_book: { entries: [{ keys: ['x'] }] }
+  } };
+  const rawEditor = { value: '' };
+  const title = { textContent: '' };
+  const tags = { textContent: '' };
+  const status = { textContent: '' };
+  elements.set('characterCardRawJson', rawEditor);
+  elements.set('characterCardName', title);
+  elements.set('characterCardTags', tags);
+  elements.set('characterCardRawStatus', status);
+  api.setExportState(card, 'edit-test');
+  api.updateCharacterCardField('description', 'after');
+  api.updateCharacterCardField('tags', 'one, two, , three');
+  assert.equal(card.data.description, 'after');
+  assert.deepEqual(JSON.parse(JSON.stringify(card.data.tags)), ['one', 'two', 'three']);
+  assert.deepEqual(JSON.parse(rawEditor.value).data.extensions, card.data.extensions);
+  assert.deepEqual(JSON.parse(rawEditor.value).data.character_book, card.data.character_book);
+  assert.match(status.textContent, /结构化字段已同步/);
+});
+
+test('invalid raw character-card JSON does not replace the current card', () => {
+  const card = { spec: 'chara_card_v3', spec_version: '3.0', data: {
+    name: 'Keep Current', extensions: { nested: { keep: true } }
+  } };
+  const editor = { value: '{invalid json' };
+  const status = { textContent: '' };
+  elements.set('characterCardRawJson', editor);
+  elements.set('characterCardRawStatus', status);
+  api.setExportState(card, 'raw-invalid-test');
+  api.applyCharacterCardRawJson();
+  assert.equal(card.data.name, 'Keep Current');
+  assert.deepEqual(JSON.parse(JSON.stringify(card.data.extensions)), { nested: { keep: true } });
+  assert.match(status.textContent, /校验失败/);
+  assert.match(messages.at(-1).message, /JSON 未应用/);
 });
