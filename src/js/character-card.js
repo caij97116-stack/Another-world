@@ -29,7 +29,9 @@
     }
 
     async function decodePayload(value){
-        const bytes = decodeBase64Bytes(value);
+        const raw = String(value).trim();
+        try { return JSON.parse(raw); } catch(error) {}
+        const bytes = decodeBase64Bytes(raw);
         const decodeJson = input => {
             const text = new TextDecoder('utf-8',{fatal:true}).decode(input);
             return JSON.parse(text);
@@ -76,6 +78,7 @@
                     const key=new TextDecoder('latin1').decode(chunk.subarray(0,split));
                     const text=new TextDecoder('latin1').decode(chunk.subarray(split+1));
                     if(key==='chara'||key==='ccv3') found.push({key,text});
+                    else if(['name','description','personality','scenario','first_mes','mes_example','creatorcomment','avatar','talkativeness'].includes(key)) found.push({key:'flat:'+key,text});
                 }
             }else if(type==='zTXt'){
                 const split=findNull(chunk,0);
@@ -110,7 +113,15 @@
     async function parsePng(buffer){
         const chunks=await readPngTextChunks(buffer);
         const ordered=[...chunks.filter(x=>x.key==='ccv3'),...chunks.filter(x=>x.key==='chara')];
-        if(!ordered.length) throw new Error('图片中没有找到 chara / ccv3 角色数据。请确认上传的是原始角色卡 PNG，而不是截图或被重新压缩过的图片。');
+        if(!ordered.length){
+            const flat=chunks.filter(x=>x.key.startsWith('flat:'));
+            if(flat.length){
+                const root={};
+                flat.forEach(item=>{root[item.key.slice(5)]=item.text;});
+                return {...getCardData(root),container:'PNG',chunk:'V1 flat tEXt'};
+            }
+            throw new Error('图片中没有找到 chara / ccv3 角色数据。请确认上传的是原始角色卡 PNG，而不是截图或被重新压缩过的图片。');
+        }
         let lastError=null;
         for(const item of ordered){
             try{
