@@ -177,13 +177,14 @@
         document.getElementById('characterCardExtra').textContent=extra.length?extra.join(', '):'无';
         document.getElementById('characterCardBookStatus').textContent=book?'已包含 character_book'+(Array.isArray(book.entries)?' · '+book.entries.length+' 条目':''):'未内嵌世界书';
         document.getElementById('characterCardFileName').textContent=file.name;
-        currentPngBuffer=file.type==='image/png'?file.slice(0,file.size).arrayBuffer():null;
-        currentPngName=file.type==='image/png'?file.name:'';
+        const isPngFile=file.type==='image/png'||file.name.toLowerCase().endsWith('.png');
+        currentPngBuffer=isPngFile?file.slice(0,file.size).arrayBuffer():null;
+        currentPngName=isPngFile?file.name:'';
         cardDirty=false;
         updateCardSaveStatus();
         const image=document.getElementById('characterCardImage');
         if(currentImageUrl){URL.revokeObjectURL(currentImageUrl);currentImageUrl=null;}
-        if(file.type==='image/png'){
+        if(isPngFile){
             currentImageUrl=URL.createObjectURL(file);
             image.src=currentImageUrl;
             image.hidden=false;
