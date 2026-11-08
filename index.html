@@ -1371,7 +1371,10 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             const present=keys.filter(k=>Object.prototype.hasOwnProperty.call(view,k));
             const storageKey=present.find(k=>view[k]!==undefined && view[k]!==null && view[k]!=='') || present[0] || null;
             const initialValue=storageKey ? view[storageKey] : fallback;
-            if(storageKey===canonical && !readTransform) return;
+            if(storageKey===canonical){
+                if(readTransform)view[canonical]=readTransform(initialValue);
+                return;
+            }
             if(storageKey) delete view[canonical];
             let current=initialValue;
             Object.defineProperty(view,canonical,{
