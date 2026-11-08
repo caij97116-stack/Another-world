@@ -352,23 +352,27 @@ function isPresetPayloadObject(value){
                 return;
             }
             let moved=0,skipped=false;
+            const selectedItems=new Set(selected.map(index=>list[index]));
             if(action==='move-up'){
-                for(const index of selected){
-                    if(index<=0||selected.includes(index-1))continue;
+                const itemsInOriginalOrder=selected.map(index=>list[index]);
+                itemsInOriginalOrder.forEach(item=>{
+                    const index=list.indexOf(item);
+                    if(index<=0||selectedItems.has(list[index-1]))return;
                     const first=list[index-1],second=list[index];
                     [list[index-1],list[index]]=[list[index],list[index-1]];
                     if(!swapPromptOrderReferences(first,second))skipped=true;
                     moved++;
-                }
+                });
             }else if(action==='move-down'){
-                for(let n=selected.length-1;n>=0;n--){
-                    const index=selected[n];
-                    if(index>=list.length-1||selected.includes(index+1))continue;
+                const itemsInOriginalOrder=selected.slice().reverse().map(index=>list[index]);
+                itemsInOriginalOrder.forEach(item=>{
+                    const index=list.indexOf(item);
+                    if(index<0||index>=list.length-1||selectedItems.has(list[index+1]))return;
                     const first=list[index],second=list[index+1];
                     [list[index],list[index+1]]=[list[index+1],list[index]];
                     if(!swapPromptOrderReferences(first,second))skipped=true;
                     moved++;
-                }
+                });
             }
             if(!moved){showToast('所选条目已在可移动边界，顺序未改变','info');return;}
             renderPromptItems();refreshPromptOrderAfterSync();
