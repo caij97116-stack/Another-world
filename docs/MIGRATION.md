@@ -444,3 +444,8 @@ Prompt cards can be duplicated with all unknown fields retained. A fresh unique 
 ### Bulk collapse and expand for extension cards
 
 The Regex and Scripts workspaces now provide controls to collapse or expand all cards in the current list. These controls only change the visible editor layout and do not alter preset data or undo history.
+
+
+### Extension tab keyboard navigation
+
+The Regex and Scripts tablist supports ArrowLeft / ArrowRight navigation and Home / End jumps. The active tab is the only tab in the normal tab sequence, with aria-selected and tabindex kept in sync.
