@@ -217,3 +217,21 @@ The Script tab retains script metadata and code editing, expands the code editor
 The bottom navigation now includes the extension workspace. The preset page no longer embeds regex/script editors, while the preset import/export actions remain available from the extension page. The original static `index.html` deployment entrypoint and classic-script load order are unchanged.
 
 Static checks performed for this change: all nine loaded JavaScript files parse with `new Function`; the extension page separation, preset-array binding, delegated actions, worker test, iframe sandbox/CSP, original script order, and responsive styles were checked in source. No browser interaction test, Vite build, TypeScript type-check, or real Tavern runtime test was performed.
+
+
+## Independent character-card workspace: import and inspection
+
+The character-card workspace is a separate page and resource domain. It currently imports SillyTavern character-card JSON (flat V1 and V2/V3 envelopes) and PNG files containing `chara` or `ccv3` text metadata. When both PNG payloads exist, the parser prefers `ccv3`. It reads PNG `tEXt`, `zTXt`, and `iTXt` metadata chunks, including deflate-compressed text where the browser supports `DecompressionStream`.
+
+The imported card is retained as its original parsed JSON object. The preview shows common character fields, tags, alternate-greeting count, embedded character-book count, extension-key count, and unknown field names. Export currently writes that preserved JSON object to a standalone `.json` file. PNG artwork is previewed from the original local file; this first phase does not rewrite or recompress PNG images.
+
+Compatibility and safety boundaries:
+
+- File reading and parsing happen locally in the browser; files are not uploaded to a service.
+- Unknown fields and V3-specific fields remain in the retained root object and are included in JSON export.
+- Embedded `character_book`, `extensions`, and other nested data remain inside the character card. They are not silently copied into the separate worldbook or preset workspaces.
+- Imported script-like fields are treated as inert data and are never executed.
+- PNG screenshots or re-encoded images may no longer contain the original character metadata and will be reported as missing `chara` / `ccv3` data.
+- The parser supports the common V1/V2/V3 JSON and PNG layouts; it is not yet a full CHARX archive reader, card editor, PNG writer, or Tavern runtime emulator.
+
+Static source checks are required before treating this phase as complete. No browser-based PNG fixture round-trip or real SillyTavern import test is claimed unless performed separately.
