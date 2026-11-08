@@ -15,7 +15,9 @@ function switchPage(page){
                 if(page==='extensions'){
                     renderPresetUI();
                     refreshExtensionWorkspace();
-                }else if(page!=='character-card'){
+                }else if(page==='character-card'){
+                    if(typeof refreshCharacterCardLinks==='function')refreshCharacterCardLinks();
+                }else{
                     renderPresetUI();
                 }
             }
