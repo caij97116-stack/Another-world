@@ -222,6 +222,12 @@ function isPresetPayloadObject(value){
                             <label>提示词正文 <span class="char-count" data-prompt-count="${i}">${content.length.toLocaleString()} 字</span></label>
                             <textarea class="form-control prompt-content-editor" rows="14" spellcheck="false" placeholder="在这里编辑完整提示词内容……" data-input-action="update-prompt-item-field" data-index="${i}" data-field="content" ${!isObject?'disabled':''}>${escapeHtml(content)}</textarea>
                         </div>
+                        <details class="prompt-render-preview">
+                            <summary>Markdown 与宏指令预览 <span class="prompt-preview-count">检测到 <b id="prompt-macro-count-${i}">0</b> 个宏</span></summary>
+                            <div class="prompt-preview-legend"><span>Markdown 排版预览</span><span>宏指令仅识别与标记，不会执行或替换</span></div>
+                            <div class="prompt-markdown-preview" id="prompt-content-preview-${i}"><p class="prompt-preview-empty">载入预览……</p></div>
+                            <div class="prompt-macro-list"><strong>检测到的宏指令</strong><div id="prompt-macro-list-${i}"></div></div>
+                        </details>
                         <details class="prompt-advanced">
                             <summary>高级 JSON（保留未识别字段）</summary>
                             <p class="prompt-advanced-hint">适合编辑 role 以外的特殊字段。普通字段编辑不会删除这里未显示的扩展数据。</p>
@@ -231,7 +237,58 @@ function isPresetPayloadObject(value){
                 </article>`;
             }).join('');
             container.querySelectorAll('.prompt-content-editor').forEach(autoResizeLongPrompt);
+            list.forEach((item,index)=>refreshPromptContentPreview(index));
             renderPromptOrderPreview();
+        }
+        function renderPromptMarkdownInline(value){
+            const code=[];
+            let text=escapeHtml(String(value??''));
+            text=text.replace(/`([^`]+)`/g,(_,value)=>'@@INLINE_CODE_'+(code.push(value)-1)+'@@');
+            text=text.replace(/\\*\\*(.+?)\\*\\*/g,'<strong>$1</strong>')
+                .replace(/~~(.+?)~~/g,'<del>$1</del>')
+                .replace(/\\*(?!\\s)(.+?)(?<!\\s)\\*/g,'<em>$1</em>');
+            text=text.replace(/@@INLINE_CODE_(\\d+)@@/g,(_,index)=>'<code>'+code[Number(index)]+'</code>');
+            return text.replace(/\\{\\{[^{}\\n]{1,120}\\}\\}/g,match=>'<span class="prompt-macro-token">'+match+'</span>');
+        }
+        function renderPromptMarkdown(content){
+            const lines=String(content??'').replace(/\\r\\n?/g,'\\n').split('\\n');
+            const output=[];
+            let paragraph=[],listType='',listItems=[],codeLines=[],inCode=false;
+            const flushParagraph=()=>{if(paragraph.length){output.push('<p>'+paragraph.map(renderPromptMarkdownInline).join('<br>')+'</p>');paragraph=[];}};
+            const flushList=()=>{if(listItems.length){const tag=listType==='ol'?'ol':'ul';output.push('<'+tag+'>'+listItems.map(item=>'<li>'+renderPromptMarkdownInline(item)+'</li>').join('')+'</'+tag+'>');listItems=[];listType='';}};
+            const flushCode=()=>{if(codeLines.length){output.push('<pre><code>'+escapeHtml(codeLines.join('\\n'))+'</code></pre>');codeLines=[];}};
+            for(const line of lines){
+                if(/^\\s*```/.test(line)){
+                    flushParagraph();flushList();
+                    if(inCode){flushCode();inCode=false;}else{inCode=true;}
+                    continue;
+                }
+                if(inCode){codeLines.push(line);continue;}
+                if(!line.trim()){flushParagraph();flushList();continue;}
+                const heading=line.match(/^\\s{0,3}(#{1,6})\\s+(.+)$/);
+                if(heading){flushParagraph();flushList();const level=heading[1].length;output.push('<h'+level+'>'+renderPromptMarkdownInline(heading[2])+'</h'+level+'>');continue;}
+                if(/^\\s{0,3}([-*_])(?:\\s*\\1){2,}\\s*$/.test(line)){flushParagraph();flushList();output.push('<hr>');continue;}
+                const unordered=line.match(/^\\s*[-*+]\\s+(.+)$/);
+                const ordered=line.match(/^\\s*\\d+[.)]\\s+(.+)$/);
+                if(unordered||ordered){flushParagraph();const nextType=ordered?'ol':'ul';if(listType&&listType!==nextType)flushList();listType=nextType;listItems.push((unordered||ordered)[1]);continue;}
+                const quote=line.match(/^\\s*>\\s?(.*)$/);
+                if(quote){flushParagraph();flushList();output.push('<blockquote>'+renderPromptMarkdownInline(quote[1])+'</blockquote>');continue;}
+                flushList();paragraph.push(line);
+            }
+            flushParagraph();flushList();if(inCode){flushCode();}
+            return output.join('')||'<p class="prompt-preview-empty">（正文为空）</p>';
+        }
+        function refreshPromptContentPreview(index){
+            const prompt=getPresetPromptItems()[index];
+            const preview=document.getElementById('prompt-content-preview-'+index);
+            const macros=document.getElementById('prompt-macro-list-'+index);
+            if(!preview||!macros)return;
+            const content=prompt&&typeof prompt.content==='string'?prompt.content:'';
+            preview.innerHTML=renderPromptMarkdown(content);
+            const found=[...new Set(content.match(/\\{\\{[^{}\\n]{1,120}\\}\\}/g)||[])];
+            macros.innerHTML=found.length?found.map(token=>'<code class="prompt-macro-chip">'+escapeHtml(token)+'</code>').join(''):'<span class="prompt-preview-empty">未检测到 {{...}} 宏指令</span>';
+            const count=document.getElementById('prompt-macro-count-'+index);
+            if(count)count.textContent=String(found.length);
         }
         function getPromptOrderGroups(){
             if(!presetData||!Array.isArray(presetData.prompt_order))return [];
@@ -360,7 +417,10 @@ function isPresetPayloadObject(value){
                 if(meta)meta.textContent=(typeof prompt.content==='string'?prompt.content.length:0).toLocaleString()+' 字 · '+(prompt.role||'system')+' · '+(prompt.enabled===false?'已禁用':'已启用');
                 const heading=card.querySelector('.regex-card-title');
                 if(heading&&field==='name')heading.textContent=value||prompt.identifier||('提示词 '+(index+1));
-                if(field==='content')autoResizeLongPrompt(card.querySelector('.prompt-content-editor'));
+                if(field==='content'){
+                    autoResizeLongPrompt(card.querySelector('.prompt-content-editor'));
+                    refreshPromptContentPreview(index);
+                }
             }
             if(field==='identifier')refreshPromptOrderAfterSync();
             else{refreshRawJson();schedulePresetSave();renderPromptOrderPreview()}
