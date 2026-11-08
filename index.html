@@ -1161,11 +1161,16 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
                 if(dot){dot.classList.remove('saving');status.textContent='已自动保存'}
             }catch(e){showToast('预设自动保存失败','error')}
         }
+        function removePresetStorageItem(key){
+            try{localStorage.removeItem(key);return true}
+            catch(e){console.warn('无法清理预设缓存：'+key,e);return false}
+        }
+
         function clearPresetData(){
             if(!presetData)return;
             if(!confirm('确定清空当前预设数据？'))return;
             presetData=null;presetEnvelope=null;presetVersion=1;presetArrayPaths={};
-            localStorage.removeItem(PRESET_STORAGE_KEY);localStorage.removeItem(PRESET_ENVELOPE_STORAGE_KEY);localStorage.removeItem(PRESET_ARRAY_PATHS_KEY);localStorage.removeItem(PRESET_VERSION_KEY);
+            [PRESET_STORAGE_KEY,PRESET_ENVELOPE_STORAGE_KEY,PRESET_ARRAY_PATHS_KEY,PRESET_VERSION_KEY].forEach(removePresetStorageItem);
             renderPresetUI();updateToolbar();showToast('已清空预设数据');
         }
         function createEmptyPreset(){
