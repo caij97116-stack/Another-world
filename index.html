@@ -89,9 +89,9 @@
                                         </select>
                                         <p class="tool-help">仅在启用「选择性」且填写排除 / 次要关键词时发挥作用。</p>
                                     </div>
-                                    <div class="wb-advanced-switches">
-                                        <label class="switch-row"><input type="checkbox" id="field_caseSensitive" data-change-action="sync-current-entry"><span>区分大小写</span></label>
-                                        <label class="switch-row"><input type="checkbox" id="field_matchWholeWords" data-change-action="sync-current-entry"><span>整词匹配</span></label>
+                                    <div class="form-grid">
+                                        <div class="form-group"><label>区分大小写</label><select id="field_caseSensitive" class="form-control" data-change-action="sync-current-entry"><option value="inherit">继承酒馆全局设置</option><option value="true">开启</option><option value="false">关闭</option></select></div>
+                                        <div class="form-group"><label>整词匹配</label><select id="field_matchWholeWords" class="form-control" data-change-action="sync-current-entry"><option value="inherit">继承酒馆全局设置</option><option value="true">开启</option><option value="false">关闭</option></select></div>
                                     </div>
                                     <p class="tool-help">整词匹配对中文、日文等不以空格分词的语言可能造成漏匹配；这类条目通常建议关闭。关键词支持使用 JavaScript 正则表达式格式，例如 <code>/dragon/i</code>，无需额外开关。</p>
                                 </div>
@@ -107,10 +107,11 @@
                                             <input type="number" id="field_groupWeight" class="form-control" min="0" data-input-action="sync-current-entry">
                                         </div>
                                         <div class="form-group">
-                                            <label class="switch-row"><input type="checkbox" id="field_useGroupScoring" data-change-action="sync-current-entry"><span>启用分组评分</span></label>
+                                            <label>分组评分</label><select id="field_useGroupScoring" class="form-control" data-change-action="sync-current-entry"><option value="inherit">继承酒馆全局设置</option><option value="true">开启</option><option value="false">关闭</option></select>
                                         </div>
                                     </div>
-                                    <p class="tool-help">同组中多个条目同时触发时，通常只会选中其中一个。权重越高，被选中的相对机会越大；分组评分会优先比较匹配关键词的数量。</p>
+                                    <label class="switch-row"><input type="checkbox" id="field_groupOverride" data-change-action="sync-current-entry"><span>优先选择本条目（Prioritize Inclusion）</span></label>
+                                    <p class="tool-help">同组中多个条目同时触发时，通常只会选中其中一个。权重越高，被选中的相对机会越大；优先选择会按条目顺序确定胜出项。分组评分可继承全局设置或单独覆盖。</p>
                                 </div>
                                 <div class="wb-advanced-section">
                                     <h4>角色过滤</h4>
