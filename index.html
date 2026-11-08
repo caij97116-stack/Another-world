@@ -373,6 +373,15 @@
                     <label class="extension-filter-select"><span class="sr-only">正则状态筛选</span><select class="form-control" id="regexStatusFilter"><option value="all">全部状态</option><option value="enabled">仅启用</option><option value="disabled">仅禁用</option></select></label>
                     <span class="extension-filter-summary" id="regexFilterSummary" aria-live="polite"></span>
                 </div>
+                <div class="extension-bulkbar">
+                    <label class="extension-select-all"><input type="checkbox" id="regexSelectVisible" data-extension-select-all="regex"><span>全选当前筛选结果</span></label>
+                    <span class="extension-selection-summary" id="regexSelectionSummary">已选 0 项</span>
+                    <div class="extension-bulk-actions">
+                        <button class="btn btn-sm" type="button" data-action="bulk-extension-action" data-kind="regex" data-bulk-action="enable">批量启用</button>
+                        <button class="btn btn-sm" type="button" data-action="bulk-extension-action" data-kind="regex" data-bulk-action="disable">批量禁用</button>
+                        <button class="btn btn-sm btn-danger" type="button" data-action="bulk-extension-action" data-kind="regex" data-bulk-action="delete">批量删除</button>
+                    </div>
+                </div>
                 <div class="regex-list" id="regexListContainer"></div>
             </section>
             <section class="glass-panel-box extension-panel" id="extensionScriptsPanel" hidden>
@@ -384,6 +393,15 @@
                     <label class="extension-search"><span class="sr-only">搜索脚本</span><span aria-hidden="true">⌕</span><input class="form-control" id="scriptSearchInput" type="search" placeholder="搜索名称、类型、触发条件或代码…" autocomplete="off"></label>
                     <label class="extension-filter-select"><span class="sr-only">脚本状态筛选</span><select class="form-control" id="scriptStatusFilter"><option value="all">全部状态</option><option value="enabled">仅启用</option><option value="disabled">仅禁用</option></select></label>
                     <span class="extension-filter-summary" id="scriptFilterSummary" aria-live="polite"></span>
+                </div>
+                <div class="extension-bulkbar">
+                    <label class="extension-select-all"><input type="checkbox" id="scriptsSelectVisible" data-extension-select-all="scripts"><span>全选当前筛选结果</span></label>
+                    <span class="extension-selection-summary" id="scriptsSelectionSummary">已选 0 项</span>
+                    <div class="extension-bulk-actions">
+                        <button class="btn btn-sm" type="button" data-action="bulk-extension-action" data-kind="scripts" data-bulk-action="enable">批量启用</button>
+                        <button class="btn btn-sm" type="button" data-action="bulk-extension-action" data-kind="scripts" data-bulk-action="disable">批量禁用</button>
+                        <button class="btn btn-sm btn-danger" type="button" data-action="bulk-extension-action" data-kind="scripts" data-bulk-action="delete">批量删除</button>
+                    </div>
                 </div>
                 <div class="script-list" id="scriptListContainer"></div>
             </section>
