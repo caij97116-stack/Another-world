@@ -325,3 +325,10 @@ Additional matching-source toggles map to the upstream entry fields `matchCharac
 Insertion positions now include example-message top/bottom and Outlet (position values 5, 6, and 7). Outlet names are stored in `outletName`. The editor also corrects the selective-logic enum mapping to match upstream (`0` AND ANY, `1` NOT ALL, `2` NOT ANY, `3` AND ALL). Case sensitivity, whole-word matching, and group scoring now support an explicit inherit-global state (`null`) rather than forcing an entry-level override when the user has not selected one. Inclusion priority maps to `groupOverride`.
 
 The local trigger preview remains intentionally simplified and does not simulate character filtering, generation triggers, additional matching sources, recursive passes, or Outlet resolution. Character-tag filtering remains preserved in imported data but is not yet edited through a tag-name picker because the standalone editor has no authoritative SillyTavern tag registry.
+
+
+## Worldbook diagnostics center
+
+A read-only diagnostics center is available from the worldbook sidebar. It scans the currently loaded entries without modifying them and reports structural or likely configuration issues: empty content, missing activation keys, selective entries without secondary keys, invalid probabilities/order/depth/positions, unsupported trigger values, malformed character-filter shapes, missing Outlet names, invalid slash-delimited regex keys, duplicate plain-text keys, and possible recursive cycles inferred from entry content mentioning other entries' keys.
+
+Findings are classified as errors, warnings, or informational notes. Selecting a finding navigates to its entry. Duplicate keywords and recursive cycles are informational because they can be intentional authoring patterns; they are not automatically treated as defects. The scan is heuristic and data-only: it does not emulate SillyTavern's prompt-building engine, global settings, actual chat context, vector search, extension hooks, or generation-time activation. It never edits or repairs data automatically.
