@@ -154,7 +154,7 @@
         panel.hidden=false;
         const data=card.data;
         const fields=[
-            ['description','角色描述'],['personality','性格'],['scenario','场景'],['first_mes','开场白'],
+            ['name','角色名称'],['description','角色描述'],['personality','性格'],['scenario','场景'],['first_mes','开场白'],
             ['mes_example','对话示例'],['creator_notes','作者备注'],['system_prompt','系统提示词'],
             ['post_history_instructions','历史后指令']
         ];
