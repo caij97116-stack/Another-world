@@ -53,6 +53,9 @@ document.addEventListener('click', (event) => {
         case 'add-prompt-item':
             window.addPromptItem();
             break;
+        case 'bulk-prompt-action':
+            window.bulkPromptAction(target.dataset.bulkAction);
+            break;
         case 'toggle-prompt-editor':
             window.togglePromptEditor(Number(target.dataset.index));
             break;
@@ -268,6 +271,10 @@ document.addEventListener('change', (event) => {
         : null;
     if (!target) return;
 
+    if(target.id==='promptSelectAll'){
+        window.setPromptSelectAll(target.checked);
+        return;
+    }
     switch (target.dataset.changeAction) {
         case 'sync-current-entry':
             window.syncCurrentEntry();
