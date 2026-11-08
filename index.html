@@ -1304,18 +1304,19 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             document.getElementById('p_system').value=presetData.system_prompt||presetData.system||'';
             const elStop=document.getElementById('p_stop');
             if(elStop){const stop=presetData.stop_sequence||presetData.stop||presetData.stop_sequences||'';elStop.value=Array.isArray(stop)?stop.join(', '):String(stop)}
-            document.getElementById('p_stream').checked=!!(presetData.stream??presetData.streaming??true);
-            document.getElementById('p_nsfw').checked=!!(presetData.nsfw||presetData.nsfw_filter===false);
+            document.getElementById('p_stream').checked=parseEntryBoolean(presetData.stream??presetData.streaming,true);
+            const nsfwEnabled=Object.prototype.hasOwnProperty.call(presetData,'nsfw')?parseEntryBoolean(presetData.nsfw,false):(Object.prototype.hasOwnProperty.call(presetData,'nsfw_filter')?!parseEntryBoolean(presetData.nsfw_filter,true):false);
+            document.getElementById('p_nsfw').checked=nsfwEnabled;
             // 插入与导出选项
             const elInst=document.getElementById('p_instruct_mode');
             if(elInst){
                 const v=presetData.instruct_mode!==undefined?presetData.instruct_mode:(presetData.instructMode!==undefined?presetData.instructMode:'');
-                elInst.value=(v===''||v===null||v===undefined)?'':String(Number(v)?1:0);
+                elInst.value=(v===''||v===null||v===undefined)?'':String(parseEntryBoolean(v,false)?1:0);
             }
             const elSys=document.getElementById('p_system_same');
             if(elSys){
                 const v=presetData.system_same_as_main!==undefined?presetData.system_same_as_main:(presetData.systemSameAsMain!==undefined?presetData.systemSameAsMain:'');
-                elSys.value=(v===''||v===null||v===undefined)?'':String(Number(v)?1:0);
+                elSys.value=(v===''||v===null||v===undefined)?'':String(parseEntryBoolean(v,false)?1:0);
             }
             const elEdR=document.getElementById('p_export_disabled_regex');
             if(elEdR) elEdR.checked=presetData._exportIncludeDisabledRegex!==false;
@@ -1448,7 +1449,7 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
                 if(!Array.isArray(source[key])) return;
                 source[key]=includeDisabled
                     ? source[key].slice()
-                    : source[key].filter(item=>!item || !item.disabled);
+                    : source[key].filter(item=>!item || !parseEntryBoolean(item.disabled,false));
             }
             const regexExportPaths=[
                 ['regex_scripts'],['regexScripts'],['regex'],['regexes'],
@@ -1606,10 +1607,10 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             definePresetViewField(view,'replaceString',['replace','replacement'],'');
             definePresetViewField(view,'trimStrings',[],[],value=>Array.isArray(value)?value:[]);
             definePresetViewField(view,'placement',[],[1,2],value=>Array.isArray(value)?value:(value!=null?[value]:[1,2]));
-            definePresetViewField(view,'disabled',[],false,value=>!!value);
-            definePresetViewField(view,'markdownOnly',[],false,value=>!!value);
-            definePresetViewField(view,'promptOnly',[],false,value=>!!value);
-            definePresetViewField(view,'runOnEdit',[],true,value=>value===undefined?true:!!value);
+            definePresetViewField(view,'disabled',[],false,value=>parseEntryBoolean(value,false));
+            definePresetViewField(view,'markdownOnly',[],false,value=>parseEntryBoolean(value,false));
+            definePresetViewField(view,'promptOnly',[],false,value=>parseEntryBoolean(value,false));
+            definePresetViewField(view,'runOnEdit',[],true,value=>value===undefined?true:parseEntryBoolean(value,true));
             definePresetViewField(view,'substituteRegex',[],0,value=>value===undefined?0:Number(value));
             definePresetViewField(view,'minDepth',[],null);
             definePresetViewField(view,'maxDepth',[],null);
@@ -1638,7 +1639,7 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             }
 
             container.innerHTML = list.map((r, i) => {
-                const disabled = !!r.disabled;
+                const disabled = parseEntryBoolean(r.disabled,false);
                 return `
                 <div class="regex-card" data-idx="${i}">
                     <div class="regex-card-header">
@@ -1745,7 +1746,7 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             definePresetViewField(view,'id',[],'script_'+Date.now()+'_'+index);
             definePresetViewField(view,'name',['scriptName','title'],'脚本 '+(index+1));
             definePresetViewField(view,'code',['content','script','js','value'],'',value=>typeof value==='string'?value:String(value||''));
-            definePresetViewField(view,'disabled',[],false,value=>!!value);
+            definePresetViewField(view,'disabled',[],false,value=>parseEntryBoolean(value,false));
             definePresetViewField(view,'type',['kind'],'js');
             definePresetViewField(view,'trigger',['event'],'');
             return view;
@@ -1781,7 +1782,7 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             }
 
             container.innerHTML = list.map((s, i) => {
-                const disabled = !!s.disabled;
+                const disabled = parseEntryBoolean(s.disabled,false);
                 return `
                 <div class="script-card" data-idx="${i}">
                     <div class="script-card-header">
