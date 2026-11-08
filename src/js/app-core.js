@@ -26,6 +26,19 @@ function switchPage(page){
             if(typeof renderScriptList==='function')renderScriptList();
         }
 
+        function switchExtensionTab(tab){
+            const regex=tab!=='scripts';
+            const regexPanel=document.getElementById('extensionRegexPanel');
+            const scriptPanel=document.getElementById('extensionScriptsPanel');
+            if(regexPanel)regexPanel.hidden=!regex;
+            if(scriptPanel)scriptPanel.hidden=regex;
+            document.querySelectorAll('.extension-tab').forEach(button=>{
+                const active=button.dataset.tab===(regex?'regex':'scripts');
+                button.classList.toggle('active',active);
+                button.setAttribute('aria-selected',active?'true':'false');
+            });
+        }
+
         function updateToolbar(){
             const titleEl=document.getElementById('toolbarTitle');
             const iconEl=document.getElementById('brandIcon');
