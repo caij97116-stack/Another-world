@@ -74,3 +74,12 @@ These modules are intentionally staged and are not yet wired into the live stati
 
 
 A compatibility bridge, `src/ts/utils/legacy-bridge.ts`, now provides `installLegacyUtilities()`. The future module bootstrap can call it before invoking the legacy `init()`, exposing the typed helpers as `window.escapeHtml` and `window.showToast` so the remaining classic scripts can continue resolving those names. The bridge is not loaded by the current static entrypoint yet.
+
+## Typed state contracts (not yet wired)
+
+- Added `src/ts/state/worldbook.ts` for world-book state and storage-key contracts.
+- Added `src/ts/state/preset.ts` for open-ended preset payload and state contracts.
+- Added `src/ts/state/index.ts` as the type-only export surface.
+- The contracts deliberately preserve arbitrary imported Tavern fields; they do not narrow preset payloads to a fixed schema.
+- These files currently describe the existing classic-script state only. They do not instantiate a second store, replace `src/js/state.js`, or alter the live GitHub Pages entrypoint.
+- The legacy state migration remains pending until the global binding and mutation patterns have been fully mapped and a verified Vite build/deployment path is available.
