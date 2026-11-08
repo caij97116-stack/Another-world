@@ -152,3 +152,42 @@ A follow-up review checked the current classic-script modules before making furt
 - `ui-utils.js` remains the live classic-script utility file until the TypeScript/Vite integration is verified.
 
 No additional JavaScript files were merged in this pass. The review favors keeping these clear responsibility boundaries over reducing the raw file count. A source-level check also confirmed that the current HTML script order remains unchanged.
+
+
+### Cross-module dependency audit
+
+A full source-level pass reviewed the current classic-script modules, shared state, delegated events, CSS entrypoint, and staged TypeScript modules before deciding whether further file splitting is justified.
+
+#### Runtime script dependency map
+
+The live entrypoint still loads classic scripts in this order:
+
+`state.js → app-core.js → worldbook.js → preset-core.js → preset-logic.js → preset-ui.js → ui-utils.js → dom-events.js → app.js`
+
+The important cross-file relationships are:
+
+- `state.js` declares the shared world-book and preset state used by the editor modules. It must remain first while the application uses classic scripts.
+- `app-core.js` provides page switching and application initialization; `dom-events.js` delegates navigation actions to `switchPage`.
+- `preset-core.js` calls `renderFieldOverview` from `preset-ui.js` and uses the shared toast utility. This later-defined function is only called after the page has finished loading, but it is still an explicit ordering dependency.
+- `worldbook.js`, `preset-logic.js`, and `app-core.js` use the shared toast utility.
+- `dom-events.js` is the delegated interaction boundary. Its selectors cover click, input, change, focus-out, and file actions rather than owning the underlying business logic.
+- `app.js` remains the final bootstrap entry and calls initialization after the preceding classic scripts have loaded.
+
+The global-state and function dependencies are intentional consequences of the current classic-script architecture. Converting individual files to ES modules before defining explicit imports and initialization contracts would risk breaking those assumptions.
+
+#### Further split assessment
+
+- `preset-core.js` is the only substantial candidate for a future split (about 645 lines). It contains preset storage and envelope handling, prompt-item operations, UI rendering/synchronization, import/export, raw-JSON editing, and array access helpers. These are distinguishable sub-responsibilities, but they currently share preset state and call one another through global functions. Splitting it now would create additional implicit cross-file dependencies rather than a clean module boundary. Defer this until the TypeScript/module migration can give those dependencies explicit imports.
+- `worldbook.js` (about 342 lines) is cohesive: import/export, entry normalization, list selection, editing, and trigger preview all operate on the same world-book entry domain. No further split is justified yet.
+- `preset-logic.js` (about 250 lines) groups regex and script editing/normalization. Those two item families share the same editing lifecycle, so keeping them together is preferable to creating tiny files.
+- `dom-events.js` (about 233 lines) is a cohesive delegated-event layer and should not be divided by individual event type.
+- `preset-ui.js` remains a small but meaningful UI responsibility and should stay separate from preset data editing/normalization.
+- `state.js`, `ui-utils.js`, and `app.js` are intentionally small boundary files; their size alone is not a reason to merge them.
+- `main.css` is already extracted from the HTML. It is compactly formatted and has only a few section markers, but its rules share page-level tokens and component styling. Splitting it into multiple stylesheets now would add load-order and maintenance overhead without a clear ownership boundary.
+- The staged TypeScript state modules intentionally mirror selected legacy contracts and helpers while migration is pending. Similar helper names across legacy JS and TypeScript are not two active runtime implementations: the live page still loads the classic JS files, and the TypeScript modules are not wired into the entrypoint.
+
+#### Conclusion
+
+No additional source files were split or merged in this audit. The current boundaries are reasonable for the live classic-script application. The next meaningful architectural step is not more fragmentation: it is to establish and test explicit module imports and state/function contracts during the TypeScript/Vite migration. Until then, preserve the existing script order and runtime implementation.
+
+This was a static source review only. It did not run npm installation, Vite build, TypeScript type-checking, or browser runtime tests.
