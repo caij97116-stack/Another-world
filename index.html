@@ -714,6 +714,13 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         }
 
         // ========== 世界书导入导出 ==========
+        function makeUniqueEntryUid(preferred){
+            const entries=worldBookData&&worldBookData.entries?worldBookData.entries:{};
+            const base=preferred!==undefined&&preferred!==null&&String(preferred)!==''?String(preferred):String(Date.now());
+            let uid=base,suffix=1;
+            while(Object.prototype.hasOwnProperty.call(entries,uid)){uid=base+'_'+suffix++;}
+            return uid;
+        }
         function triggerImport(){document.getElementById('fileInput').click()}
         function onFileChosen(event){
             const file=event.target.files[0];if(!file)return;
@@ -721,28 +728,32 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             reader.onload=function(e){
                 try{
                     const parsed=JSON.parse(e.target.result);
+                    if(!parsed||typeof parsed!=='object')throw new Error('文件顶层必须是对象或条目数组');
                     let normalizedEntries={};
+                    const appendArrayEntry=(item,index)=>{
+                        if(!item||typeof item!=='object'||Array.isArray(item))throw new Error('第 '+(index+1)+' 个条目不是有效对象');
+                        const preferred=(item.uid!==undefined&&item.uid!==null&&String(item.uid)!=='')?String(item.uid):String(index);
+                        let uid=preferred,suffix=1;
+                        while(Object.prototype.hasOwnProperty.call(normalizedEntries,uid))uid=preferred+'_import_'+suffix++;
+                        normalizedEntries[uid]=item;
+                    };
                     if(parsed.entries&&typeof parsed.entries==='object'&&!Array.isArray(parsed.entries))normalizedEntries=parsed.entries;
-                    else if(Array.isArray(parsed.entries))parsed.entries.forEach((item,index)=>{const uid=(item.uid!==undefined&&item.uid!==null)?String(item.uid):String(index);normalizedEntries[uid]=item});
-                    else if(Array.isArray(parsed))parsed.forEach((item,index)=>{const uid=(item.uid!==undefined&&item.uid!==null)?String(item.uid):String(index);normalizedEntries[uid]=item});
-                    else if(typeof parsed==='object'){
-                        if(Object.values(parsed).some(v=>v&&typeof v==='object'&&('key' in v||'content' in v||'comment' in v)))normalizedEntries=parsed;
-                        else throw new Error('无法识别');
-                    }
-                    // 按出现顺序写入，并补齐缺失的 order，保证列表顺序与原文件一致
-                    const orderedUids = Object.keys(normalizedEntries);
-                    orderedUids.forEach((uid, index) => {
-                        const e = sanitizeEntry(normalizedEntries[uid], uid);
-                        if (normalizedEntries[uid].order === undefined || normalizedEntries[uid].order === null || normalizedEntries[uid].order === '') {
-                            e.order = (index + 1) * 10;
-                        }
-                        normalizedEntries[uid] = e;
+                    else if(Array.isArray(parsed.entries))parsed.entries.forEach(appendArrayEntry);
+                    else if(Array.isArray(parsed))parsed.forEach(appendArrayEntry);
+                    else if(Object.values(parsed).some(v=>v&&typeof v==='object'&&('key' in v||'content' in v||'comment' in v)))normalizedEntries=parsed;
+                    else throw new Error('无法识别世界书结构');
+                    const orderedUids=Object.keys(normalizedEntries);
+                    orderedUids.forEach((uid,index)=>{
+                        const sourceEntry=normalizedEntries[uid];
+                        if(!sourceEntry||typeof sourceEntry!=='object'||Array.isArray(sourceEntry))throw new Error('条目 '+uid+' 不是有效对象');
+                        const entry=sanitizeEntry(sourceEntry,uid);
+                        if(sourceEntry.order===undefined||sourceEntry.order===null||sourceEntry.order==='')entry.order=(index+1)*10;
+                        normalizedEntries[uid]=entry;
                     });
-                    // 保留导入文件的完整顶层结构；entries 仅作为编辑器工作副本规范化。
                     pendingImportData={source:parsed,entries:normalizedEntries,version:parsed._editorVersion?parseInt(parsed._editorVersion,10):null};
                     if(Object.keys(worldBookData.entries).length===0)doImport('overwrite');
                     else document.getElementById('importModal').classList.add('show');
-                }catch(err){console.error(err);showToast('解析 JSON 失败','error')}
+                }catch(err){console.error(err);showToast('导入失败：'+err.message,'error')}
             };
             reader.readAsText(file);event.target.value='';
         }
@@ -750,19 +761,35 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         function doImport(mode){
             if(!pendingImportData)return;
             pushHistory();
+            const previousActiveUid=activeUid;
             const incoming=pendingImportData.entries;
             if(mode==='overwrite'){
-                // 从原始顶层对象开始，仅替换 entries，避免丢失酒馆/插件元数据。
                 worldBookData={...(pendingImportData.source||{}),entries:incoming};
                 if(pendingImportData.version)exportVersion=pendingImportData.version;
-            }else Object.keys(incoming).forEach(uid=>{worldBookData.entries[uid]=incoming[uid]});
+            }else{
+                let added=0,remapped=0;
+                Object.keys(incoming).forEach(uid=>{
+                    let targetUid=uid;
+                    if(Object.prototype.hasOwnProperty.call(worldBookData.entries,targetUid)){
+                        targetUid=makeUniqueEntryUid(uid);
+                        remapped++;
+                    }
+                    const entry={...incoming[uid],uid:targetUid};
+                    worldBookData.entries[targetUid]=sanitizeEntry(entry,targetUid);
+                    added++;
+                });
+                pendingImportData.mergeStats={added,remapped};
+            }
             const keys=Object.keys(worldBookData.entries);
-            activeUid=keys.length>0?keys[0]:null;
+            activeUid=mode!=='overwrite'&&previousActiveUid&&worldBookData.entries[String(previousActiveUid)]?String(previousActiveUid):(keys[0]||null);
             selectedUids.clear();selectMode=false;updateSelectModeUI();
             renderEntryList();loadActiveEntry();scheduleAutoSave();updateEntryCount();updateToolbar();
+            const stats=pendingImportData.mergeStats;
             closeImportModal();
-            showToast(mode==='overwrite'?`覆盖导入 ${keys.length} 个条目`:`合并完成，当前共 ${keys.length} 个条目`,'success');
+            const message=mode==='overwrite'?'覆盖导入 '+keys.length+' 个条目':(stats.remapped?'合并完成：新增 '+stats.added+' 条，重复 UID 已重新分配 '+stats.remapped+' 条':'合并完成：新增 '+stats.added+' 条');
+            showToast(message,'success');
         }
+
         // 列表字段只在 UI 层拆分；数据层保留导入时的原始类型（字符串仍是字符串，数组仍是数组）。
         function listFieldItems(value){
             if(Array.isArray(value))return value.map(v=>String(v));
@@ -939,7 +966,7 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         }
         function addNewEntry(){
             pushHistory();
-            const newUid=Date.now().toString();
+            const newUid=makeUniqueEntryUid(Date.now().toString());
             // 计算插入位置：当前选中条目后面
             let newOrder = 100;
             const entries = Object.values(worldBookData.entries || {});
@@ -976,7 +1003,7 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         function copyCurrentEntry(){if(activeUid)copyEntryByUid(activeUid)}
         function copyEntryByUid(uid){
             const src=worldBookData.entries[uid];if(!src)return;pushHistory();
-            const newUid=Date.now().toString();const copy=JSON.parse(JSON.stringify(src));
+            const newUid=makeUniqueEntryUid(Date.now().toString());const copy=JSON.parse(JSON.stringify(src));
             copy.uid=newUid;copy.comment=(copy.comment||'未命名')+' (副本)';copy.order=(Number(copy.order)||100)+5;
             worldBookData.entries[newUid]=sanitizeEntry(copy,newUid);activeUid=newUid;
             renderEntryList();loadActiveEntry();scheduleAutoSave();updateEntryCount();showToast('已复制条目');
