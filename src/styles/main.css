@@ -615,3 +615,12 @@ body.dark-theme .character-card-hero{background:linear-gradient(120deg,rgba(14,1
 .extension-panel :is(button,input,select):focus-visible,.preset-status :is(button):focus-visible{outline:2px solid var(--sky-accent);outline-offset:2px;box-shadow:0 0 0 3px rgba(56,189,248,.16)}
 .extension-card-select,.extension-select-all{min-height:30px;cursor:pointer}
 .extension-bulk-actions .btn,.regex-card-actions .btn{min-height:32px}
+
+/* Focused script editing overlay. */
+.script-code-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
+.script-code-toolbar label{margin:0!important}
+body.script-editor-focus{overflow:hidden}
+body.script-editor-focus::before{content:'';position:fixed;inset:0;z-index:9998;background:rgba(7,15,28,.72);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+textarea.script-code.is-fullscreen{position:fixed!important;z-index:9999;top:4vh;left:4vw;width:92vw!important;height:92vh!important;max-height:92vh;min-height:92vh;resize:none;padding:20px;font-size:.88rem;line-height:1.65;background:var(--glass-panel-strong,var(--bg-main));border:1px solid var(--sky-accent);box-shadow:0 24px 90px rgba(0,0,0,.4)}
+@media(max-width:600px){textarea.script-code.is-fullscreen{top:2vh;left:2vw;width:96vw!important;height:96vh!important;max-height:96vh;min-height:96vh;padding:13px;font-size:.78rem}}
+@media(prefers-reduced-motion:reduce){textarea.script-code.is-fullscreen{transition:none}}
