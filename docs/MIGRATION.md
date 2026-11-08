@@ -287,3 +287,21 @@ The character-card workspace now accepts the JSON resource bundle format produce
 - Imported scripts remain inert: staging and restore do not execute JavaScript stored in the preset or card.
 
 This is a JSON bundle workflow, not a ZIP/CHARX importer. Validation is source-level only at this stage; real browser interaction, storage-quota failure, and round-trip testing with multiple real-world bundles remain outstanding.
+
+
+## Character-card and resource-bundle compatibility tests
+
+A Node.js built-in test suite exercises the live character-card parser and resource-bundle staging logic in an isolated VM context. The test harness exposes only selected internal functions and supplies stub UI/storage dependencies; it does not open or mutate a user's browser data.
+
+Coverage includes:
+
+- Flat V1 JSON, V2 envelope, and V3 envelope recognition.
+- Preservation of nested and unknown card fields.
+- Rejection of cards without a usable name.
+- Legacy V1 PNG text metadata parsing and V3 `ccv3` preference when both `ccv3` and `chara` chunks exist.
+- Successful staging of a synthetic resource bundle without applying it.
+- Rejection of malformed JSON, unsupported bundle versions, duplicate resource types, malformed worldbook entries, and mismatched resource fingerprints.
+
+Run locally with `npm test` (Node.js 22 or later). GitHub Actions runs the same command on pushes and pull requests to `main`.
+
+Latest CI result: 10 tests passed, 0 failed. This is parser and bundle-staging unit coverage only. It does not replace browser interaction testing, a full export-then-import round trip through the UI, real-world PNG corpus testing, storage-quota testing, or Tavern runtime compatibility testing.
