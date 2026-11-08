@@ -159,6 +159,14 @@ document.addEventListener('click', (event) => {
         case 'move-regex-script':
             window.moveRegexScript(Number(target.dataset.index),Number(target.dataset.direction));
             break;
+        case 'toggle-extension-card': {
+            const card=target.closest('.regex-card,.script-card');
+            if(!card)break;
+            const collapsed=card.classList.toggle('is-collapsed');
+            target.setAttribute('aria-expanded',String(!collapsed));
+            target.textContent=collapsed?'展开':'收起';
+            break;
+        }
         case 'bulk-extension-action':
             window.bulkExtensionAction(target.dataset.kind,target.dataset.bulkAction);
             break;
