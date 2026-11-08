@@ -229,6 +229,62 @@
 
     function refreshCharacterCardLinks(){renderCharacterCardLinks()}
 
+    function exportCharacterResourceBundle(){
+        if(!currentCard||!currentCardLinkKey){showToast('请先载入角色卡','error');return}
+        if(typeof syncCurrentEntry==='function'&&typeof worldBookData!=='undefined'&&activeUid)syncCurrentEntry(true);
+        if(typeof syncPreset==='function'&&typeof presetData!=='undefined'&&presetData)syncPreset();
+
+        const store=loadCardLinkStore();
+        const links=store[currentCardLinkKey]||{};
+        const resources={};
+        const manifestResources=[];
+        const stale=[];
+        ['worldbook','preset'].forEach(kind=>{
+            const link=links[kind];
+            if(!link)return;
+            const active=getActiveResourceInfo(kind);
+            if(!active||active.fingerprint!==link.fingerprint){stale.push(kind==='worldbook'?'独立世界书':'独立预设');return}
+            const source=kind==='worldbook'?worldBookData:presetData;
+            resources[kind]=JSON.parse(JSON.stringify(source));
+            manifestResources.push({
+                type:kind,
+                name:link.name,
+                summary:link.label,
+                fingerprint:link.fingerprint,
+                linked_at:link.linkedAt
+            });
+        });
+        if(stale.length){
+            showToast('关联资源已变化或未载入：'+stale.join('、')+'。请先重新关联再导出。','error');
+            renderCharacterCardLinks();
+            return;
+        }
+        if(!manifestResources.length){showToast('请至少关联一个独立世界书或预设，再导出资源包','error');return}
+        const data=currentCard.data||currentCard;
+        const bundle={
+            format:'another-world-character-resource-bundle',
+            format_version:1,
+            created_at:new Date().toISOString(),
+            manifest:{
+                character:{name:data.name||'未命名角色',spec:currentCard.spec||'chara_card_v1',spec_version:currentCard.spec_version||'1.0',source_filename:currentCardFile&&currentCardFile.name||''},
+                resources:manifestResources,
+                notes:['此文件是资源快照包，不会修改原始角色卡、世界书或预设。','角色卡以 JSON 数据形式收录，不包含原始 PNG 图片像素。','关联记录本身仍保存在创建此资源包的浏览器本地。']
+            },
+            character_card:JSON.parse(JSON.stringify(currentCard)),
+            resources
+        };
+        const blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json;charset=utf-8'});
+        const url=URL.createObjectURL(blob);
+        const anchor=document.createElement('a');
+        anchor.href=url;
+        anchor.download=(String(data.name||'character').replace(/[\\/:*?"<>|]/g,'_')||'character')+'_resource_bundle.json';
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),1000);
+        showToast('关联资源包已导出；原始资源未被修改','success');
+    }
+
     function fieldPreview(data,key){
         const value=data[key];
         if(typeof value==='string' && value.trim()) return value;
@@ -542,6 +598,7 @@
     window.linkCurrentCardResource=linkCurrentCardResource;
     window.unlinkCurrentCardResource=unlinkCurrentCardResource;
     window.refreshCharacterCardLinks=refreshCharacterCardLinks;
+    window.exportCharacterResourceBundle=exportCharacterResourceBundle;
     window.updateCharacterCardField=updateCharacterCardField;
     window.applyCharacterCardRawJson=applyCharacterCardRawJson;
     window.exportCharacterCardPng=exportCharacterCardPng;
