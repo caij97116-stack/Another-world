@@ -159,6 +159,18 @@ document.addEventListener('click', (event) => {
         case 'redo':
             window.redo();
             break;
+        case 'open-preset-diagnostics':
+            window.openPresetDiagnostics();
+            break;
+        case 'run-preset-diagnostics':
+            window.runPresetDiagnostics();
+            break;
+        case 'close-preset-diagnostics':
+            window.closePresetDiagnostics();
+            break;
+        case 'jump-preset-diagnostic':
+            window.jumpToPresetDiagnostic(target.dataset.targetId, target.dataset.promptIndex);
+            break;
         case 'open-worldbook-diagnostics':
             window.openWorldbookDiagnostics();
             break;
