@@ -42,6 +42,7 @@ function switchPage(page){
                 const active=button.dataset.tab===(regex?'regex':'scripts');
                 button.classList.toggle('active',active);
                 button.setAttribute('aria-selected',active?'true':'false');
+                button.setAttribute('tabindex',active?'0':'-1');
             });
         }
 
