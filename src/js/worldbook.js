@@ -379,4 +379,142 @@ function makeUniqueEntryUid(preferred){
             else resultEl.innerHTML=hits.map(h=>`<div class="preview-hit"><strong>${escapeHtml(h.entry.comment||'未命名')}</strong><span style="opacity:.75;font-size:.72rem"> · ${escapeHtml(h.reason)}</span></div>`).join('');
         }
 
+
+        // ========== 世界书诊断中心 ==========
+        function closeWorldbookDiagnostics(){
+            document.getElementById('diagnosticsModal')?.classList.remove('show');
+        }
+        function openWorldbookDiagnostics(){
+            const modal=document.getElementById('diagnosticsModal');
+            if(!modal)return;
+            modal.classList.add('show');
+            runWorldbookDiagnostics();
+        }
+        function jumpToDiagnosticEntry(uid){
+            uid=String(uid??'');
+            if(!uid||!worldBookData.entries?.[uid])return;
+            closeWorldbookDiagnostics();
+            activeUid=uid;
+            renderEntryList();
+            loadActiveEntry();
+            if(window.innerWidth<=860)enterFullscreenEdit();
+            const form=document.getElementById('editorForm');
+            form?.scrollIntoView({behavior:'smooth',block:'start'});
+        }
+        function runWorldbookDiagnostics(){
+            const summary=document.getElementById('diagnosticsSummary');
+            const results=document.getElementById('diagnosticsResults');
+            if(!summary||!results)return;
+            const entries=Object.entries(worldBookData.entries||{}).filter(([,entry])=>entry&&typeof entry==='object'&&!Array.isArray(entry));
+            const issues=[];
+            const add=(severity,category,uid,title,detail)=>issues.push({severity,category,uid:String(uid),title,detail});
+            const allowedPositions=new Set([0,1,2,3,4,5,6,7]);
+            const allowedTriggers=new Set(['normal','continue','impersonate','swipe','regenerate','quiet']);
+            const keywordOwners=new Map();
+            const graph=new Map();
+            const plainKeyOwners=[];
+            const entryCount=entries.length;
+            entries.forEach(([uid,entry])=>{
+                const name=String(entry.comment||entry.title||'未命名条目');
+                const enabled=getEntryEnabled(entry);
+                const keys=listFieldItems(entry.key).map(k=>k.trim()).filter(Boolean);
+                const secondary=listFieldItems(entry.keysecondary).map(k=>k.trim()).filter(Boolean);
+                const content=typeof entry.content==='string'?entry.content:String(entry.content??'');
+                const label=name+'（UID '+uid+'）';
+                if(entry.uid!==undefined&&String(entry.uid)!==String(uid))add('warning','数据一致性',uid,'条目 UID 与对象键不一致',label+'；导出与定位可能产生歧义。');
+                if(!content.trim())add(enabled?'warning':'info','内容完整性',uid,'条目内容为空',label+'；确认是否有意留空。');
+                if(enabled&&!parseEntryBoolean(entry.constant,false)&&keys.length===0&&!parseEntryBoolean(entry.vectorized,false)&&!entry.delayUntilRecursion){
+                    add('warning','触发条件',uid,'没有常驻标记或主关键词',label+'；该条目可能无法通过普通关键词扫描触发。');
+                }
+                if(enabled&&keys.length===0&&parseEntryBoolean(entry.constant,false)===false&&parseEntryBoolean(entry.selective,false)){
+                    add('warning','触发条件',uid,'选择性已开启但没有主关键词',label+'；请确认触发策略是否符合预期。');
+                }
+                if(parseEntryBoolean(entry.selective,false)&&secondary.length===0)add('warning','触发条件',uid,'选择性条目没有次要关键词',label+'；Selective Logic 没有可供判断的关键词。');
+                if(Number(entry.probability)===0&&enabled)add('warning','触发条件',uid,'触发概率为 0%',label+'；即使满足其他条件也不会被插入。');
+                if(entry.probability!==undefined&&entry.probability!==null&&entry.probability!==''&&(!Number.isFinite(Number(entry.probability))||Number(entry.probability)<0||Number(entry.probability)>100)){
+                    add('error','数值范围',uid,'触发概率超出 0–100',label+'；当前值：'+String(entry.probability));
+                }
+                if(entry.order!==undefined&&entry.order!==null&&entry.order!==''&&!Number.isFinite(Number(entry.order)))add('error','数值范围',uid,'插入顺序不是有效数字',label+'；当前值：'+String(entry.order));
+                if(entry.position!==undefined&&!allowedPositions.has(Number(entry.position)))add('error','插入设置',uid,'插入位置不受支持',label+'；当前值：'+String(entry.position));
+                if(Number(entry.position)===4&&entry.depth!==undefined&&(!Number.isFinite(Number(entry.depth))||Number(entry.depth)<0))add('error','插入设置',uid,'深度值无效',label+'；深度应为不小于 0 的数字。');
+                if(Number(entry.position)===7&&!String(entry.outletName||'').trim())add('warning','插入设置',uid,'Outlet 名称为空',label+'；没有名称的 Outlet 条目会被跳过。');
+                if(Number(entry.position)!==7&&String(entry.outletName||'').trim())add('info','插入设置',uid,'设置了未使用的 Outlet 名称',label+'；当前插入位置不是 Outlet。');
+                if(Number(entry.position)===7&&/\{\{\s*outlet::/i.test(content))add('warning','插入设置',uid,'Outlet 内容包含 Outlet 宏','条目正文不支持嵌套调用 Outlet，可能造成循环解析。');
+                const groupNames=listFieldItems(entry.group);
+                if(groupNames.length&&entry.groupWeight!==undefined&&(!Number.isFinite(Number(entry.groupWeight))||Number(entry.groupWeight)<0))add('error','互斥分组',uid,'分组权重无效',label+'；权重应为不小于 0 的数字。');
+                if(entry.triggers!==undefined&&!Array.isArray(entry.triggers))add('warning','生成触发',uid,'Triggers 不是数组',label+'；请检查导入数据格式。');
+                if(Array.isArray(entry.triggers)){
+                    const invalid=entry.triggers.filter(t=>!allowedTriggers.has(String(t)));
+                    if(invalid.length)add('warning','生成触发',uid,'存在未知生成类型',label+'；未知值：'+invalid.join(', '));
+                }
+                if(entry.characterFilter!==undefined&&(!entry.characterFilter||typeof entry.characterFilter!=='object'||Array.isArray(entry.characterFilter)))add('warning','角色过滤',uid,'角色过滤结构异常',label+'；characterFilter 应为对象。');
+                if(entry.characterFilter&&typeof entry.characterFilter==='object'&&!Array.isArray(entry.characterFilter)){
+                    ['names','tags'].forEach(field=>{
+                        if(entry.characterFilter[field]!==undefined&&!Array.isArray(entry.characterFilter[field]))add('warning','角色过滤',uid,'角色过滤 '+field+' 不是数组',label+'；原始值已保留，请核对酒馆数据格式。');
+                    });
+                }
+                if(entry.delayUntilRecursion!==undefined&&entry.delayUntilRecursion!==false&&entry.delayUntilRecursion!==true&&(!Number.isInteger(Number(entry.delayUntilRecursion))||Number(entry.delayUntilRecursion)<1))add('warning','递归设置',uid,'递归延迟层级无效',label+'；应为 true、false 或正整数层级。');
+                keys.forEach(key=>{
+                    const regexMatch=key.match(/^\/(.*)\/([dgimsuvy]*)$/);
+                    if(regexMatch){
+                        try{new RegExp(regexMatch[1],regexMatch[2])}
+                        catch(error){add('error','关键词格式',uid,'正则关键词无法解析',label+'；/'+regexMatch[1]+'/'+regexMatch[2]+'：'+error.message)}
+                    }else if(key.length>=2){
+                        const normalized=key.toLocaleLowerCase();
+                        if(!keywordOwners.has(normalized))keywordOwners.set(normalized,[]);
+                        keywordOwners.get(normalized).push({uid,name});
+                        plainKeyOwners.push({uid,key:normalized});
+                    }
+                });
+                graph.set(uid,new Set());
+            });
+            keywordOwners.forEach((owners,key)=>{
+                if(owners.length>1){
+                    const names=owners.map(o=>o.name+'（'+o.uid+'）').join('、');
+                    owners.forEach(owner=>add('info','关键词重复',owner.uid,'多个条目使用相同关键词','关键词「'+key+'」同时出现在：'+names+'。这可能是有意共享触发词，请确认是否会导致重复注入。'));
+                }
+            });
+            // 检查条目正文中提及其他条目的普通关键词，标记可能的递归环；不把正常的互相引用判为错误。
+            const contentByUid=new Map(entries.map(([uid,entry])=>[uid,String(entry.content??'').toLocaleLowerCase()]));
+            const keyTargets=plainKeyOwners.filter(item=>item.key.length>=3).slice(0,2500);
+            entries.forEach(([uid])=>{
+                const content=contentByUid.get(uid)||'';
+                keyTargets.forEach(target=>{
+                    if(target.uid!==uid&&content.includes(target.key))graph.get(uid).add(target.uid);
+                    if(target.uid===uid&&content.includes(target.key))graph.get(uid).add(uid);
+                });
+            });
+            const visited=new Set(),stack=[],stackSet=new Set(),reportedCycles=new Set();
+            function visit(uid){
+                if(stackSet.has(uid)){
+                    const start=stack.indexOf(uid),cycle=stack.slice(start).concat(uid);
+                    const signature=[...new Set(cycle)].sort().join('|');
+                    if(!reportedCycles.has(signature)){
+                        reportedCycles.add(signature);
+                        const names=cycle.map(id=>String(worldBookData.entries[id]?.comment||id)).join(' → ');
+                        add('info','递归关系',uid,'发现可能的递归循环',names+'。循环引用可能是设计需要；请确认递归扫描限制与预算。');
+                    }
+                    return;
+                }
+                if(visited.has(uid))return;
+                visited.add(uid);stack.push(uid);stackSet.add(uid);
+                (graph.get(uid)||[]).forEach(next=>visit(next));
+                stack.pop();stackSet.delete(uid);
+            }
+            graph.forEach((_,uid)=>visit(uid));
+            const rank={error:0,warning:1,info:2};
+            issues.sort((a,b)=>rank[a.severity]-rank[b.severity]||a.category.localeCompare(b.category,'zh-CN'));
+            const counts={error:issues.filter(i=>i.severity==='error').length,warning:issues.filter(i=>i.severity==='warning').length,info:issues.filter(i=>i.severity==='info').length};
+            summary.innerHTML=`<div class="diagnostics-stat"><strong>${entryCount}</strong><span>条目</span></div><div class="diagnostics-stat is-error"><strong>${counts.error}</strong><span>错误</span></div><div class="diagnostics-stat is-warning"><strong>${counts.warning}</strong><span>警告</span></div><div class="diagnostics-stat"><strong>${counts.info}</strong><span>提示</span></div>`;
+            if(!issues.length){
+                results.innerHTML='<div class="diagnostics-empty"><strong>没有发现明显问题</strong><span>这不代表酒馆运行时一定会触发所有条目；本工具只检查可从导入数据静态判断的项目。</span></div>';
+                return {entryCount,issues,counts};
+            }
+            results.innerHTML=issues.map(issue=>{
+                const severityLabel=issue.severity==='error'?'错误':issue.severity==='warning'?'警告':'提示';
+                return `<button class="diagnostic-issue severity-${issue.severity}" data-action="jump-diagnostic-entry" data-uid="${escapeHtml(issue.uid)}"><span class="diagnostic-issue-top"><span class="diagnostic-severity">${severityLabel}</span><span class="diagnostic-category">${escapeHtml(issue.category)}</span></span><strong>${escapeHtml(issue.title)}</strong><span>${escapeHtml(issue.detail)}</span><small>点击定位条目 · UID ${escapeHtml(issue.uid)}</small></button>`;
+            }).join('');
+            return {entryCount,issues,counts};
+        }
+
         // ========== 预设功能 ==========
