@@ -206,6 +206,8 @@
             const activeText=active?'当前：'+active.name+'（'+active.label+'）':'当前未载入可关联的'+labels[kind];
             return '<div class="character-link-row"><div class="character-link-info"><strong>'+labels[kind]+'</strong><span class="character-link-status '+(matches?'is-match':link?'is-stale':'')+'">'+status+'</span>'+(link?'<small>已关联：'+detail+'</small>':'')+'<small>'+escapeCardHtml(activeText)+'</small></div><div class="character-link-actions"><button class="btn btn-sm btn-primary" type="button" data-action="link-card-resource" data-kind="'+kind+'" '+(active?'':'disabled')+'>'+(link?'重新关联当前':'关联当前')+'</button>'+(link?'<button class="btn btn-sm btn-ghost" type="button" data-action="unlink-card-resource" data-kind="'+kind+'">解除</button>':'')+'</div></div>';
         }).join('');
+        const exportButton=document.getElementById('characterCardBundleExport');
+        if(exportButton)exportButton.disabled=!(links.worldbook||links.preset);
     }
 
     function linkCurrentCardResource(kind){
