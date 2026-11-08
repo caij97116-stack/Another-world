@@ -27,3 +27,4 @@
         let presetArrayPaths={};
         const PRESET_IMPORT_BACKUP_KEY='tavern_preset_editor_import_backup';
         let pendingPresetImport=null;
+        let pendingPresetExport=null;
