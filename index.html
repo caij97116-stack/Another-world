@@ -1241,9 +1241,11 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             writePresetField(presetData,'stream',['streaming'],document.getElementById('p_stream').checked);
             // nsfw_filter 与 nsfw 语义相反，单独反向写回，不能作为普通别名处理。
             const nsfwValue=document.getElementById('p_nsfw').checked;
-            if(Object.prototype.hasOwnProperty.call(presetData,'nsfw')) presetData.nsfw=nsfwValue;
-            else if(Object.prototype.hasOwnProperty.call(presetData,'nsfw_filter')) presetData.nsfw_filter=!nsfwValue;
-            else presetData.nsfw=nsfwValue;
+            const hasNsfw=Object.prototype.hasOwnProperty.call(presetData,'nsfw');
+            const hasNsfwFilter=Object.prototype.hasOwnProperty.call(presetData,'nsfw_filter');
+            if(hasNsfw) presetData.nsfw=nsfwValue;
+            if(hasNsfwFilter) presetData.nsfw_filter=!nsfwValue;
+            if(!hasNsfw&&!hasNsfwFilter) presetData.nsfw=nsfwValue;
             const elInst=document.getElementById('p_instruct_mode');
             if(elInst && elInst.value!==''){ writePresetField(presetData,'instruct_mode',['instructMode'],Number(elInst.value)); }
             const elSys=document.getElementById('p_system_same');
