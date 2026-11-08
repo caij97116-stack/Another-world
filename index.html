@@ -265,6 +265,11 @@
                                         <button class="btn btn-sm" type="button" data-action="bulk-prompt-action" data-bulk-action="clear">取消选择</button>
                                     </div>
                                 </div>
+                                <div class="extension-filterbar prompt-filterbar">
+                                    <label class="extension-search"><span class="sr-only">搜索提示词</span><span aria-hidden="true">⌕</span><input class="form-control" id="promptSearchInput" type="search" placeholder="搜索名称、标识符、角色或正文…" autocomplete="off"></label>
+                                    <label class="extension-filter-select"><span class="sr-only">提示词状态筛选</span><select class="form-control" id="promptStatusFilter"><option value="all">全部状态</option><option value="enabled">仅启用</option><option value="disabled">仅禁用</option></select></label>
+                                    <span class="extension-filter-summary" id="promptFilterSummary" aria-live="polite"></span>
+                                </div>
                                 <div class="regex-list" id="promptItemsContainer"></div>
                             </div>
                         </div>
