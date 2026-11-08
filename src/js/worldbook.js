@@ -190,13 +190,10 @@ function makeUniqueEntryUid(preferred){
                 const card=document.createElement('div');
                 card.className=`entry-card ${String(activeUid)===uid?'active':''} ${!isEnabled?'disabled-entry':''} ${isSelected?'selected':''}`;
                 card.dataset.uid=uid;
-                card.onclick=e=>{
-                    if(e.target.classList.contains('entry-check')||e.target.closest('.card-btn'))return;
-                    if(selectMode){const check=card.querySelector('.entry-check');check.checked=!check.checked;toggleSelect(uid,check.checked);return}
-                    activeUid=uid;renderEntryList();loadActiveEntry();closeSidebar();updateFullscreenBtn();
-                };
+                card.dataset.action='select-entry-card';
+                const safeUid=escapeHtml(uid);
                 const tagsHtml=listFieldItems(entry.tags).map(t=>`<span class="tag-chip">${escapeHtml(t)}</span>`).join('');
-                card.innerHTML=`${selectMode?`<input type="checkbox" class="entry-check" ${isSelected?'checked':''} onchange="toggleSelect('${entry.uid}',this.checked)">`:''}<div class="entry-card-body"><div class="entry-status ${isEnabled?'':'off'}"></div><div class="entry-card-title">${escapeHtml(title)}</div><div class="entry-card-keys">${escapeHtml(keys||'无关键词')}</div>${tagsHtml?`<div class="entry-card-tags">${tagsHtml}</div>`:''}${!selectMode?`<div class="entry-card-actions"><button class="card-btn" onclick="event.stopPropagation();moveEntry('${entry.uid}',-1)">↑</button><button class="card-btn" onclick="event.stopPropagation();moveEntry('${entry.uid}',1)">↓</button><button class="card-btn" onclick="event.stopPropagation();copyEntryByUid('${entry.uid}')">复制</button></div>`:''}</div>`;
+                card.innerHTML=`${selectMode?`<input type="checkbox" class="entry-check" data-change-action="toggle-entry-selection" data-uid="${safeUid}" ${isSelected?'checked':''}>`:''}<div class="entry-card-body"><div class="entry-status ${isEnabled?'':'off'}"></div><div class="entry-card-title">${escapeHtml(title)}</div><div class="entry-card-keys">${escapeHtml(keys||'无关键词')}</div>${tagsHtml?`<div class="entry-card-tags">${tagsHtml}</div>`:''}${!selectMode?`<div class="entry-card-actions"><button class="card-btn" data-action="move-entry" data-uid="${safeUid}" data-direction="-1">↑</button><button class="card-btn" data-action="move-entry" data-uid="${safeUid}" data-direction="1">↓</button><button class="card-btn" data-action="copy-entry" data-uid="${safeUid}">复制</button></div>`:''}</div>`;
                 container.appendChild(card);
             });
             if(visibleCount===0&&searchVal)container.innerHTML=`<div style="text-align:center;color:var(--text-muted);padding:18px 10px;font-size:.78rem">没有匹配的条目</div>`;
