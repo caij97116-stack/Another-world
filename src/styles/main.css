@@ -601,3 +601,9 @@ body.dark-theme .character-card-hero{background:linear-gradient(120deg,rgba(14,1
 .extension-selection-summary{font-size:.68rem;color:var(--text-muted);white-space:nowrap}
 .extension-bulk-actions{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
 @media(max-width:520px){.extension-bulkbar{align-items:flex-start}.extension-bulk-actions{width:100%;margin-left:0}.extension-bulk-actions .btn{flex:1}}
+
+/* Compact mode for long extension cards. */
+.regex-card,.script-card{transition:padding .2s ease,border-color .18s ease,box-shadow .18s ease}
+.regex-card.is-collapsed,.script-card.is-collapsed{padding-bottom:8px}
+.regex-card.is-collapsed>:not(.regex-card-header),.script-card.is-collapsed>:not(.script-card-header){display:none!important}
+.regex-card.is-collapsed .regex-card-header,.script-card.is-collapsed .script-card-header{margin-bottom:0}
