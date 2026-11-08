@@ -368,12 +368,22 @@
                     <div><h3>正则规则管理</h3><p class="tool-help">编辑匹配表达式、替换内容和应用位置。测试台仅验证查找 / 替换结果，不模拟酒馆的触发位置、深度或宏环境。</p></div>
                     <button class="btn btn-primary btn-sm" type="button" data-action="add-regex-script">＋ 新建正则</button>
                 </div>
+                <div class="extension-filterbar">
+                    <label class="extension-search"><span class="sr-only">搜索正则</span><span aria-hidden="true">⌕</span><input class="form-control" id="regexSearchInput" type="search" placeholder="搜索名称、查找表达式或替换内容…" autocomplete="off"></label>
+                    <label class="extension-filter-select"><span class="sr-only">正则状态筛选</span><select class="form-control" id="regexStatusFilter"><option value="all">全部状态</option><option value="enabled">仅启用</option><option value="disabled">仅禁用</option></select></label>
+                    <span class="extension-filter-summary" id="regexFilterSummary" aria-live="polite"></span>
+                </div>
                 <div class="regex-list" id="regexListContainer"></div>
             </section>
             <section class="glass-panel-box extension-panel" id="extensionScriptsPanel" hidden>
                 <div class="panel-header">
                     <div><h3>脚本管理</h3><p class="tool-help">脚本仅在你主动点击测试时运行；测试环境不提供酒馆宿主 API。</p></div>
                     <button class="btn btn-primary btn-sm" type="button" data-action="add-script">＋ 新建脚本</button>
+                </div>
+                <div class="extension-filterbar">
+                    <label class="extension-search"><span class="sr-only">搜索脚本</span><span aria-hidden="true">⌕</span><input class="form-control" id="scriptSearchInput" type="search" placeholder="搜索名称、类型、触发条件或代码…" autocomplete="off"></label>
+                    <label class="extension-filter-select"><span class="sr-only">脚本状态筛选</span><select class="form-control" id="scriptStatusFilter"><option value="all">全部状态</option><option value="enabled">仅启用</option><option value="disabled">仅禁用</option></select></label>
+                    <span class="extension-filter-summary" id="scriptFilterSummary" aria-live="polite"></span>
                 </div>
                 <div class="script-list" id="scriptListContainer"></div>
             </section>
