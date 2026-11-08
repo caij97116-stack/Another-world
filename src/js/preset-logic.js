@@ -91,18 +91,26 @@ function normalizeRegexScript(raw, index){
 
         function updateRegexField(idx, key, value){
             if(!presetData || !getActivePresetArray('regex_scripts') || !getActivePresetArray('regex_scripts')[idx]) return;
-            getActivePresetArray('regex_scripts')[idx][key] = value;
+            const item=getActivePresetArray('regex_scripts')[idx];
+            if(item[key]===value)return;
+            recordPresetEditHistory(false);
+            item[key] = value;
             if(key === 'scriptName' || key === 'disabled') renderRegexList();
             schedulePresetSave();
         }
         function updateRegexPlacement(idx, str){
             if(!presetData || !getActivePresetArray('regex_scripts') || !getActivePresetArray('regex_scripts')[idx]) return;
             const arr = String(str).split(/[,，\s]+/).map(s => s.trim()).filter(Boolean).map(Number).filter(n => !isNaN(n));
-            getActivePresetArray('regex_scripts')[idx].placement = arr.length ? arr : [1, 2];
+            const item=getActivePresetArray('regex_scripts')[idx];
+            const next=arr.length ? arr : [1, 2];
+            if(JSON.stringify(item.placement)===JSON.stringify(next))return;
+            recordPresetEditHistory(false);
+            item.placement = next;
             schedulePresetSave();
         }
         function toggleRegexDisabled(idx){
             if(!presetData || !getActivePresetArray('regex_scripts') || !getActivePresetArray('regex_scripts')[idx]) return;
+            recordPresetEditHistory(false);
             getActivePresetArray('regex_scripts')[idx].disabled = !getActivePresetArray('regex_scripts')[idx].disabled;
             renderRegexList();
             schedulePresetSave();
@@ -111,6 +119,7 @@ function normalizeRegexScript(raw, index){
             if(!presetData || !getActivePresetArray('regex_scripts')) return;
             const name = getActivePresetArray('regex_scripts')[idx]?.scriptName || '该正则';
             if(!confirm('确定删除「' + name + '」？')) return;
+            recordPresetEditHistory(false);
             getActivePresetArray('regex_scripts').splice(idx, 1);
             renderRegexList();
             schedulePresetSave();
@@ -120,6 +129,7 @@ function normalizeRegexScript(raw, index){
             if(!presetData){ createEmptyPreset(); }
             ensureRegexScripts();
             const i = getActivePresetArray('regex_scripts').length;
+            recordPresetEditHistory(false);
             getActivePresetArray('regex_scripts').push(normalizeRegexScript({
                 scriptName: '新正则 ' + (i + 1),
                 findRegex: '',
@@ -315,12 +325,16 @@ function normalizeRegexScript(raw, index){
 
         function updateScriptField(idx, key, value){
             if(!presetData || !getActivePresetArray('scripts') || !getActivePresetArray('scripts')[idx]) return;
-            getActivePresetArray('scripts')[idx][key] = value;
+            const item=getActivePresetArray('scripts')[idx];
+            if(item[key]===value)return;
+            recordPresetEditHistory(key==='code');
+            item[key] = value;
             if(key === 'name' || key === 'disabled') renderScriptList();
             schedulePresetSave();
         }
         function toggleScriptDisabled(idx){
             if(!presetData || !getActivePresetArray('scripts') || !getActivePresetArray('scripts')[idx]) return;
+            recordPresetEditHistory(false);
             getActivePresetArray('scripts')[idx].disabled = !getActivePresetArray('scripts')[idx].disabled;
             renderScriptList();
             schedulePresetSave();
@@ -329,6 +343,7 @@ function normalizeRegexScript(raw, index){
             if(!presetData || !getActivePresetArray('scripts')) return;
             const name = getActivePresetArray('scripts')[idx]?.name || '该脚本';
             if(!confirm('确定删除「' + name + '」？')) return;
+            recordPresetEditHistory(false);
             getActivePresetArray('scripts').splice(idx, 1);
             renderScriptList();
             schedulePresetSave();
@@ -338,6 +353,7 @@ function normalizeRegexScript(raw, index){
             if(!presetData) createEmptyPreset();
             ensureScripts();
             const i = getActivePresetArray('scripts').length;
+            recordPresetEditHistory(false);
             getActivePresetArray('scripts').push(normalizeScript({
                 name: '新脚本 ' + (i + 1),
                 code: '// 在此编写脚本\n',
