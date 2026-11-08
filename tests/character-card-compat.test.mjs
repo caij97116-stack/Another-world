@@ -119,7 +119,7 @@ function pngChunk(type, payload) {
 function makePng(textChunks) {
   const signature = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
   const chunks = textChunks.map(([key, value]) =>
-    pngChunk('tEXt', new TextEncoder().encode(key + '\\0' + value))
+    pngChunk('tEXt', new TextEncoder().encode(key + '\0' + value))
   );
   chunks.push(pngChunk('IEND', new Uint8Array()));
   const size = signature.length + chunks.reduce((sum, chunk) => sum + chunk.length, 0);
