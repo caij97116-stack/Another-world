@@ -156,6 +156,9 @@ document.addEventListener('click', (event) => {
         case 'delete-regex-script':
             window.deleteRegexScript(Number(target.dataset.index));
             break;
+        case 'duplicate-regex-script':
+            window.duplicateRegexScript(Number(target.dataset.index));
+            break;
         case 'move-regex-script':
             window.moveRegexScript(Number(target.dataset.index),Number(target.dataset.direction));
             break;
@@ -175,6 +178,9 @@ document.addEventListener('click', (event) => {
             break;
         case 'delete-script':
             window.deleteScript(Number(target.dataset.index));
+            break;
+        case 'duplicate-script':
+            window.duplicateScript(Number(target.dataset.index));
             break;
         case 'move-script':
             window.moveScript(Number(target.dataset.index),Number(target.dataset.direction));
