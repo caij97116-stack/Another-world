@@ -71,3 +71,6 @@ The first standalone TypeScript utilities have been added under `src/ts/utils/`:
 - `index.ts` provides a single import surface for both utilities.
 
 These modules are intentionally staged and are not yet wired into the live static entrypoint. The existing classic-script `ui-utils.js` remains active because the current GitHub Pages deployment serves the root HTML directly; browsers cannot execute the unbuilt TypeScript source. Integration will happen only after the Vite build and deployment path are verified, avoiding a premature switch that could make the published site stop loading.
+
+
+A compatibility bridge, `src/ts/utils/legacy-bridge.ts`, now provides `installLegacyUtilities()`. The future module bootstrap can call it before invoking the legacy `init()`, exposing the typed helpers as `window.escapeHtml` and `window.showToast` so the remaining classic scripts can continue resolving those names. The bridge is not loaded by the current static entrypoint yet.
