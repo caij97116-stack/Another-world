@@ -26,7 +26,7 @@ function normalizeRegexScript(raw, index){
             const container = document.getElementById('regexListContainer');
             const badge = document.getElementById('regexCountBadge');
             if(!container) return;
-            if(!presetData){ container.innerHTML = ''; if(badge) badge.textContent = '0'; return; }
+            if(!presetData){ container.innerHTML = '<div class="regex-empty">请先导入预设，或点击右上角「新建正则」自动创建空白预设。</div>'; if(badge) badge.textContent = '0'; return; }
 
             detectAndNormalizeRegex();
             const list = getActivePresetArray('regex_scripts') || [];
@@ -175,7 +175,7 @@ function normalizeRegexScript(raw, index){
             const container = document.getElementById('scriptListContainer');
             const badge = document.getElementById('scriptCountBadge');
             if(!container) return;
-            if(!presetData){ container.innerHTML = ''; if(badge) badge.textContent = '0'; return; }
+            if(!presetData){ container.innerHTML = '<div class="regex-empty">请先导入预设，或点击「新建脚本」自动创建空白预设。</div>'; if(badge) badge.textContent = '0'; return; }
 
             detectAndNormalizeScripts();
             const list = getActivePresetArray('scripts') || [];
