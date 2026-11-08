@@ -410,6 +410,7 @@ function isPresetPayloadObject(value){
             if(!presetData){
                 empty.style.display='flex';
                 editor.style.display='none';
+                if(currentPage==='extensions'&&typeof refreshExtensionWorkspace==='function')refreshExtensionWorkspace();
                 return;
             }
             empty.style.display='none';
@@ -464,6 +465,7 @@ function isPresetPayloadObject(value){
             if(typeof renderScriptList==='function')renderScriptList();
             if(typeof renderFieldOverview==='function')renderFieldOverview();
             if(typeof autoExpandPresetSections==='function')autoExpandPresetSections();
+            if(currentPage==='extensions'&&typeof refreshExtensionWorkspace==='function')refreshExtensionWorkspace();
         }
         function getNum(obj,key,def){
             if(obj[key]!==undefined&&obj[key]!==null&&obj[key]!=='')return Number(obj[key]);
