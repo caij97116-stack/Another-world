@@ -105,6 +105,33 @@ document.addEventListener('click', (event) => {
         case 'delete-script':
             window.deleteScript(Number(target.dataset.index));
             break;
+        case 'undo':
+            window.undo();
+            break;
+        case 'redo':
+            window.redo();
+            break;
+        case 'trigger-worldbook-import':
+            window.triggerImport();
+            break;
+        case 'export-worldbook':
+            window.exportWorldBook();
+            break;
+        case 'delete-current-entry':
+            window.deleteCurrentEntry();
+            break;
+        case 'toggle-theme':
+            window.toggleTheme();
+            break;
+        case 'clear-preset-data':
+            window.clearPresetData();
+            break;
+        case 'trigger-preset-import':
+            window.triggerPresetImport();
+            break;
+        case 'export-preset':
+            window.exportPreset();
+            break;
     }
 });
 
