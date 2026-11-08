@@ -1390,25 +1390,31 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             const keys=[canonical,...aliases];
             const present=keys.filter(k=>Object.prototype.hasOwnProperty.call(view,k));
             const storageKey=present.find(k=>view[k]!==undefined && view[k]!==null && view[k]!=='') || present[0] || null;
-            const initialValue=storageKey ? view[storageKey] : fallback;
-            if(storageKey===canonical){
-                if(readTransform)view[canonical]=readTransform(initialValue);
-                return;
-            }
-            if(storageKey) delete view[canonical];
-            let current=initialValue;
+            const canonicalPresent=Object.prototype.hasOwnProperty.call(view,canonical);
+            let current=storageKey ? view[storageKey] : fallback;
+            if(readTransform) current=readTransform(current);
+
+            // 标准字段保持原有可枚举状态；旧字段作为底层存储时，统一视图字段不参与序列化。
+            const descriptor=canonicalPresent?Object.getOwnPropertyDescriptor(view,canonical):null;
             Object.defineProperty(view,canonical,{
-                configurable:true,enumerable:false,
-                get(){
-                    const value=storageKey && storageKey!==canonical ? view[storageKey] : current;
-                    return readTransform ? readTransform(value) : value;
-                },
+                configurable:true,
+                enumerable:canonicalPresent ? !!(descriptor && descriptor.enumerable) : false,
+                get(){ return current; },
                 set(value){
-                    if(storageKey && storageKey!==canonical) view[storageKey]=value;
-                    else if(storageKey===canonical) current=value;
-                    else{
-                        current=value;
-                        Object.defineProperty(view,canonical,{value,writable:true,configurable:true,enumerable:true});
+                    current=value;
+                    if(present.length){
+                        // 如果原对象同时存在标准字段和一个或多个别名，编辑时同步更新它们。
+                        present.forEach(key=>{
+                            if(key!==canonical) view[key]=value;
+                        });
+                    }else{
+                        // 原对象没有任何对应字段时，首次编辑才创建标准字段。
+                        Object.defineProperty(view,canonical,{
+                            value,
+                            writable:true,
+                            configurable:true,
+                            enumerable:true
+                        });
                     }
                 }
             });
