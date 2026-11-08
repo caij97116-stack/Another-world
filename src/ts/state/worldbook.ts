@@ -41,3 +41,15 @@ export interface WorldBookStorageKeys {
   readonly storage: string;
   readonly version: string;
 }
+
+/** Undo/redo history contracts for the world-book editor. */
+export type WorldBookSnapshot = string;
+
+export interface HistoryStateContract {
+  historyStack: WorldBookSnapshot[];
+  historyIndex: number;
+}
+
+export interface HistoryLimits {
+  readonly maxHistory: number;
+}
