@@ -5,6 +5,9 @@
     const MAX_FILE_BYTES = 100 * 1024 * 1024;
     let currentCard = null;
     let currentImageUrl = null;
+    let currentPngBuffer = null;
+    let currentPngName = '';
+    let cardDirty = false;
 
     function isObject(value){
         return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -168,12 +171,16 @@
             ['扩展字段',isObject(data.extensions)?Object.keys(data.extensions).length:0],['未归类字段',extra.length]
         ].map(([label,count])=>'<div class="character-stat"><strong>'+count+'</strong><span>'+label+'</span></div>').join('');
         document.getElementById('characterCardFields').innerHTML=fields.map(([key,label])=>{
-            const value=fieldPreview(data,key);
-            return value?'<details class="character-field"><summary>'+label+' <span>'+value.length+' 字符</span></summary><pre>'+escapeCardHtml(value)+'</pre></details>':'';
-        }).join('') || '<p class="tool-help">这张卡没有常见文本字段，仍会完整保留原始数据。</p>';
+            const value=typeof data[key]==='string'?data[key]:'';
+            return '<label class="character-edit-field"><span>'+label+'</span><textarea rows="'+(key==='description'||key==='mes_example'?5:3)+'" data-card-field="'+key+'" spellcheck="false">'+escapeCardHtml(value)+'</textarea></label>';
+        }).join('') + '<label class="character-edit-field"><span>标签（用逗号分隔）</span><input type="text" data-card-field="tags" value="'+escapeCardHtml(Array.isArray(data.tags)?data.tags.join(', '):'')+'"></label>';
         document.getElementById('characterCardExtra').textContent=extra.length?extra.join(', '):'无';
         document.getElementById('characterCardBookStatus').textContent=book?'已包含 character_book'+(Array.isArray(book.entries)?' · '+book.entries.length+' 条目':''):'未内嵌世界书';
         document.getElementById('characterCardFileName').textContent=file.name;
+        currentPngBuffer=file.type==='image/png'?file.slice(0,file.size).arrayBuffer():null;
+        currentPngName=file.type==='image/png'?file.name:'';
+        cardDirty=false;
+        updateCardSaveStatus();
         const image=document.getElementById('characterCardImage');
         if(currentImageUrl){URL.revokeObjectURL(currentImageUrl);currentImageUrl=null;}
         if(file.type==='image/png'){
@@ -188,6 +195,7 @@
         const toolbarExport=document.getElementById('toolbarExportCharacterCard');
         if(toolbarExport)toolbarExport.disabled=false;
         currentCard=card.root;
+        updateCardSaveStatus();
     }
 
     async function importCharacterCard(file){
@@ -207,6 +215,113 @@
         }
         renderCard(card,file);
         showToast('已在本地载入角色卡：'+card.name,'success');
+    }
+
+    function updateCardSaveStatus(){
+        const status=document.getElementById('characterCardEditStatus');
+        const pngButton=document.getElementById('characterCardExportPng');
+        if(status)status.textContent=cardDirty?'有未保存的修改':'修改会同步到导出数据';
+        if(pngButton)pngButton.disabled=!currentCard||!currentPngBuffer;
+    }
+
+    function updateCharacterCardField(field,value){
+        if(!currentCard||!field)return;
+        const data=isObject(currentCard.data)?currentCard.data:currentCard;
+        if(field==='tags'){
+            data.tags=String(value).split(',').map(tag=>tag.trim()).filter(Boolean);
+        }else{
+            data[field]=String(value);
+        }
+        cardDirty=true;
+        const name=data.name||'未命名角色';
+        const title=document.getElementById('characterCardName');
+        if(title)title.textContent=name;
+        const tags=document.getElementById('characterCardTags');
+        if(tags)tags.textContent=Array.isArray(data.tags)&&data.tags.length?data.tags.join(' · '):'暂无标签';
+        updateCardSaveStatus();
+    }
+
+    function crc32(bytes){
+        let crc=0xffffffff;
+        for(let i=0;i<bytes.length;i++){
+            crc^=bytes[i];
+            for(let bit=0;bit<8;bit++) crc=(crc>>>1)^((crc&1)?0xedb88320:0);
+        }
+        return (crc^0xffffffff)>>>0;
+    }
+
+    function makePngChunk(type,data){
+        const typeBytes=new TextEncoder().encode(type);
+        const payload=new Uint8Array(data.length+4);
+        payload.set(typeBytes,0);
+        payload.set(data,4);
+        const chunk=new Uint8Array(data.length+12);
+        const view=new DataView(chunk.buffer);
+        view.setUint32(0,data.length);
+        chunk.set(payload,4);
+        view.setUint32(data.length+8,crc32(payload));
+        return chunk;
+    }
+
+    function encodeBase64Utf8(value){
+        const bytes=new TextEncoder().encode(value);
+        let binary='';
+        const step=0x8000;
+        for(let i=0;i<bytes.length;i+=step) binary+=String.fromCharCode(...bytes.subarray(i,i+step));
+        return btoa(binary);
+    }
+
+    async function exportCharacterCardPng(){
+        if(!currentCard||!currentPngBuffer) return;
+        try{
+            const source=new Uint8Array(await currentPngBuffer);
+            if(source.length<8||!PNG_SIGNATURE.every((v,i)=>source[i]===v)) throw new Error('原始 PNG 数据无效，无法写回。');
+            const outputParts=[source.subarray(0,8)];
+            let offset=8,inserted=false;
+            const isV3=currentCard.spec==='chara_card_v3';
+            const key=isV3?'ccv3':'chara';
+            const metadata=new TextEncoder().encode(key+'\\0'+encodeBase64Utf8(JSON.stringify(currentCard)));
+            while(offset+12<=source.length){
+                const length=new DataView(source.buffer,source.byteOffset+offset,4).getUint32(0);
+                const type=String.fromCharCode(source[offset+4],source[offset+5],source[offset+6],source[offset+7]);
+                const end=offset+12+length;
+                if(end>source.length) throw new Error('原始 PNG 结构不完整，已取消导出。');
+                const chunkData=source.subarray(offset+8,offset+8+length);
+                let isCardMetadata=false;
+                if(['tEXt','zTXt','iTXt'].includes(type)){
+                    const zero=findNull(chunkData,0);
+                    if(zero>0){
+                        const keyword=new TextDecoder('latin1').decode(chunkData.subarray(0,zero));
+                        isCardMetadata=keyword==='chara'||keyword==='ccv3';
+                    }
+                }
+                if(!isCardMetadata){
+                    if(type==='IEND'&&!inserted){
+                        outputParts.push(makePngChunk('tEXt',metadata));
+                        inserted=true;
+                    }
+                    outputParts.push(source.subarray(offset,end));
+                }
+                offset=end;
+                if(type==='IEND') break;
+            }
+            if(!inserted) throw new Error('PNG 缺少 IEND 结束块，无法安全写回。');
+            const blob=new Blob(outputParts,{type:'image/png'});
+            const url=URL.createObjectURL(blob);
+            const anchor=document.createElement('a');
+            anchor.href=url;
+            const base=(currentCard.data?.name||currentCard.name||'character-card').replace(/[\\\\/:*?"<>|]/g,'_');
+            anchor.download=base+'.png';
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            setTimeout(()=>URL.revokeObjectURL(url),1500);
+            cardDirty=false;
+            updateCardSaveStatus();
+            showToast('已写回角色数据并导出 PNG','success');
+        }catch(error){
+            showToast(error.message||'PNG 导出失败','error');
+        }
     }
 
     function exportCharacterCardJson(){
@@ -235,6 +350,8 @@
     }
 
     window.hasImportedCharacterCard=()=>!!currentCard;
+    window.updateCharacterCardField=updateCharacterCardField;
+    window.exportCharacterCardPng=exportCharacterCardPng;
     window.importCharacterCard=importCharacterCard;
     window.triggerCharacterCardImport=triggerCharacterCardImport;
     window.onCharacterCardFileChosen=onCharacterCardFileChosen;
