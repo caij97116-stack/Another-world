@@ -77,6 +77,9 @@ document.addEventListener('click', (event) => {
         case 'unlink-card-resource':
             window.unlinkCurrentCardResource(target.dataset.kind);
             break;
+        case 'export-character-resource-bundle':
+            window.exportCharacterResourceBundle();
+            break;
         case 'test-regex-script':
             window.testRegexScript(Number(target.dataset.index));
             break;
