@@ -33,30 +33,30 @@
                     <div class="sidebar-header">
                         <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" class="search-input" id="searchInput" placeholder="搜索名称 / 关键词 / 标签..." data-input-action="render-entry-list"></div>
                         <div style="display:flex;gap:6px">
-                            <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="addNewEntry()">＋ 新建</button>
-                            <button class="btn" style="flex:0 0 auto" onclick="toggleSelectMode()" id="btnSelectMode">多选</button>
+                            <button class="btn btn-primary" style="flex:1;justify-content:center" data-action="add-new-entry">＋ 新建</button>
+                            <button class="btn" style="flex:0 0 auto" data-action="toggle-select-mode" id="btnSelectMode">多选</button>
                         </div>
                     </div>
                     <div class="bulk-bar" id="bulkBar">
                         <span class="bulk-count" id="bulkCount">已选 0</span>
-                        <button class="btn btn-sm" onclick="bulkSetEnabled(true)">启用</button>
-                        <button class="btn btn-sm" onclick="bulkSetEnabled(false)">禁用</button>
-                        <button class="btn btn-sm btn-danger" onclick="bulkDelete()">删除</button>
-                        <button class="btn btn-sm btn-ghost" onclick="clearSelection()">取消</button>
+                        <button class="btn btn-sm" data-action="bulk-enable">启用</button>
+                        <button class="btn btn-sm" data-action="bulk-disable">禁用</button>
+                        <button class="btn btn-sm btn-danger" data-action="bulk-delete">删除</button>
+                        <button class="btn btn-sm btn-ghost" data-action="clear-selection">取消</button>
                     </div>
                     <div class="entry-list" id="entryListContainer"></div>
                     <div class="status-bar"><span><span class="status-dot" id="saveDot"></span><span id="saveStatus">已自动保存</span></span><span id="entryCount">0 条目</span></div>
                 </aside>
                 <main class="editor-workspace">
-                    <div class="fullscreen-bar"><button class="btn" onclick="exitFullscreenEdit()">← 返回列表</button><span style="font-size:.82rem;font-weight:600;color:var(--text-sub)" id="fsTitle"></span></div>
+                    <div class="fullscreen-bar"><button class="btn" data-action="exit-fullscreen-edit">← 返回列表</button><span style="font-size:.82rem;font-weight:600;color:var(--text-sub)" id="fsTitle"></span></div>
                     <div class="editor-empty" id="editorEmpty"><div class="empty-icon">📜</div><p style="font-weight:600;color:var(--text-sub)">请选择或新建一个世界书条目</p><p style="font-size:.8rem">支持导入 / 导出酒馆标准 JSON 格式</p></div>
                     <div class="glass-panel-box" id="editorForm" style="display:none">
                         <div class="panel-header">
                             <h3>核心设定</h3>
                             <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
                                 <label class="switch-row"><input type="checkbox" id="field_enabled" data-change-action="sync-current-entry"><span>启用</span></label>
-                                <button class="btn btn-sm" onclick="copyCurrentEntry()">复制</button>
-                                <button class="btn btn-sm" onclick="enterFullscreenEdit()" id="btnFullscreen" style="display:none">全屏编辑</button>
+                                <button class="btn btn-sm" data-action="copy-current-entry">复制</button>
+                                <button class="btn btn-sm" data-action="enter-fullscreen-edit" id="btnFullscreen" style="display:none">全屏编辑</button>
                             </div>
                         </div>
                         <div class="form-group"><label>备注名称 <span class="hint">(Comment)</span></label><input type="text" id="field_comment" class="form-control" placeholder="条目名称..." data-input-action="sync-current-entry"></div>
@@ -91,7 +91,7 @@
                     <div class="big-icon">⚙️</div>
                     <p style="font-weight:600;color:var(--text-sub)">暂无预设数据</p>
                     <p style="font-size:.82rem;max-width:280px">点击右上角「导入」加载酒馆 Preset JSON，或直接填写下方字段后导出</p>
-                    <button class="btn btn-primary" style="margin-top:8px" onclick="createEmptyPreset()">新建空白预设</button>
+                    <button class="btn btn-primary" style="margin-top:8px" data-action="create-empty-preset">新建空白预设</button>
                 </div>
 
                 <div id="presetEditor" style="display:none">
@@ -148,7 +148,7 @@
                             <div class="panel-header">
                                 <h3>提示词条目 <span class="regex-badge" id="promptItemsBadge">0</span></h3>
                                 <div style="display:flex;gap:6px;align-items:center">
-                                    <button class="btn btn-sm btn-primary" type="button" onclick="addPromptItem()">＋ 新建条目</button>
+                                    <button class="btn btn-sm btn-primary" type="button" data-action="add-prompt-item">＋ 新建条目</button>
                                     <button class="panel-toggle" type="button" data-action="toggle-section" data-target="secPromptItems">折叠/展开</button>
                                 </div>
                             </div>
@@ -163,7 +163,7 @@
                                 <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px">保留原始 prompt_order 结构。修改后必须是合法 JSON；不修改时不会主动重写。</p>
                                 <textarea id="p_prompt_order" class="form-control" rows="8" spellcheck="false" placeholder="导入预设后显示 prompt_order JSON" data-change-action="apply-prompt-order"></textarea>
                                 <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:6px">
-                                    <button class="btn btn-sm" type="button" onclick="refreshPromptOrderJson()">重新载入</button>
+                                    <button class="btn btn-sm" type="button" data-action="refresh-prompt-order">重新载入</button>
                                 </div>
                             </div>
                         </div>
@@ -183,7 +183,7 @@
                         <div class="panel-header">
                             <h3>正则脚本 <span class="regex-badge" id="regexCountBadge">0</span></h3>
                             <div style="display:flex;gap:6px;align-items:center">
-                                <button class="btn btn-sm btn-primary" type="button" onclick="addRegexScript()">＋ 新建</button>
+                                <button class="btn btn-sm btn-primary" type="button" data-action="add-regex-script">＋ 新建</button>
                                 <button class="panel-toggle" type="button" data-action="toggle-section" data-target="secRegex">折叠/展开</button>
                             </div>
                         </div>
@@ -198,7 +198,7 @@
                         <div class="panel-header">
                             <h3>脚本 <span class="regex-badge" id="scriptCountBadge">0</span></h3>
                             <div style="display:flex;gap:6px;align-items:center">
-                                <button class="btn btn-sm btn-primary" type="button" onclick="addScript()">＋ 新建</button>
+                                <button class="btn btn-sm btn-primary" type="button" data-action="add-script">＋ 新建</button>
                                 <button class="panel-toggle" type="button" data-action="toggle-section" data-target="secScripts">折叠/展开</button>
                             </div>
                         </div>
@@ -248,8 +248,8 @@
                         <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:8px">高级用户可直接编辑完整 JSON。失焦或点「应用」后会解析并覆盖当前预设。</p>
                         <textarea id="p_raw_json" class="form-control raw-json" rows="10" data-focusout-action="apply-raw-json"></textarea>
                         <div style="margin-top:8px;display:flex;gap:8px">
-                            <button class="btn btn-sm" type="button" onclick="refreshRawJson()">刷新显示</button>
-                            <button class="btn btn-sm btn-primary" type="button" onclick="applyRawJson()">应用修改</button>
+                            <button class="btn btn-sm" type="button" data-action="refresh-raw-json">刷新显示</button>
+                            <button class="btn btn-sm btn-primary" type="button" data-action="apply-raw-json">应用修改</button>
                         </div>
                         </div>
                     </div>
@@ -267,15 +267,15 @@
             <h3>选择导入方式</h3>
             <p>覆盖：清空现有条目后导入<br>合并：保留现有条目，新增或更新同名 uid</p>
             <div class="modal-actions">
-                <button class="btn btn-primary" onclick="doImport('overwrite')">覆盖导入</button>
-                <button class="btn" onclick="doImport('merge')">合并导入</button>
-                <button class="btn btn-ghost" onclick="closeImportModal()">取消</button>
+                <button class="btn btn-primary" data-action="import-overwrite">覆盖导入</button>
+                <button class="btn" data-action="import-merge">合并导入</button>
+                <button class="btn btn-ghost" data-action="close-import-modal">取消</button>
             </div>
         </div>
     </div>
 
-    <input type="file" id="fileInput" accept=".json" style="display:none" onchange="onFileChosen(event)">
-    <input type="file" id="presetFileInput" accept=".json" style="display:none" onchange="onPresetFileChosen(event)">
+    <input type="file" id="fileInput" accept=".json" style="display:none" data-file-action="worldbook-import">
+    <input type="file" id="presetFileInput" accept=".json" style="display:none" data-file-action="preset-import">
     <div class="toast-container" id="toastContainer"></div>
 
     <script src="./src/js/state.js"></script>
