@@ -424,3 +424,8 @@ Regex and script cards can be duplicated in place. A duplicate retains its exist
 ### Script editor focus mode
 
 Each script code editor has a full-screen focus mode with a dimmed, blurred backdrop and a larger editing surface. Escape exits focus mode. This is a presentation-only mode and does not change script content or bypass the existing manual sandbox-test action.
+
+
+### Prompt list search and status filters
+
+The prompt-items editor now supports live search across name, identifier, role, and prompt body, plus enabled/disabled filtering. The visible/total count updates without rebuilding the search field. Select-all and batch actions apply only to the currently visible filtered results; changing filters clears selections on hidden prompts to avoid accidental batch edits.
