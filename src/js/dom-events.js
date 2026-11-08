@@ -156,11 +156,17 @@ document.addEventListener('click', (event) => {
         case 'delete-regex-script':
             window.deleteRegexScript(Number(target.dataset.index));
             break;
+        case 'move-regex-script':
+            window.moveRegexScript(Number(target.dataset.index),Number(target.dataset.direction));
+            break;
         case 'toggle-script-disabled':
             window.toggleScriptDisabled(Number(target.dataset.index));
             break;
         case 'delete-script':
             window.deleteScript(Number(target.dataset.index));
+            break;
+        case 'move-script':
+            window.moveScript(Number(target.dataset.index),Number(target.dataset.direction));
             break;
         case 'undo':
             window.undo();
