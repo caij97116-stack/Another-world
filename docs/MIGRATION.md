@@ -98,3 +98,11 @@ A compatibility bridge, `src/ts/utils/legacy-bridge.ts`, now provides `installLe
 - Added `PresetArrayPathMap` to describe alias-to-path mappings used to find nested prompt, regex, and script arrays without moving or flattening the original fields.
 - Tightened the four preset storage-key types to the exact existing localStorage key names.
 - The runtime validation and persistence functions remain in the legacy JavaScript file. This is a type-contract refinement only; no import/export or storage behavior was changed.
+
+### Preset array-path helper extraction
+
+- Added `src/ts/state/preset-paths.ts` with typed validation and resolution for nested preset arrays.
+- `isPresetArrayPath` matches the legacy restore rule: a non-empty array containing only non-empty strings.
+- `findPresetArrayAtPath` resolves an existing nested array and returns its owner/key/value without flattening, rewriting, or mutating the imported preset.
+- Exported the helpers and their result type from `src/ts/state/index.ts`.
+- These are standalone TypeScript helpers and are not yet called by the active classic-script application; integration waits for the verified build and compatibility migration.
