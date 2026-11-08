@@ -404,3 +404,8 @@ The Regex and Scripts cards include adjacent move-up and move-down controls. Bou
 ### Extension workspace search, filters, and motion
 
 Regex and Scripts now each have a live search field and an enabled/disabled status filter. Search covers regex names, find/replace expressions and placement values; script search covers names, type, trigger and source code. Filtering is presentation-only: it hides nonmatching cards without changing the preset arrays or their order. Each toolbar reports visible versus total entries and provides an accessible empty-result message. Cards and tabs use restrained transition/entry effects, with motion disabled when the operating system requests reduced motion. The search field is filtered in place without rebuilding the input on each keystroke.
+
+
+### Extension card compact mode and bulk controls
+
+Regex and script cards can be individually collapsed to keep long workspaces navigable. Both workspaces also support selecting visible cards, selecting all currently filtered results, and batch enable/disable/delete. Batch deletion requires confirmation; each batch mutation creates one preset undo-history entry. Search and status filters do not modify the underlying arrays, and batch actions are scoped to selected cards that remain visible under the current filter.
