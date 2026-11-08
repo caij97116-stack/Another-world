@@ -173,6 +173,9 @@ document.addEventListener('input', (event) => {
         case 'update-prompt-item-field':
             window.updatePromptItemField(Number(target.dataset.index), target.dataset.field, target.value);
             break;
+        case 'update-script-field':
+            window.updateScriptField(Number(target.dataset.index), target.dataset.field, target.value);
+            break;
         case 'trigger-preview':
             window.runTriggerPreview();
             break;
