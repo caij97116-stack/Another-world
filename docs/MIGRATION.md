@@ -90,3 +90,11 @@ A compatibility bridge, `src/ts/utils/legacy-bridge.ts`, now provides `installLe
 - Confirmed from the legacy implementation that history snapshots are serialized JSON strings; `WorldBookStateContract.historyStack` now reflects `string[]` rather than an unconstrained array.
 - Removed the history limit from the storage-key contract because it is a separate configuration value, not a browser storage key.
 - The runtime history implementation remains in `src/js/app-core.js`; this step adds types only and does not change undo/redo behavior.
+
+### Preset metadata state contracts
+
+- Refined `src/ts/state/preset.ts` after tracing the legacy import, cache-restore, save, and export paths in `src/js/preset-core.js`.
+- Added `PresetEnvelope` to describe the wrapper metadata as a string key plus an open wrapper object. The wrapper remains open-ended so unrelated metadata is preserved when exporting.
+- Added `PresetArrayPathMap` to describe alias-to-path mappings used to find nested prompt, regex, and script arrays without moving or flattening the original fields.
+- Tightened the four preset storage-key types to the exact existing localStorage key names.
+- The runtime validation and persistence functions remain in the legacy JavaScript file. This is a type-contract refinement only; no import/export or storage behavior was changed.
