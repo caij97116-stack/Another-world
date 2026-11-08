@@ -773,11 +773,11 @@ function isPresetPayloadObject(value){
             const finalExportObj=buildPresetExportObject(exportObj);
             const checked=inspectPresetExportRoundTrip(finalExportObj);
             const stats={
-                topLevelFields:Object.keys(exportObj).length,
+                topLevelFields:Object.keys(finalExportObj).length,
                 prompts:Array.isArray(exportObj.prompts)?exportObj.prompts.length:0,
                 promptOrder:Array.isArray(exportObj.prompt_order)?exportObj.prompt_order.length:0,
-                regex:regexPaths.reduce((sum,path)=>sum+countPresetExportPath(exportObj,path),0),
-                scripts:scriptPaths.reduce((sum,path)=>sum+countPresetExportPath(exportObj,path),0)
+                regex:countPresetArrayAtPaths(exportObj,regexPaths),
+                scripts:countPresetArrayAtPaths(exportObj,scriptPaths)
             };
             return {version:nextVersion,filename:'Preset_'+(getStr(presetData,'name','preset_name')||'unnamed').replace(/[\\/:*?"<>|]/g,'_')+'_v'+nextVersion+'.json',checked,stats};
         }
