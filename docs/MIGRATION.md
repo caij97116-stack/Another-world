@@ -11,7 +11,8 @@ The root `index.html` remains the GitHub Pages entrypoint. It loads the extracte
 5. `src/js/preset-logic.js`
 6. `src/js/preset-ui.js`
 7. `src/js/ui-utils.js`
-8. `src/js/app.js`
+8. `src/js/dom-events.js`
+9. `src/js/app.js`
 
 Keep this order until the legacy functions and inline HTML handlers have been migrated. These classic scripts share global declarations, and the HTML currently calls many functions through inline event attributes.
 
@@ -36,3 +37,7 @@ The project-site base path is configured as `/Another-world/`. Revisit it if the
 - Do not delete or rename import/export fields or data paths as part of this structural migration.
 - Keep each migration unit independently committed.
 - Distinguish static source checks from an actual browser runtime test.
+
+## Completed event migration
+
+The bottom page navigation, mobile sidebar toggle/overlay, and nine preset collapsible-section controls now use `data-action` attributes handled by `src/js/dom-events.js`. Keep this delegated handler loaded after the legacy function definitions and before `app.js` calls `init()`. Other inline handlers remain intentionally untouched for incremental migration.
