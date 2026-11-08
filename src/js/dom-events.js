@@ -241,10 +241,12 @@ document.addEventListener('click', (event) => {
 // Delegated form events for migrated editor controls.
 document.addEventListener('input', (event) => {
     const target = event.target instanceof Element
-        ? event.target.closest('[data-input-action], [data-card-field]')
+        ? event.target.closest('[data-input-action], [data-card-field], #regexSearchInput, #scriptSearchInput')
         : null;
     if (!target) return;
 
+    if(target.id==='regexSearchInput'){window.applyExtensionFilters('regex');return}
+    if(target.id==='scriptSearchInput'){window.applyExtensionFilters('scripts');return}
     if(target.matches('[data-card-field]')){
         window.updateCharacterCardField(target.dataset.cardField,target.value);
         return;
@@ -279,10 +281,12 @@ document.addEventListener('input', (event) => {
 
 document.addEventListener('change', (event) => {
     const target = event.target instanceof Element
-        ? event.target.closest('[data-change-action]')
+        ? event.target.closest('[data-change-action], #regexStatusFilter, #scriptStatusFilter')
         : null;
     if (!target) return;
 
+    if(target.id==='regexStatusFilter'){window.applyExtensionFilters('regex');return}
+    if(target.id==='scriptStatusFilter'){window.applyExtensionFilters('scripts');return}
     if(target.id==='promptSelectAll'){
         window.setPromptSelectAll(target.checked);
         return;
