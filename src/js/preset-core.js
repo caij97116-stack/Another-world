@@ -1,3 +1,93 @@
+
+// Preset edit history is separate from the worldbook's existing undo/redo stack.
+const PRESET_EDIT_HISTORY_LIMIT=50;
+let presetEditUndoStack=[];
+let presetEditRedoStack=[];
+let presetEditTypingPending=false;
+let presetEditTypingTimer=null;
+function clonePresetEditSnapshot(){
+    try{
+        return {
+            data:presetData===null?null:JSON.parse(JSON.stringify(presetData)),
+            envelope:presetEnvelope===null?null:JSON.parse(JSON.stringify(presetEnvelope)),
+            version:presetVersion,
+            arrayPaths:JSON.parse(JSON.stringify(presetArrayPaths||{}))
+        };
+    }catch(error){
+        console.warn('无法为预设编辑创建历史快照',error);
+        return null;
+    }
+}
+function updatePresetEditHistoryControls(){
+    const undo=document.getElementById('undoPresetEditButton');
+    const redo=document.getElementById('redoPresetEditButton');
+    if(undo){undo.disabled=presetEditUndoStack.length===0;undo.title=presetEditUndoStack.length?'撤销最近一次预设编辑':'没有可撤销的编辑';}
+    if(redo){redo.disabled=presetEditRedoStack.length===0;redo.title=presetEditRedoStack.length?'重做刚才撤销的编辑':'没有可重做的编辑';}
+}
+function resetPresetEditHistory(){
+    clearTimeout(presetEditTypingTimer);
+    presetEditTypingTimer=null;
+    presetEditTypingPending=false;
+    presetEditUndoStack=[];
+    presetEditRedoStack=[];
+    updatePresetEditHistoryControls();
+}
+function recordPresetEditHistory(coalesceTyping){
+    const snapshot=clonePresetEditSnapshot();
+    if(!snapshot)return;
+    if(coalesceTyping&&presetEditTypingPending){
+        clearTimeout(presetEditTypingTimer);
+        presetEditTypingTimer=setTimeout(()=>{presetEditTypingPending=false;presetEditTypingTimer=null;},800);
+        return;
+    }
+    if(!coalesceTyping){
+        clearTimeout(presetEditTypingTimer);
+        presetEditTypingTimer=null;
+        presetEditTypingPending=false;
+    }else{
+        presetEditTypingPending=true;
+        presetEditTypingTimer=setTimeout(()=>{presetEditTypingPending=false;presetEditTypingTimer=null;},800);
+    }
+    presetEditUndoStack.push(snapshot);
+    if(presetEditUndoStack.length>PRESET_EDIT_HISTORY_LIMIT)presetEditUndoStack.shift();
+    presetEditRedoStack=[];
+    updatePresetEditHistoryControls();
+}
+function restorePresetEditSnapshot(snapshot){
+    if(!snapshot)return false;
+    presetData=snapshot.data===null?null:JSON.parse(JSON.stringify(snapshot.data));
+    presetEnvelope=snapshot.envelope===null?null:JSON.parse(JSON.stringify(snapshot.envelope));
+    presetVersion=snapshot.version;
+    presetArrayPaths=JSON.parse(JSON.stringify(snapshot.arrayPaths||{}));
+    renderPresetUI();
+    schedulePresetSave();
+    updatePresetEditHistoryControls();
+    return true;
+}
+function undoPresetEdit(){
+    clearTimeout(presetEditTypingTimer);
+    presetEditTypingTimer=null;
+    presetEditTypingPending=false;
+    if(!presetEditUndoStack.length){updatePresetEditHistoryControls();return;}
+    const current=clonePresetEditSnapshot();
+    const previous=presetEditUndoStack.pop();
+    if(current)presetEditRedoStack.push(current);
+    restorePresetEditSnapshot(previous);
+    showToast('已撤销最近一次预设编辑','success');
+}
+function redoPresetEdit(){
+    clearTimeout(presetEditTypingTimer);
+    presetEditTypingTimer=null;
+    presetEditTypingPending=false;
+    if(!presetEditRedoStack.length){updatePresetEditHistoryControls();return;}
+    const current=clonePresetEditSnapshot();
+    const next=presetEditRedoStack.pop();
+    if(current)presetEditUndoStack.push(current);
+    if(presetEditUndoStack.length>PRESET_EDIT_HISTORY_LIMIT)presetEditUndoStack.shift();
+    restorePresetEditSnapshot(next);
+    showToast('已重做预设编辑','success');
+}
+
 function isPresetPayloadObject(value){
             if(!value||typeof value!=='object'||Array.isArray(value))return false;
             const signatures=['prompts','prompt_order','temperature','top_p','top_k','max_tokens','max_length','main_prompt','system_prompt','jailbreak_prompt','stop_sequence','stop_sequences','regex_scripts','regexScripts','regex','regexes','scripts','tavern_helper_scripts','tavernhelper_scripts','tavernHelperScripts','mjs_scripts','repetition_penalty','rep_pen'];
@@ -143,6 +233,7 @@ function isPresetPayloadObject(value){
             renderPresetUI();updateToolbar();showToast('已清空预设数据');
         }
         function createEmptyPreset(){
+            resetPresetEditHistory();
             presetEnvelope=null;
             presetArrayPaths={};
             presetData={
@@ -340,6 +431,7 @@ function isPresetPayloadObject(value){
             const selected=getSelectedPromptIndexes();
             if(!selected.length){showToast('请先选择至少一条提示词','warning');return;}
             if(action==='clear'){setPromptSelectAll(false);return;}
+            if(action==='enable'||action==='disable'||action==='move-up'||action==='move-down')recordPresetEditHistory(false);
             const list=presetData.prompts;
             if(action==='enable'||action==='disable'){
                 const enabled=action==='enable';
@@ -497,6 +589,7 @@ function isPresetPayloadObject(value){
                 }
                 value=newId;
             }
+            recordPresetEditHistory(true);
             prompt[field]=value;
             const card=document.querySelector('.prompt-item-card:nth-child('+(index+1)+')');
             if(card){
@@ -534,6 +627,7 @@ function isPresetPayloadObject(value){
                         });
                     });
                 }
+                recordPresetEditHistory(false);
                 presetData.prompts[index]=parsed;
                 renderPromptItems();refreshPromptOrderAfterSync();
                 showToast('提示词条目已更新','success');
@@ -542,6 +636,7 @@ function isPresetPayloadObject(value){
         function addPromptItem(){
             if(!presetData) return;
             if(!Array.isArray(presetData.prompts)) presetData.prompts=[];
+            recordPresetEditHistory(false);
             const prompt={name:'New Prompt',system_prompt:false,role:'system',content:'',identifier:makeUniquePromptIdentifier(),enabled:true};
             presetData.prompts.push(prompt);
             getPromptOrderGroups().forEach(group=>{
@@ -555,6 +650,7 @@ function isPresetPayloadObject(value){
         }
         function deletePromptItem(index){
             if(!presetData||!Array.isArray(presetData.prompts)||index<0||index>=presetData.prompts.length)return;
+            recordPresetEditHistory(false);
             const prompt=presetData.prompts[index];
             const id=prompt&&typeof prompt.identifier==='string'?prompt.identifier:'';
             const duplicate=id&&presetData.prompts.some((item,i)=>i!==index&&item&&item.identifier===id);
@@ -571,6 +667,7 @@ function isPresetPayloadObject(value){
             if(!presetData||!Array.isArray(presetData.prompts))return;
             const target=index+delta;
             if(index<0||target<0||target>=presetData.prompts.length)return;
+            recordPresetEditHistory(false);
             const list=presetData.prompts;
             const first=list[index],second=list[target];
             const firstId=first&&typeof first.identifier==='string'?first.identifier:'';
@@ -606,16 +703,20 @@ function isPresetPayloadObject(value){
             const el=document.getElementById('p_prompt_order');
             if(!el||!presetData)return;
             if(!el.value.trim()){
+                recordPresetEditHistory(false);
                 delete presetData.prompt_order;
                 schedulePresetSave();refreshRawJson();renderPromptOrderPreview();showToast('已清空 prompt_order');return;
             }
             try{
-                presetData.prompt_order=JSON.parse(el.value);
+                const parsedOrder=JSON.parse(el.value);
+                recordPresetEditHistory(false);
+                presetData.prompt_order=parsedOrder;
                 schedulePresetSave();refreshRawJson();renderPromptOrderPreview();showToast('prompt_order 已更新','success');
             }catch(err){showToast('prompt_order JSON 格式错误，请检查后重试','error');refreshPromptOrderJson()}
         }
 
         function renderPresetUI(){
+            updatePresetEditHistoryControls();
             if(typeof updatePresetImportBackupButton==='function')updatePresetImportBackupButton();
             const empty=document.getElementById('presetEmpty');
             const editor=document.getElementById('presetEditor');
@@ -701,6 +802,7 @@ function isPresetPayloadObject(value){
         }
         function syncPreset(){
             if(!presetData)return;
+            recordPresetEditHistory(true);
             writePresetField(presetData,'name',['preset_name'],document.getElementById('p_name').value);
             const elMax=document.getElementById('p_max_tokens'); if(elMax) writePresetField(presetData,'max_tokens',['max_length'],Number(elMax.value)||0);
             const elSeed=document.getElementById('p_seed'); if(elSeed) presetData.seed=Number(elSeed.value);
