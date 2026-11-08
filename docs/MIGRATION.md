@@ -314,3 +314,14 @@ The worldbook entry editor now exposes an expandable advanced-settings panel whi
 The editor writes these properties onto the existing entry object instead of rebuilding it from a reduced schema, so unrelated and unknown fields remain intact. Existing entries without these properties display documented defaults in the controls; saving the entry writes the selected values. Regex-style keys continue to use SillyTavern's slash-delimited JavaScript regex convention and do not require a separate enable flag.
 
 The whole-word option is accompanied by a language caveat: it can reduce matches for Chinese and Japanese text because those languages do not generally separate words with spaces. The advanced panel is a data editor only; the local trigger preview remains a simplified keyword preview and does not emulate SillyTavern's complete matching, group-selection, recursion, or generation pipeline.
+
+
+## Expanded worldbook entry controls
+
+The advanced editor now includes character filtering, generation-type triggers, additional matching sources, per-entry recursion controls, and Outlet insertion. Character filtering edits the SillyTavern `characterFilter` object (`isExclude`, `names`) while preserving any existing `tags` identifiers; the names field expects the character avatar/file identifiers used by SillyTavern. Generation triggers use the documented values `normal`, `continue`, `impersonate`, `swipe`, `regenerate`, and `quiet`; an empty array means all generation types.
+
+Additional matching-source toggles map to the upstream entry fields `matchCharacterDescription`, `matchCharacterPersonality`, `matchScenario`, `matchPersonaDescription`, `matchCharacterDepthPrompt`, and `matchCreatorNotes`. Recursion controls map to `excludeRecursion`, `preventRecursion`, and `delayUntilRecursion`. The delay field accepts a boolean-style enabled state or a positive recursion level. These per-entry controls do not replace SillyTavern's global recursive-scan setting or global maximum recursion steps.
+
+Insertion positions now include example-message top/bottom and Outlet (position values 5, 6, and 7). Outlet names are stored in `outletName`. The editor also corrects the selective-logic enum mapping to match upstream (`0` AND ANY, `1` NOT ALL, `2` NOT ANY, `3` AND ALL). Case sensitivity, whole-word matching, and group scoring now support an explicit inherit-global state (`null`) rather than forcing an entry-level override when the user has not selected one. Inclusion priority maps to `groupOverride`.
+
+The local trigger preview remains intentionally simplified and does not simulate character filtering, generation triggers, additional matching sources, recursive passes, or Outlet resolution. Character-tag filtering remains preserved in imported data but is not yet edited through a tag-name picker because the standalone editor has no authoritative SillyTavern tag registry.
