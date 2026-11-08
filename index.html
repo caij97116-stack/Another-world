@@ -1479,10 +1479,22 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
                     showToast(msg,'success');
                 }catch(err){
                     console.error(err);
-                    showToast('预设 JSON 解析失败','error');
+                    showToast('预设 JSON 解析失败或数据无法载入','error');
                 }
             };
-            reader.readAsText(file);event.target.value='';
+            reader.onerror=function(){
+                console.error('预设文件读取失败',reader.error);
+                showToast('预设文件读取失败，请重新选择文件','error');
+            };
+            reader.onabort=function(){
+                showToast('预设文件读取已取消','error');
+            };
+            try{reader.readAsText(file)}
+            catch(err){
+                console.error('启动预设文件读取失败',err);
+                showToast('无法读取该预设文件，请重新选择','error');
+            }
+            event.target.value='';
         }
         function exportPreset(){
             if(!presetData){showToast('请先导入或新建预设','error');return}
