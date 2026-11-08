@@ -168,22 +168,58 @@ function isPresetPayloadObject(value){
                 return;
             }
             container.innerHTML=list.map((item,i)=>{
-                const title=item && typeof item==='object' ? (item.name||item.identifier||('提示词 '+(i+1))) : ('提示词 '+(i+1));
+                const isObject=item&&typeof item==='object'&&!Array.isArray(item);
+                const prompt=isObject?item:{};
+                const title=prompt.name||prompt.identifier||('提示词 '+(i+1));
+                const content=typeof prompt.content==='string'?prompt.content:'';
+                const identifier=typeof prompt.identifier==='string'?prompt.identifier:'';
+                const role=typeof prompt.role==='string'?prompt.role:'system';
+                const enabled=prompt.enabled!==false;
+                const systemPrompt=prompt.system_prompt===true;
                 return `
-                <div class="regex-card">
+                <article class="regex-card prompt-item-card">
                     <div class="regex-card-header">
-                        <div class="regex-card-title">${escapeHtml(title)}</div>
+                        <div class="prompt-item-heading">
+                            <div class="regex-card-title">${escapeHtml(title)}</div>
+                            <div class="prompt-item-meta">${content.length.toLocaleString()} 字 · ${escapeHtml(role)} · ${enabled?'已启用':'已禁用'}</div>
+                        </div>
                         <div class="regex-card-actions">
+                            <button class="btn btn-sm" type="button" data-action="toggle-prompt-editor" data-index="${i}">展开编辑</button>
                             <button class="btn btn-sm" type="button" data-action="move-prompt-item" data-index="${i}" data-direction="-1" ${i===0?'disabled':''}>上移</button>
                             <button class="btn btn-sm" type="button" data-action="move-prompt-item" data-index="${i}" data-direction="1" ${i===list.length-1?'disabled':''}>下移</button>
                             <button class="btn btn-sm btn-danger" type="button" data-action="delete-prompt-item" data-index="${i}">删除</button>
                         </div>
                     </div>
-                    <div class="regex-field">
-                        <label>完整条目 JSON</label>
-                        <textarea class="form-control" rows="8" spellcheck="false" data-change-action="update-prompt-item-json" data-index="${i}">${escapeHtml(JSON.stringify(item,null,2))}</textarea>
+                    <div class="prompt-item-fields">
+                        <div class="form-grid">
+                            <div class="regex-field">
+                                <label>条目名称</label>
+                                <input class="form-control" type="text" value="${escapeHtml(prompt.name||'')}" data-input-action="update-prompt-item-field" data-index="${i}" data-field="name" ${!isObject?'disabled':''}>
+                            </div>
+                            <div class="regex-field">
+                                <label>角色（role）</label>
+                                <input class="form-control" type="text" value="${escapeHtml(role)}" data-input-action="update-prompt-item-field" data-index="${i}" data-field="role" ${!isObject?'disabled':''}>
+                            </div>
+                        </div>
+                        <div class="regex-field">
+                            <label>唯一标识符（identifier）</label>
+                            <input class="form-control" type="text" value="${escapeHtml(identifier)}" data-change-action="update-prompt-item-field" data-index="${i}" data-field="identifier" ${!isObject?'disabled':''}>
+                        </div>
+                        <div class="prompt-item-switches">
+                            <label class="switch-row"><input type="checkbox" ${enabled?'checked':''} data-change-action="update-prompt-item-field" data-index="${i}" data-field="enabled" data-value-type="boolean" ${!isObject?'disabled':''}><span>启用条目</span></label>
+                            <label class="switch-row"><input type="checkbox" ${systemPrompt?'checked':''} data-change-action="update-prompt-item-field" data-index="${i}" data-field="system_prompt" data-value-type="boolean" ${!isObject?'disabled':''}><span>System Prompt</span></label>
+                        </div>
+                        <div class="regex-field prompt-content-field">
+                            <label>提示词正文 <span class="char-count" data-prompt-count="${i}">${content.length.toLocaleString()} 字</span></label>
+                            <textarea class="form-control prompt-content-editor" rows="14" spellcheck="false" placeholder="在这里编辑完整提示词内容……" data-input-action="update-prompt-item-field" data-index="${i}" data-field="content" ${!isObject?'disabled':''}>${escapeHtml(content)}</textarea>
+                        </div>
+                        <details class="prompt-advanced">
+                            <summary>高级 JSON（保留未识别字段）</summary>
+                            <p class="prompt-advanced-hint">适合编辑 role 以外的特殊字段。普通字段编辑不会删除这里未显示的扩展数据。</p>
+                            <textarea class="form-control raw-json" rows="8" spellcheck="false" data-change-action="update-prompt-item-json" data-index="${i}">${escapeHtml(JSON.stringify(item,null,2))}</textarea>
+                        </details>
                     </div>
-                </div>`;
+                </article>`;
             }).join('');
         }
         function getPromptOrderGroups(){
@@ -202,6 +238,43 @@ function isPresetPayloadObject(value){
             let suffix=1;
             while(used.has(id)){id='custom_prompt_'+Date.now()+'_'+suffix++;}
             return id;
+        }
+        function updatePromptItemField(index,field,value){
+            if(!presetData||!Array.isArray(presetData.prompts)||index<0||index>=presetData.prompts.length)return;
+            const prompt=presetData.prompts[index];
+            if(!prompt||typeof prompt!=='object'||Array.isArray(prompt))return;
+            const allowed=['name','role','identifier','content','enabled','system_prompt'];
+            if(!allowed.includes(field))return;
+            if(field==='enabled'||field==='system_prompt')value=Boolean(value);
+            else value=String(value??'');
+            if(field==='identifier'){
+                const oldId=typeof prompt.identifier==='string'?prompt.identifier:'';
+                const newId=value.trim();
+                if(oldId&&!newId){showToast('原条目存在 identifier，不能清空','error');renderPromptItems();return}
+                if(newId&&presetData.prompts.some((item,i)=>i!==index&&item&&item.identifier===newId)){
+                    showToast('identifier 与其他提示词重复，请使用唯一值','error');renderPromptItems();return;
+                }
+                if(oldId&&oldId!==newId){
+                    const duplicate=presetData.prompts.some((item,i)=>i!==index&&item&&item.identifier===oldId);
+                    if(duplicate){showToast('原 identifier 存在重复，无法安全同步排序表','error');renderPromptItems();return}
+                    getPromptOrderGroups().forEach(group=>group.order.forEach(entry=>{
+                        if(entry&&typeof entry==='object'&&!Array.isArray(entry)&&entry.identifier===oldId)entry.identifier=newId;
+                    }));
+                }
+                value=newId;
+            }
+            prompt[field]=value;
+            const card=document.querySelector('.prompt-item-card:nth-child('+(index+1)+')');
+            if(card){
+                const count=card.querySelector('[data-prompt-count="'+index+'"]');
+                if(count&&field==='content')count.textContent=value.length.toLocaleString()+' 字';
+                const meta=card.querySelector('.prompt-item-meta');
+                if(meta)meta.textContent=(typeof prompt.content==='string'?prompt.content.length:0).toLocaleString()+' 字 · '+(prompt.role||'system')+' · '+(prompt.enabled===false?'已禁用':'已启用');
+                const heading=card.querySelector('.regex-card-title');
+                if(heading&&field==='name')heading.textContent=value||prompt.identifier||('提示词 '+(index+1));
+            }
+            if(field==='identifier')refreshPromptOrderAfterSync();
+            else{refreshRawJson();schedulePresetSave()}
         }
         function updatePromptItemJson(index,raw){
             try{
