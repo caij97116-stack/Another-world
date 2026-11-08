@@ -610,3 +610,8 @@ body.dark-theme .character-card-hero{background:linear-gradient(120deg,rgba(14,1
 
 .preset-status #undoPresetEditButton,.preset-status #redoPresetEditButton{transition:background .18s ease,border-color .18s ease,transform .18s ease}
 .preset-status #undoPresetEditButton:not(:disabled):active,.preset-status #redoPresetEditButton:not(:disabled):active{transform:translateY(1px)}
+
+/* Keyboard focus and touch-friendly controls for extension workflows. */
+.extension-panel :is(button,input,select):focus-visible,.preset-status :is(button):focus-visible{outline:2px solid var(--sky-accent);outline-offset:2px;box-shadow:0 0 0 3px rgba(56,189,248,.16)}
+.extension-card-select,.extension-select-all{min-height:30px;cursor:pointer}
+.extension-bulk-actions .btn,.regex-card-actions .btn{min-height:32px}
