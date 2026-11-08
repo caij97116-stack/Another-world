@@ -627,3 +627,5 @@ textarea.script-code.is-fullscreen{position:fixed!important;z-index:9999;top:4vh
 
 body.script-editor-focus .script-code-toolbar button{position:fixed;top:1vh;right:4vw;z-index:10000;min-height:34px;background:var(--glass-panel);box-shadow:0 5px 20px rgba(0,0,0,.24)}
 @media(max-width:600px){body.script-editor-focus .script-code-toolbar button{top:1vh;right:2vw}}
+
+body.script-editor-focus .script-card:hover{transform:none}
