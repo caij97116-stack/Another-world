@@ -273,3 +273,17 @@ The character-card workspace can export a JSON resource bundle after at least on
 - The bundle includes a small manifest with resource names, counts, fingerprints, and association timestamps. It does not include browser-local association records as a reusable global identity system.
 - The output is a JSON snapshot package. It includes the character card's JSON data but not the original PNG image pixels; keep the original PNG separately when its artwork is needed.
 - The bundle is an export-only container in this phase. It does not yet have an import/restore workflow, ZIP/CHARX packaging, or automatic resource synchronization.
+
+## Resource bundle import and restore
+
+The character-card workspace now accepts the JSON resource bundle format produced by this editor (`another-world-character-resource-bundle`, version 1):
+
+- Selecting a bundle only stages and inspects it. The importer validates the format/version, card `name` and root structure, worldbook `entries`, preset signature, duplicate/unknown resource types, and each included resource fingerprint. It shows a preview and does not mutate the active card, worldbook, or preset during inspection.
+- The character card, standalone worldbook, and standalone preset have separate explicit actions. The card is imported as JSON data; its original PNG artwork/pixels are not part of the bundle.
+- Restoring a worldbook or preset requires a confirmation. Before replacement, the current workspace is snapshotted to browser localStorage under a dedicated `another_world_pre_bundle_*_backup` key.
+- After restoring a worldbook or preset, a one-click rollback action is shown to restore the immediately preceding local snapshot. The rollback target is the most recent bundle-restore backup for that resource type; a later restore replaces that backup.
+- The bundle's manifest association records are informational only. Import does not recreate browser-local card/resource association records or automatically link the imported resources.
+- Embedded character-book data and V3 assets remain inside the character-card JSON and are not automatically copied into the standalone worldbook.
+- Imported scripts remain inert: staging and restore do not execute JavaScript stored in the preset or card.
+
+This is a JSON bundle workflow, not a ZIP/CHARX importer. Validation is source-level only at this stage; real browser interaction, storage-quota failure, and round-trip testing with multiple real-world bundles remain outstanding.
