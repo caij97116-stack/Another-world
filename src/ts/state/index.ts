@@ -14,14 +14,14 @@ export type {
   PresetArrayPathMap,
   PresetEnvelope,
   PresetStateContract,
-  PresetStorageKeys
+  PresetStorageKeys,
+  ParsedPresetImport
 } from "./preset";
 export {
   isPresetPayloadObject,
   unwrapPresetObject,
   buildPresetExportObject
-} from "./preset-import";
-export type { ParsedPresetImport } from "./preset-import";
+} from "./preset";
 export {
   isPresetArrayPath,
   findPresetArrayAtPath,
