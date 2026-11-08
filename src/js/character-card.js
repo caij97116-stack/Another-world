@@ -280,9 +280,9 @@
             const outputParts=[source.subarray(0,8)];
             let offset=8,inserted=false;
             const cardJson=JSON.stringify(currentCard);
-            const charaMetadata=new TextEncoder().encode('chara\\0'+encodeBase64Utf8(cardJson));
+            const charaMetadata=new TextEncoder().encode('chara\0'+encodeBase64Utf8(cardJson));
             const v3Card=isObject(currentCard.data)?{...currentCard,spec:'chara_card_v3',spec_version:'3.0'}:null;
-            const ccv3Metadata=v3Card?new TextEncoder().encode('ccv3\\0'+encodeBase64Utf8(JSON.stringify(v3Card))):null;
+            const ccv3Metadata=v3Card?new TextEncoder().encode('ccv3\0'+encodeBase64Utf8(JSON.stringify(v3Card))):null;
             while(offset+12<=source.length){
                 const length=new DataView(source.buffer,source.byteOffset+offset,4).getUint32(0);
                 const type=String.fromCharCode(source[offset+4],source[offset+5],source[offset+6],source[offset+7]);
