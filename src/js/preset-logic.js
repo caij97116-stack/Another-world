@@ -83,6 +83,7 @@ function normalizeRegexScript(raw, index){
                         <div class="regex-card-actions">
                             <button class="btn btn-sm" type="button" data-action="toggle-extension-card" aria-expanded="true">收起</button>
                             <button class="btn btn-sm" type="button" data-action="toggle-regex-disabled" data-index="${i}">${disabled ? '启用' : '禁用'}</button>
+                            <button class="btn btn-sm" type="button" data-action="duplicate-regex-script" data-index="${i}">复制</button>
                             <button class="btn btn-sm" type="button" data-action="move-regex-script" data-index="${i}" data-direction="-1" ${i===0?'disabled':''} aria-label="上移正则">↑</button>
                             <button class="btn btn-sm" type="button" data-action="move-regex-script" data-index="${i}" data-direction="1" ${i===list.length-1?'disabled':''} aria-label="下移正则">↓</button>
                             <button class="btn btn-sm btn-danger" type="button" data-action="delete-regex-script" data-index="${i}">删除</button>
@@ -165,6 +166,19 @@ function normalizeRegexScript(raw, index){
             renderRegexList();
             schedulePresetSave();
             showToast('已调整正则顺序','success');
+        }
+        function duplicateRegexScript(idx){
+            const list=getActivePresetArray('regex_scripts');
+            if(!Array.isArray(list)||!list[idx])return;
+            let copy;
+            try{copy=JSON.parse(JSON.stringify(list[idx]))}catch(error){showToast('无法复制该正则：数据无法序列化');return}
+            recordPresetEditHistory(false);
+            copy.id='regex_'+Date.now()+'_'+(list.length+1);
+            copy.scriptName=(copy.scriptName||'未命名正则')+'（副本）';
+            list.splice(idx+1,0,copy);
+            renderRegexList();
+            schedulePresetSave();
+            showToast('已复制正则');
         }
         function deleteRegexScript(idx){
             if(!presetData || !getActivePresetArray('regex_scripts')) return;
@@ -259,6 +273,7 @@ function normalizeRegexScript(raw, index){
                         <div class="regex-card-actions">
                             <button class="btn btn-sm" type="button" data-action="toggle-extension-card" aria-expanded="true">收起</button>
                             <button class="btn btn-sm" type="button" data-action="toggle-script-disabled" data-index="${i}">${disabled ? '启用' : '禁用'}</button>
+                            <button class="btn btn-sm" type="button" data-action="duplicate-script" data-index="${i}">复制</button>
                             <button class="btn btn-sm" type="button" data-action="move-script" data-index="${i}" data-direction="-1" ${i===0?'disabled':''} aria-label="上移脚本">↑</button>
                             <button class="btn btn-sm" type="button" data-action="move-script" data-index="${i}" data-direction="1" ${i===list.length-1?'disabled':''} aria-label="下移脚本">↓</button>
                             <button class="btn btn-sm btn-danger" type="button" data-action="delete-script" data-index="${i}">删除</button>
@@ -406,6 +421,19 @@ function normalizeRegexScript(raw, index){
             renderScriptList();
             schedulePresetSave();
             showToast('已调整脚本顺序','success');
+        }
+        function duplicateScript(idx){
+            const list=getActivePresetArray('scripts');
+            if(!Array.isArray(list)||!list[idx])return;
+            let copy;
+            try{copy=JSON.parse(JSON.stringify(list[idx]))}catch(error){showToast('无法复制该脚本：数据无法序列化');return}
+            recordPresetEditHistory(false);
+            copy.id='script_'+Date.now()+'_'+(list.length+1);
+            copy.name=(copy.name||'未命名脚本')+'（副本）';
+            list.splice(idx+1,0,copy);
+            renderScriptList();
+            schedulePresetSave();
+            showToast('已复制脚本');
         }
         function deleteScript(idx){
             if(!presetData || !getActivePresetArray('scripts')) return;
