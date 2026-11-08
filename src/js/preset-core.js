@@ -59,6 +59,7 @@ function restorePresetEditSnapshot(snapshot){
     presetEnvelope=snapshot.envelope===null?null:JSON.parse(JSON.stringify(snapshot.envelope));
     presetVersion=snapshot.version;
     presetArrayPaths=JSON.parse(JSON.stringify(snapshot.arrayPaths||{}));
+    if(presetData===null)removePresetStorageItem(PRESET_STORAGE_KEY);
     renderPresetUI();
     schedulePresetSave();
     updatePresetEditHistoryControls();
