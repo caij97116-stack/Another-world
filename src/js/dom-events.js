@@ -65,6 +65,9 @@ document.addEventListener('click', (event) => {
         case 'export-character-card-json':
             window.exportCharacterCardJson();
             break;
+        case 'export-character-card-png':
+            window.exportCharacterCardPng();
+            break;
         case 'test-regex-script':
             window.testRegexScript(Number(target.dataset.index));
             break;
@@ -160,6 +163,11 @@ document.addEventListener('input', (event) => {
         ? event.target.closest('[data-input-action]')
         : null;
     if (!target) return;
+
+    if(target.matches('[data-card-field]')){
+        window.updateCharacterCardField(target.dataset.cardField,target.value);
+        return;
+    }
 
     switch (target.dataset.inputAction) {
         case 'render-entry-list':
