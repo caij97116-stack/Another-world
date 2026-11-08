@@ -174,6 +174,8 @@
             image.hidden=true;
         }
         document.getElementById('characterCardExportJson').disabled=false;
+        const toolbarExport=document.getElementById('toolbarExportCharacterCard');
+        if(toolbarExport)toolbarExport.disabled=false;
         currentCard=card.root;
     }
 
