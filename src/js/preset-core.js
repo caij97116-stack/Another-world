@@ -166,6 +166,7 @@ function isPresetPayloadObject(value){
             element.style.overflowY=element.scrollHeight>maxHeight?'auto':'hidden';
         }
         function renderPromptItems(){
+            document.body.classList.remove('prompt-editor-open');
             const container=document.getElementById('promptItemsContainer');
             const badge=document.getElementById('promptItemsBadge');
             if(!container) return;
