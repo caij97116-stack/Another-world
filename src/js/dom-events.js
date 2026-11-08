@@ -160,7 +160,7 @@ document.addEventListener('click', (event) => {
 // Delegated form events for migrated editor controls.
 document.addEventListener('input', (event) => {
     const target = event.target instanceof Element
-        ? event.target.closest('[data-input-action]')
+        ? event.target.closest('[data-input-action], [data-card-field]')
         : null;
     if (!target) return;
 
