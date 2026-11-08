@@ -71,6 +71,12 @@ document.addEventListener('click', (event) => {
         case 'apply-character-card-json':
             window.applyCharacterCardRawJson();
             break;
+        case 'link-card-resource':
+            window.linkCurrentCardResource(target.dataset.kind);
+            break;
+        case 'unlink-card-resource':
+            window.unlinkCurrentCardResource(target.dataset.kind);
+            break;
         case 'test-regex-script':
             window.testRegexScript(Number(target.dataset.index));
             break;
