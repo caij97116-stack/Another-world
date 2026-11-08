@@ -250,6 +250,18 @@ function makeUniqueEntryUid(preferred){
             document.getElementById('field_group').value=typeof entry.group==='string'?entry.group:Array.isArray(entry.group)?entry.group.join(', '):'';
             document.getElementById('field_groupWeight').value=entry.groupWeight!==undefined?entry.groupWeight:100;
             document.getElementById('field_useGroupScoring').checked=parseEntryBoolean(entry.useGroupScoring,false);
+            const characterFilter=entry.characterFilter&&typeof entry.characterFilter==='object'?entry.characterFilter:{};
+            document.getElementById('field_characterFilterNames').value=listFieldText(characterFilter.names);
+            document.getElementById('field_characterFilterExclude').checked=parseEntryBoolean(characterFilter.isExclude,false);
+            const triggerValues=Array.isArray(entry.triggers)?entry.triggers:[];
+            Array.from(document.getElementById('field_triggers').options).forEach(option=>{option.selected=triggerValues.includes(option.value)});
+            ['matchCharacterDescription','matchCharacterPersonality','matchScenario','matchPersonaDescription','matchCharacterDepthPrompt','matchCreatorNotes','excludeRecursion','preventRecursion'].forEach(field=>{
+                document.getElementById('field_'+field).checked=parseEntryBoolean(entry[field],false);
+            });
+            const delayValue=entry.delayUntilRecursion;
+            document.getElementById('field_delayUntilRecursionEnabled').checked=delayValue!==undefined&&delayValue!==false&&delayValue!==0;
+            document.getElementById('field_delayUntilRecursionLevel').value=typeof delayValue==='number'?delayValue:'';
+            document.getElementById('field_outletName').value=entry.outletName||'';
             if(isFullscreen)document.getElementById('fsTitle').textContent=entry.comment||'编辑条目';
             updateFullscreenBtn();runTriggerPreview();
         }
@@ -278,6 +290,18 @@ function makeUniqueEntryUid(preferred){
             entry.group=document.getElementById('field_group').value.trim();
             entry.groupWeight=writeNumberPreservingType(entry.groupWeight,document.getElementById('field_groupWeight').value,100);
             entry.useGroupScoring=document.getElementById('field_useGroupScoring').checked;
+            const characterFilter=entry.characterFilter&&typeof entry.characterFilter==='object'?{...entry.characterFilter}:{isExclude:false,names:[],tags:[]};
+            characterFilter.names=writeListPreservingType(characterFilter.names,document.getElementById('field_characterFilterNames').value);
+            characterFilter.isExclude=document.getElementById('field_characterFilterExclude').checked;
+            entry.characterFilter=characterFilter;
+            entry.triggers=Array.from(document.getElementById('field_triggers').selectedOptions).map(option=>option.value);
+            ['matchCharacterDescription','matchCharacterPersonality','matchScenario','matchPersonaDescription','matchCharacterDepthPrompt','matchCreatorNotes','excludeRecursion','preventRecursion'].forEach(field=>{
+                entry[field]=document.getElementById('field_'+field).checked;
+            });
+            const delayEnabled=document.getElementById('field_delayUntilRecursionEnabled').checked;
+            const delayLevel=document.getElementById('field_delayUntilRecursionLevel').value.trim();
+            entry.delayUntilRecursion=delayEnabled?(delayLevel===''?true:Math.max(1,Math.floor(Number(delayLevel)||1))):false;
+            entry.outletName=document.getElementById('field_outletName').value.trim();
             if(!skipRender)renderEntryList();scheduleAutoSave();runTriggerPreview();
         }
         function addNewEntry(){
