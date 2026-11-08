@@ -70,6 +70,7 @@
         if(bytes.length<PNG_SIGNATURE.length || !PNG_SIGNATURE.every((v,i)=>bytes[i]===v)) throw new Error('这不是有效的 PNG 文件。');
         const found = [];
         let offset=8;
+        let sawIend=false;
         while(offset+12<=bytes.length){
             const view = new DataView(buffer,offset,4);
             const length=view.getUint32(0);
@@ -114,8 +115,9 @@
                 }
             }
             offset=end+4;
-            if(type==='IEND') break;
+            if(type==='IEND'){sawIend=true;break;}
         }
+        if(!sawIend) throw new Error('PNG 文件缺少完整的 IEND 结束块，文件可能已截断。');
         return found;
     }
 
