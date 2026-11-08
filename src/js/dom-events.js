@@ -150,6 +150,9 @@ document.addEventListener('click', (event) => {
         case 'delete-prompt-item':
             window.deletePromptItem(Number(target.dataset.index));
             break;
+        case 'duplicate-prompt-item':
+            window.duplicatePromptItem(Number(target.dataset.index));
+            break;
         case 'toggle-regex-disabled':
             window.toggleRegexDisabled(Number(target.dataset.index));
             break;
