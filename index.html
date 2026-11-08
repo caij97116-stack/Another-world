@@ -1200,10 +1200,26 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             if(obj[key]!==undefined&&obj[key]!==null&&obj[key]!=='')return Number(obj[key]);
             return def;
         }
+        // 按原始预设已有的字段名写回；若存在多个同义字段则同步更新，避免产生互相矛盾的值。
+        function writePresetField(obj,canonical,aliases,value){
+            const keys=[canonical,...aliases];
+            const existing=keys.filter(key=>Object.prototype.hasOwnProperty.call(obj,key));
+            const targets=existing.length?existing:[canonical];
+            targets.forEach(key=>{obj[key]=value});
+        }
+        function writePresetStopField(obj,value){
+            const keys=['stop_sequence','stop_sequences','stop'];
+            const existing=keys.filter(key=>Object.prototype.hasOwnProperty.call(obj,key));
+            const targets=existing.length?existing:['stop_sequence'];
+            targets.forEach(key=>{
+                const oldValue=obj[key];
+                obj[key]=Array.isArray(oldValue)?value.slice():value.join(', ');
+            });
+        }
         function syncPreset(){
             if(!presetData)return;
-            presetData.name=document.getElementById('p_name').value;
-            const elMax=document.getElementById('p_max_tokens'); if(elMax) presetData.max_tokens=Number(elMax.value)||0;
+            writePresetField(presetData,'name',['preset_name'],document.getElementById('p_name').value);
+            const elMax=document.getElementById('p_max_tokens'); if(elMax) writePresetField(presetData,'max_tokens',['max_length'],Number(elMax.value)||0);
             const elSeed=document.getElementById('p_seed'); if(elSeed) presetData.seed=Number(elSeed.value);
             presetData.temperature=Number(document.getElementById('p_temp').value)||0;
             presetData.top_p=Number(document.getElementById('p_top_p').value)||0;
@@ -1212,30 +1228,32 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             presetData.top_a=Number(document.getElementById('p_top_a').value)||0;
             const elTyp=document.getElementById('p_typical_p'); if(elTyp) presetData.typical_p=Number(elTyp.value)||1;
             const elTfs=document.getElementById('p_tfs'); if(elTfs) presetData.tfs=Number(elTfs.value)||1;
-            presetData.repetition_penalty=Number(document.getElementById('p_rep_pen').value)||1;
+            writePresetField(presetData,'repetition_penalty',['rep_pen'],Number(document.getElementById('p_rep_pen').value)||1);
             presetData.presence_penalty=Number(document.getElementById('p_pres_pen').value)||0;
             presetData.frequency_penalty=Number(document.getElementById('p_freq_pen').value)||0;
             const elSm=document.getElementById('p_smooth'); if(elSm) presetData.smoothing_factor=Number(elSm.value)||0;
             const elMi=document.getElementById('p_mirostat'); if(elMi) presetData.mirostat_mode=Number(elMi.value)||0;
-            presetData.main_prompt=document.getElementById('p_main_prompt').value;
-            presetData.jailbreak_prompt=document.getElementById('p_jailbreak').value;
-            presetData.system_prompt=document.getElementById('p_system').value;
+            writePresetField(presetData,'main_prompt',['prompt','mainPrompt'],document.getElementById('p_main_prompt').value);
+            writePresetField(presetData,'jailbreak_prompt',['jailbreak','jb'],document.getElementById('p_jailbreak').value);
+            writePresetField(presetData,'system_prompt',['system'],document.getElementById('p_system').value);
             const elStop=document.getElementById('p_stop');
-            if(elStop){const stopRaw=elStop.value.trim();presetData.stop_sequence=stopRaw?stopRaw.split(/[\n,，]/).map(s=>s.trim()).filter(Boolean):[]}
-            presetData.stream=document.getElementById('p_stream').checked;
-            presetData.nsfw=document.getElementById('p_nsfw').checked;
+            if(elStop){const stopRaw=elStop.value.trim();writePresetStopField(presetData,stopRaw?stopRaw.split(/[\n,，]/).map(s=>s.trim()).filter(Boolean):[])}
+            writePresetField(presetData,'stream',['streaming'],document.getElementById('p_stream').checked);
+            // nsfw_filter 与 nsfw 语义相反，单独反向写回，不能作为普通别名处理。
+            const nsfwValue=document.getElementById('p_nsfw').checked;
+            if(Object.prototype.hasOwnProperty.call(presetData,'nsfw')) presetData.nsfw=nsfwValue;
+            else if(Object.prototype.hasOwnProperty.call(presetData,'nsfw_filter')) presetData.nsfw_filter=!nsfwValue;
+            else presetData.nsfw=nsfwValue;
             const elInst=document.getElementById('p_instruct_mode');
-            if(elInst && elInst.value!==''){ presetData.instruct_mode=Number(elInst.value); }
+            if(elInst && elInst.value!==''){ writePresetField(presetData,'instruct_mode',['instructMode'],Number(elInst.value)); }
             const elSys=document.getElementById('p_system_same');
-            if(elSys && elSys.value!==''){ presetData.system_same_as_main=Number(elSys.value)===1; }
+            if(elSys && elSys.value!==''){ writePresetField(presetData,'system_same_as_main',['systemSameAsMain'],Number(elSys.value)===1); }
             const elEdR=document.getElementById('p_export_disabled_regex');
             if(elEdR) presetData._exportIncludeDisabledRegex=elEdR.checked;
             const elEdS=document.getElementById('p_export_disabled_scripts');
             if(elEdS) presetData._exportIncludeDisabledScripts=elEdS.checked;
             const elMeta=document.getElementById('p_export_meta');
             if(elMeta) presetData._exportMeta=elMeta.checked;
-            if('prompt' in presetData)presetData.prompt=presetData.main_prompt;
-            if('jailbreak' in presetData)presetData.jailbreak=presetData.jailbreak_prompt;
             schedulePresetSave();
         }
         function triggerPresetImport(){document.getElementById('presetFileInput').click()}
@@ -1300,7 +1318,7 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             const finalExportObj=buildPresetExportObject(exportObj);
             const blob=new Blob([JSON.stringify(finalExportObj,null,2)],{type:'application/json;charset=utf-8'});
             const url=URL.createObjectURL(blob);const a=document.createElement('a');
-            a.href=url;a.download=`Preset_${(presetData.name||'unnamed').replace(/[\\/:*?"<>|]/g,'_')}_v${presetVersion}.json`;
+            a.href=url;a.download=`Preset_${(getStr(presetData,'name','preset_name')||'unnamed').replace(/[\\/:*?"<>|]/g,'_')}_v${presetVersion}.json`;
             document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
             schedulePresetSave();showToast(`已导出预设 v${presetVersion}`,'success');
         }
