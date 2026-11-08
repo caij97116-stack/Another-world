@@ -241,3 +241,29 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         }
         @media(max-width:480px){.form-grid{grid-template-columns:1fr}.btn{padding:6px 8px;font-size:.74rem}}
         @media(min-width:1200px){:root{--sidebar-width:340px}.editor-workspace,.preset-workspace{padding:18px 24px;max-width:900px}}
+
+/* Long-form prompt editing workspace */
+.long-prompt-editor{min-height:220px;line-height:1.7;white-space:pre-wrap;tab-size:2}
+.prompt-item-card{display:flex;flex-direction:column;gap:12px}
+.prompt-item-heading{flex:1;min-width:0}
+.prompt-item-meta{font-size:.68rem;color:var(--text-muted);margin-top:3px}
+.prompt-item-fields{display:flex;flex-direction:column;gap:8px}
+.prompt-item-fields .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.prompt-item-fields .regex-field{min-width:0}
+.prompt-item-fields .regex-field label{display:flex;align-items:center;justify-content:space-between}
+.prompt-item-switches{display:flex;flex-wrap:wrap;gap:14px;padding:4px 0}
+.prompt-content-field{margin-top:4px}
+.prompt-content-editor{min-height:300px;line-height:1.75;resize:vertical;white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;font-size:.86rem}
+.prompt-advanced{border-top:1px solid var(--glass-border-subtle);padding-top:10px}
+.prompt-advanced summary{cursor:pointer;color:var(--sky-accent);font-size:.76rem;font-weight:700;user-select:none}
+.prompt-advanced-hint{font-size:.7rem;color:var(--text-muted);margin:8px 0}
+.prompt-editor-open{overflow:hidden}
+.prompt-item-card.prompt-editor-expanded{position:fixed;inset:10px;z-index:250;overflow-y:auto;margin:0;padding:18px;background:var(--glass-panel);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);box-shadow:var(--shadow-lg);border:1px solid var(--glass-border)}
+.prompt-item-card.prompt-editor-expanded .prompt-content-editor{min-height:48vh}
+@media(max-width:600px){
+  .prompt-item-fields .form-grid{grid-template-columns:1fr}
+  .prompt-content-editor{min-height:240px}
+  .prompt-item-card.prompt-editor-expanded{inset:6px;padding:12px}
+  .prompt-item-card.prompt-editor-expanded .prompt-content-editor{min-height:52vh}
+}
+
