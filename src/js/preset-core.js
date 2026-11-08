@@ -530,44 +530,158 @@ function isPresetPayloadObject(value){
             schedulePresetSave();
         }
         function triggerPresetImport(){document.getElementById('presetFileInput').click()}
+        function countPresetArrayAtPaths(data,paths){
+            for(const path of paths){
+                let value=data;
+                for(const key of path)value=value&&typeof value==='object'?value[key]:undefined;
+                if(Array.isArray(value))return value.length;
+            }
+            return 0;
+        }
+        function closePresetImportPreview(){
+            document.getElementById('presetImportPreviewModal')?.classList.remove('show');
+            pendingPresetImport=null;
+        }
+        function renderPresetImportPreview(parsed,file){
+            const result=unwrapPresetObject(parsed);
+            const data=result.data;
+            const prompts=Array.isArray(data.prompts)?data.prompts:[];
+            const enabledPrompts=prompts.filter(item=>item&&typeof item==='object'&&item.enabled!==false).length;
+            const regexCount=countPresetArrayAtPaths(data,[['regex_scripts'],['regexScripts'],['regex'],['regexes'],['extensions','regex_scripts'],['extensions','regexScripts'],['tavernhelper','regex_scripts'],['TavernHelper','regex_scripts']]);
+            const scriptCount=countPresetArrayAtPaths(data,[['scripts'],['tavern_helper_scripts'],['tavernhelper_scripts'],['tavernHelperScripts'],['extensions','scripts'],['extensions','tavern_helper_scripts'],['tavernhelper','scripts'],['TavernHelper','scripts'],['mjs_scripts']]);
+            const topKeys=Object.keys(data).filter(key=>!key.startsWith('_'));
+            const recognized=isPresetPayloadObject(data);
+            const warnings=[];
+            if(!recognized)warnings.push('没有识别到常见预设字段。文件仍可载入，但请确认它确实是目标酒馆或兼容工具的预设。');
+            if(prompts.length&&!data.prompt_order)warnings.push('存在 prompts，但没有 prompt_order；提示词顺序可能由导入端自行决定。');
+            if(Array.isArray(data.prompt_order)&&!prompts.length)warnings.push('存在 prompt_order，但没有 prompts 数组；请确认是否为特殊预设结构。');
+            const summary=document.getElementById('presetImportPreviewContent');
+            if(!summary)return;
+            const safeName=escapeHtml(file.name||'preset.json');
+            const size=(file.size/1024).toFixed(file.size>=1024*1024?0:1);
+            const unit=file.size>=1024*1024?'MB':'KB';
+            summary.innerHTML=
+                '<div class="preset-import-file"><strong>'+safeName+'</strong><span>'+size+' '+unit+'</span></div>'+
+                '<div class="preset-import-stats">'+
+                '<div><strong>'+topKeys.length+'</strong><span>顶层字段</span></div>'+
+                '<div><strong>'+prompts.length+'</strong><span>提示词条目</span></div>'+
+                '<div><strong>'+enabledPrompts+'</strong><span>启用提示词</span></div>'+
+                '<div><strong>'+regexCount+'</strong><span>正则条目</span></div>'+
+                '<div><strong>'+scriptCount+'</strong><span>脚本条目</span></div>'+
+                '</div>'+
+                '<div class="preset-import-meta"><span>外层包装：'+(result.envelope?'已识别（'+escapeHtml(result.envelope.key)+'）':'无')+'</span><span>预设名称：'+escapeHtml(getStr(data,'name','preset_name')||'未命名')+'</span><span>识别结果：'+(recognized?'检测到常见预设字段':'未识别到常见预设字段')+'</span></div>'+
+                '<div class="preset-import-keys"><strong>主要字段</strong><span>'+escapeHtml(topKeys.slice(0,24).join(' · '))+(topKeys.length>24?' · …':'')+'</span></div>'+
+                (warnings.length?'<div class="preset-import-warnings">'+warnings.map(item=>'<p>'+escapeHtml(item)+'</p>').join('')+'</div>':'')+
+                '<p class="tool-help">预览不会覆盖当前预设。确认导入后会先保存当前预设及包装信息，随后才应用新文件。</p>';
+        }
         function onPresetFileChosen(event){
             const file=event.target.files[0];if(!file)return;
             const reader=new FileReader();
             reader.onload=function(e){
                 try{
                     const parsed=JSON.parse(e.target.result);
-                    const imported=setPresetFromParsed(parsed);
-                    renderPresetUI();
-                    schedulePresetSave();
-                    updateToolbar();
-                    if(typeof detectAndNormalizeRegex==='function')detectAndNormalizeRegex();
-                    if(typeof renderRegexList==='function')renderRegexList();
-                    if(typeof detectAndNormalizeScripts==='function')detectAndNormalizeScripts();
-                    if(typeof renderScriptList==='function')renderScriptList();
-                    const rc=(getActivePresetArray('regex_scripts')||[]).length, sc=(getActivePresetArray('scripts')||[]).length;
-                    const topKeys=Object.keys(presetData).filter(k=>!k.startsWith('_')).length;
-                    let msg=imported.envelope?'预设导入成功（已识别并保留外层包装）':'预设导入成功';
-                    if(rc||sc) msg += `（正则 ${rc} · 脚本 ${sc}）`;
-                    else msg += `（${topKeys} 个顶层字段）`;
-                    showToast(msg,'success');
+                    if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new Error('预设文件必须是 JSON 对象');
+                    unwrapPresetObject(parsed);
+                    pendingPresetImport={parsed,fileName:file.name,fileSize:file.size};
+                    renderPresetImportPreview(parsed,file);
+                    document.getElementById('presetImportPreviewModal')?.classList.add('show');
                 }catch(err){
                     console.error(err);
-                    showToast('预设 JSON 解析失败或数据无法载入','error');
+                    showToast('预设 JSON 无法解析或根结构不是对象','error');
                 }
             };
             reader.onerror=function(){
                 console.error('预设文件读取失败',reader.error);
                 showToast('预设文件读取失败，请重新选择文件','error');
             };
-            reader.onabort=function(){
-                showToast('预设文件读取已取消','error');
-            };
+            reader.onabort=function(){showToast('预设文件读取已取消','error')};
             try{reader.readAsText(file)}
             catch(err){
                 console.error('启动预设文件读取失败',err);
                 showToast('无法读取该预设文件，请重新选择','error');
             }
             event.target.value='';
+        }
+        function updatePresetImportBackupButton(){
+            const button=document.getElementById('undoPresetImportButton');
+            if(!button)return;
+            let available=false;
+            try{available=!!localStorage.getItem(PRESET_IMPORT_BACKUP_KEY)}catch(e){}
+            button.hidden=!available;
+        }
+        function applyStagedPresetImport(){
+            if(!pendingPresetImport)return;
+            const backup={
+                hadPreset:!!presetData,
+                data:presetData?JSON.parse(JSON.stringify(presetData)):null,
+                envelope:presetEnvelope?JSON.parse(JSON.stringify(presetEnvelope)):null,
+                version:presetVersion,
+                arrayPaths:presetArrayPaths?JSON.parse(JSON.stringify(presetArrayPaths)):{},
+                savedAt:new Date().toISOString()
+            };
+            try{
+                const serialized=JSON.stringify(backup);
+                localStorage.setItem(PRESET_IMPORT_BACKUP_KEY,serialized);
+            }catch(err){
+                console.error('导入前备份失败',err);
+                showToast('无法保存导入前备份，已取消导入以保护当前预设','error');
+                return;
+            }
+            try{
+                clearTimeout(presetSaveTimer);
+                setPresetFromParsed(pendingPresetImport.parsed);
+                renderPresetUI();
+                schedulePresetSave();
+                updateToolbar();
+                if(typeof detectAndNormalizeRegex==='function')detectAndNormalizeRegex();
+                if(typeof renderRegexList==='function')renderRegexList();
+                if(typeof detectAndNormalizeScripts==='function')detectAndNormalizeScripts();
+                if(typeof renderScriptList==='function')renderScriptList();
+                const rc=countPresetArrayAtPaths(presetData,[['regex_scripts'],['regexScripts'],['regex'],['regexes'],['extensions','regex_scripts'],['extensions','regexScripts'],['tavernhelper','regex_scripts'],['TavernHelper','regex_scripts']]);
+                const sc=countPresetArrayAtPaths(presetData,[['scripts'],['tavern_helper_scripts'],['tavernhelper_scripts'],['tavernHelperScripts'],['extensions','scripts'],['extensions','tavern_helper_scripts'],['tavernhelper','scripts'],['TavernHelper','scripts'],['mjs_scripts']]);
+                const filename=pendingPresetImport.fileName;
+                closePresetImportPreview();
+                updatePresetImportBackupButton();
+                let msg='预设导入成功：'+filename;
+                if(rc||sc)msg+='（正则 '+rc+' · 脚本 '+sc+'）';
+                showToast(msg,'success');
+            }catch(err){
+                console.error('应用预设失败',err);
+                showToast('预设应用失败；可以使用导入前备份恢复','error');
+                updatePresetImportBackupButton();
+            }
+        }
+        function undoLastPresetImport(){
+            let backup;
+            try{
+                const raw=localStorage.getItem(PRESET_IMPORT_BACKUP_KEY);
+                if(!raw){showToast('没有可恢复的导入前备份','error');updatePresetImportBackupButton();return}
+                backup=JSON.parse(raw);
+                if(!backup||typeof backup!=='object'||typeof backup.hadPreset!=='boolean')throw new Error('备份结构无效');
+                if(!confirm(backup.hadPreset?'确定恢复到上一次导入前的预设吗？当前预设将被替换。':'上一次导入前没有预设。确定清除当前预设并恢复为空状态吗？'))return;
+                clearTimeout(presetSaveTimer);
+                if(backup.hadPreset){
+                    if(!backup.data||typeof backup.data!=='object'||Array.isArray(backup.data))throw new Error('备份预设数据无效');
+                    presetData=JSON.parse(JSON.stringify(backup.data));
+                    presetEnvelope=backup.envelope?JSON.parse(JSON.stringify(backup.envelope)):null;
+                    presetVersion=Number.isFinite(Number(backup.version))&&Number(backup.version)>0?Number(backup.version):1;
+                    presetArrayPaths=backup.arrayPaths&&typeof backup.arrayPaths==='object'&&!Array.isArray(backup.arrayPaths)?JSON.parse(JSON.stringify(backup.arrayPaths)):{};
+                    schedulePresetSave();
+                }else{
+                    presetData=null;presetEnvelope=null;presetVersion=1;presetArrayPaths={};
+                    [PRESET_STORAGE_KEY,PRESET_ENVELOPE_STORAGE_KEY,PRESET_ARRAY_PATHS_KEY,PRESET_VERSION_KEY].forEach(removePresetStorageItem);
+                    presetDirty=false;
+                }
+                localStorage.removeItem(PRESET_IMPORT_BACKUP_KEY);
+                renderPresetUI();
+                updateToolbar();
+                if(typeof refreshExtensionWorkspace==='function')refreshExtensionWorkspace();
+                updatePresetImportBackupButton();
+                showToast('已恢复导入前的预设状态','success');
+            }catch(err){
+                console.error('恢复预设备份失败',err);
+                showToast('备份无法读取或内容无效，未执行恢复','error');
+            }
         }
         function exportPreset(){
             if(!presetData){showToast('请先导入或新建预设','error');return}
