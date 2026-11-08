@@ -563,3 +563,14 @@ body.dark-theme .character-card-hero{background:linear-gradient(120deg,rgba(14,1
 .prompt-macro-list>div{display:flex;flex-wrap:wrap;gap:6px}
 .prompt-preview-empty{color:var(--text-muted);font-size:.72rem}
 @media(max-width:600px){.prompt-preview-legend{flex-direction:column}.prompt-markdown-preview{padding:9px}}
+
+
+/* Bulk prompt selection and actions */
+.prompt-bulk-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:9px;padding:10px 11px;margin:10px 0 12px;border:1px solid var(--glass-border-subtle);border-radius:11px;background:rgba(125,160,190,.045)}
+.prompt-bulk-select-all,.prompt-bulk-item-check{display:inline-flex;align-items:center;gap:6px;color:var(--text-main);font-size:.75rem;cursor:pointer;white-space:nowrap}
+.prompt-bulk-toolbar>span{font-size:.7rem;color:var(--text-muted)}
+.prompt-bulk-actions{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
+.prompt-bulk-item-check{padding:4px 5px;border-radius:6px;background:rgba(125,160,190,.08)}
+.prompt-item-card .regex-card-header{align-items:center}
+.prompt-item-select{accent-color:var(--sky-accent);width:15px;height:15px;cursor:pointer}
+@media(max-width:620px){.prompt-bulk-actions{width:100%;margin-left:0}.prompt-bulk-actions .btn{flex:1 1 auto}.prompt-bulk-toolbar{align-items:flex-start}}
