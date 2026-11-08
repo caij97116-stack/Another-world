@@ -236,3 +236,16 @@ Compatibility and safety boundaries:
 - PNG writing preserves existing non-character PNG chunks as-is, but the browser implementation has not yet been tested against a broad real-world corpus of PNG variants. It is not a full CHARX archive reader or Tavern runtime emulator.
 
 Static source checks are required before treating this phase as complete. No browser-based PNG fixture round-trip or real SillyTavern import test is claimed unless performed separately.
+
+## Character-card embedded resource inspection
+
+The character-card workspace now provides read-only previews for resources already embedded in the imported card:
+
+- `character_book`: displays the book summary and individual entries, including entry names/comments, trigger keys, enabled state, and content.
+- V3 `assets`: lists each resource's name, type, extension, and URI. Data URLs are intentionally shown as a placeholder rather than expanded into the page.
+- `extensions`: lists extension keys, value types, and a bounded JSON preview. Deeply nested values, long strings, and large arrays are folded or truncated in the preview; the full retained data remains available in the advanced JSON editor and exports.
+- The resource count summary now includes V3 assets.
+
+These panels are inspection-only. They do not import, copy, overwrite, or merge embedded resources into the standalone worldbook or preset workspaces. The original character-card object remains the source of truth, and JSON / PNG exports continue to use that retained object.
+
+This phase was checked with source-level assertions and JavaScript syntax parsing. It was not tested through browser interaction or against a broad corpus of real-world character cards.
