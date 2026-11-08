@@ -77,7 +77,7 @@ function switchPage(page){
                 actionsEl.innerHTML=`
                     <button class="btn btn-ghost" data-action="toggle-theme" title="切换主题" id="btnTheme">${document.body.classList.contains('dark-theme')?'☀️':'🌙'}</button>
                     <button class="btn" data-action="trigger-character-card-import">导入角色卡</button>
-                    <button class="btn btn-primary" data-action="export-character-card-json" id="toolbarExportCharacterCard" disabled>导出 JSON</button>`;
+                    <button class="btn btn-primary" data-action="export-character-card-json" id="toolbarExportCharacterCard" ${window.hasImportedCharacterCard&&window.hasImportedCharacterCard()?'':'disabled'}>导出 JSON</button>`;
             }else{
                 titleEl.textContent='预设编辑器';
                 iconEl.textContent='⚙️';
