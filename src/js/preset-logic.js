@@ -402,7 +402,7 @@ function normalizeRegexScript(raw, index){
             active.classList.remove('is-fullscreen');
             document.body.classList.remove('script-editor-focus');
             const button=active.closest('.script-card')?.querySelector('[data-action="toggle-script-fullscreen"]');
-            if(button)button.textContent='全屏编辑';
+            if(button){button.textContent='全屏编辑';button.setAttribute('aria-expanded','false')}
         }
         function toggleScriptEditorFocus(idx){
             const card=document.querySelector('.script-card[data-idx="'+idx+'"]');
@@ -414,7 +414,7 @@ function normalizeRegexScript(raw, index){
             textarea.classList.add('is-fullscreen');
             document.body.classList.add('script-editor-focus');
             const button=card.querySelector('[data-action="toggle-script-fullscreen"]');
-            if(button)button.textContent='退出全屏（Esc）';
+            if(button){button.textContent='退出全屏（Esc）';button.setAttribute('aria-expanded','true')}
             textarea.focus();
         }
         function updateScriptField(idx, key, value){
