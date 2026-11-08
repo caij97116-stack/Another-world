@@ -188,6 +188,7 @@ function isPresetPayloadObject(value){
                 return `
                 <article class="regex-card prompt-item-card" id="prompt-item-${i}">
                     <div class="regex-card-header">
+                        <label class="prompt-bulk-item-check" title="选择此提示词"><input type="checkbox" class="prompt-item-select" data-index="${i}" aria-label="选择提示词 ${escapeHtml(title)}"></label>
                         <div class="prompt-item-heading">
                             <div class="regex-card-title">${escapeHtml(title)}</div>
                             <div class="prompt-item-meta">${content.length.toLocaleString()} 字 · ${escapeHtml(role)} · ${enabled?'已启用':'已禁用'}</div>
@@ -238,6 +239,8 @@ function isPresetPayloadObject(value){
             }).join('');
             container.querySelectorAll('.prompt-content-editor').forEach(autoResizeLongPrompt);
             list.forEach((item,index)=>refreshPromptContentPreview(index));
+            container.querySelectorAll('.prompt-item-select').forEach(input=>input.addEventListener('change',updatePromptBulkSelectionUI));
+            updatePromptBulkSelectionUI();
             renderPromptOrderPreview();
         }
         function renderPromptMarkdownInline(value){
@@ -289,6 +292,88 @@ function isPresetPayloadObject(value){
             macros.innerHTML=found.length?found.map(token=>'<code class="prompt-macro-chip">'+escapeHtml(token)+'</code>').join(''):'<span class="prompt-preview-empty">未检测到 {{...}} 宏指令</span>';
             const count=document.getElementById('prompt-macro-count-'+index);
             if(count)count.textContent=String(found.length);
+        }
+        function getSelectedPromptIndexes(){
+            return [...document.querySelectorAll('.prompt-item-select:checked')]
+                .map(input=>Number(input.dataset.index))
+                .filter(index=>Number.isInteger(index)&&index>=0&&index<getPresetPromptItems().length)
+                .sort((a,b)=>a-b);
+        }
+        function updatePromptBulkSelectionUI(){
+            const selected=getSelectedPromptIndexes();
+            const count=document.getElementById('promptBulkSelectionCount');
+            const selectAll=document.getElementById('promptSelectAll');
+            const total=getPresetPromptItems().length;
+            if(count)count.textContent='已选 '+selected.length+' 项';
+            if(selectAll){
+                selectAll.checked=total>0&&selected.length===total;
+                selectAll.indeterminate=selected.length>0&&selected.length<total;
+                selectAll.disabled=total===0;
+            }
+        }
+        function setPromptSelectAll(checked){
+            document.querySelectorAll('.prompt-item-select').forEach(input=>{input.checked=Boolean(checked)});
+            updatePromptBulkSelectionUI();
+        }
+        function swapPromptOrderReferences(first,second){
+            const firstId=first&&typeof first.identifier==='string'?first.identifier:'';
+            const secondId=second&&typeof second.identifier==='string'?second.identifier:'';
+            if(!firstId||!secondId||firstId===secondId)return false;
+            const prompts=getPresetPromptItems();
+            if(prompts.filter(item=>item&&item.identifier===firstId).length!==1||
+               prompts.filter(item=>item&&item.identifier===secondId).length!==1)return false;
+            let safe=true;
+            getPromptOrderGroups().forEach(group=>{
+                const a=[],b=[];
+                group.order.forEach((entry,index)=>{
+                    if(!entry||typeof entry!=='object'||Array.isArray(entry))return;
+                    if(entry.identifier===firstId)a.push(index);
+                    if(entry.identifier===secondId)b.push(index);
+                });
+                if(a.length===1&&b.length===1)[group.order[a[0]],group.order[b[0]]]=[group.order[b[0]],group.order[a[0]]];
+                else if(a.length||b.length)safe=false;
+            });
+            return safe;
+        }
+        function bulkPromptAction(action){
+            if(!presetData||!Array.isArray(presetData.prompts))return;
+            const selected=getSelectedPromptIndexes();
+            if(!selected.length){showToast('请先选择至少一条提示词','warning');return;}
+            if(action==='clear'){setPromptSelectAll(false);return;}
+            const list=presetData.prompts;
+            if(action==='enable'||action==='disable'){
+                const enabled=action==='enable';
+                selected.forEach(index=>{
+                    const prompt=list[index];
+                    if(prompt&&typeof prompt==='object'&&!Array.isArray(prompt))prompt.enabled=enabled;
+                });
+                renderPromptItems();refreshPromptOrderAfterSync();
+                showToast('已批量'+(enabled?'启用':'禁用')+' '+selected.length+' 项','success');
+                return;
+            }
+            let moved=0,skipped=false;
+            if(action==='move-up'){
+                for(const index of selected){
+                    if(index<=0||selected.includes(index-1))continue;
+                    const first=list[index-1],second=list[index];
+                    [list[index-1],list[index]]=[list[index],list[index-1]];
+                    if(!swapPromptOrderReferences(first,second))skipped=true;
+                    moved++;
+                }
+            }else if(action==='move-down'){
+                for(let n=selected.length-1;n>=0;n--){
+                    const index=selected[n];
+                    if(index>=list.length-1||selected.includes(index+1))continue;
+                    const first=list[index],second=list[index+1];
+                    [list[index],list[index+1]]=[list[index+1],list[index]];
+                    if(!swapPromptOrderReferences(first,second))skipped=true;
+                    moved++;
+                }
+            }
+            if(!moved){showToast('所选条目已在可移动边界，顺序未改变','info');return;}
+            renderPromptItems();refreshPromptOrderAfterSync();
+            if(skipped)showToast('已移动 '+moved+' 项；部分排序组因 identifier 缺失或重复，未能同步对应顺序','warning');
+            else showToast('已整体移动 '+moved+' 项','success');
         }
         function getPromptOrderGroups(){
             if(!presetData||!Array.isArray(presetData.prompt_order))return [];
