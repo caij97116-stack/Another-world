@@ -53,6 +53,9 @@ document.addEventListener('click', (event) => {
         case 'add-prompt-item':
             window.addPromptItem();
             break;
+        case 'toggle-prompt-editor':
+            window.togglePromptEditor(Number(target.dataset.index));
+            break;
         case 'refresh-prompt-order':
             window.refreshPromptOrderJson();
             break;
@@ -157,6 +160,9 @@ document.addEventListener('input', (event) => {
             window.syncPreset();
             window.updateCharCounts();
             break;
+        case 'update-prompt-item-field':
+            window.updatePromptItemField(Number(target.dataset.index), target.dataset.field, target.value);
+            break;
         case 'trigger-preview':
             window.runTriggerPreview();
             break;
@@ -185,6 +191,11 @@ document.addEventListener('change', (event) => {
         case 'update-prompt-item-json':
             window.updatePromptItemJson(Number(target.dataset.index), target.value);
             break;
+        case 'update-prompt-item-field': {
+            const value = target.dataset.valueType === 'boolean' ? target.checked : target.value;
+            window.updatePromptItemField(Number(target.dataset.index), target.dataset.field, value);
+            break;
+        }
         case 'update-regex-placement':
             window.updateRegexPlacement(Number(target.dataset.index), target.value);
             break;
