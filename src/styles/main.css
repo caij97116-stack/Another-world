@@ -407,3 +407,16 @@ body.dark-theme .character-card-hero{background:linear-gradient(120deg,rgba(14,1
 .character-bundle-preview-item strong{font-size:.72rem;color:var(--text-main)}
 .character-bundle-import-actions{display:flex;flex-wrap:wrap;gap:7px;padding-top:12px}
 @media(max-width:600px){.character-bundle-import-actions .btn{flex:1 1 45%}}
+
+
+/* Worldbook advanced entry settings */
+.wb-advanced-settings{margin-top:16px;border:1px solid var(--glass-border);border-radius:13px;background:rgba(125,160,190,.045);overflow:hidden}
+.wb-advanced-settings>summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;color:var(--text-main);font-size:.78rem;font-weight:750;list-style-position:inside}
+.wb-advanced-settings>summary span{color:var(--text-muted);font-size:.66rem;font-weight:500;text-align:right}
+.wb-advanced-body{padding:0 13px 13px}
+.wb-advanced-section{padding:12px 0;border-top:1px solid var(--glass-border)}
+.wb-advanced-section h4{margin:0 0 11px;color:var(--text-sub);font-size:.73rem;font-weight:750}
+.wb-advanced-switches{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0}
+.wb-advanced-body .tool-help{margin:7px 0 0;line-height:1.55}
+.wb-advanced-body code{padding:1px 4px;border-radius:4px;background:rgba(125,160,190,.12);font-size:.92em}
+@media(max-width:600px){.wb-advanced-settings>summary{align-items:flex-start;flex-direction:column;gap:4px}.wb-advanced-settings>summary span{text-align:left}.wb-advanced-body .form-grid{grid-template-columns:1fr}}
