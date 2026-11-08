@@ -389,3 +389,8 @@ When moving prompts, the editor attempts to mirror each adjacent swap in every r
 The Preset Studio now has a separate, bounded undo/redo history for edits made through the main preset fields and prompt editor. It records prompt field changes, prompt JSON replacement, prompt addition/deletion/reordering, bulk prompt actions, and prompt-order JSON changes. Consecutive typing is coalesced into one history step rather than storing every keystroke. The history holds up to 50 snapshots in memory for the current page session.
 
 Undo and redo restore the preset payload together with its recognized outer wrapper, editor version, and array-path metadata, then refresh the editor and schedule local persistence. This history is independent of the one-level “撤销上次导入” rollback and the worldbook's own history. It is session-local and is cleared when a new empty preset is created or the page is reloaded; it is not embedded in exported preset JSON. Regex/script-specific editing controls are not yet included in this history scope.
+
+
+### Regex and script editor history coverage
+
+The shared preset edit history also covers Regex and Scripts workspace changes: regex field edits and placement updates, enable/disable, add, and delete; script name/type/trigger/code edits, enable/disable, add, and delete. Script code typing is coalesced into a single undo step while the user continues typing. Test runs and sandbox output are intentionally excluded because they do not mutate preset data. Undo/redo restores the same preset snapshot and refreshes the extension lists, so these edits remain part of the active preset and its normal import/export data.
