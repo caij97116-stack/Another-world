@@ -33,12 +33,11 @@ export interface WorldBookStateContract {
   selectedUids: Set<EntryUid>;
   pendingImportData: unknown | null;
   isFullscreen: boolean;
-  historyStack: unknown[];
+  historyStack: string[];
   historyIndex: number;
 }
 
 export interface WorldBookStorageKeys {
-  readonly maxHistory: number;
   readonly storage: string;
   readonly version: string;
 }
