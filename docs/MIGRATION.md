@@ -361,3 +361,10 @@ Preset export now opens a pre-download report after synchronizing the visible ed
 The final export object (including its recognized outer wrapper) is serialized and parsed again in memory. A recursive comparison reports fields dropped by JSON serialization, type/value changes, array-length changes, and non-finite numbers. Values that JSON cannot serialize, such as cyclic structures or BigInt, block export rather than producing a broken file. The report lists a bounded set of differences; it does not modify the active preset.
 
 The user must explicitly confirm the export from the preview. Cancelling closes the preview without downloading or incrementing the export version. A successful confirmation downloads the exact JSON string that was inspected. The check validates JSON serialization integrity, not semantic compatibility with every Tavern fork or provider. Browser download behavior and real Tavern import round-trips still require separate runtime testing.
+
+
+## Preset prompt-order preview
+
+The Preset Studio now shows a read-only structural preview beneath the raw `prompt_order` JSON editor. It groups entries by each order group's `character_id`, resolves order references against `prompts[].identifier`, displays each referenced prompt's name, role, and combined enabled state, and lists prompts that are not referenced by any recognized order group. Missing identifiers, unresolved references, and duplicate identifiers are surfaced as warnings rather than silently omitted.
+
+The preview refreshes when prompt fields or the raw order JSON are updated. It does not rewrite `prompt_order`, reorder the source `prompts` array, or change export data. This is deliberately not presented as the exact final prompt sent to a model: character-specific context, extension processing, primary prompt insertion, and runtime rules can affect the final assembled context. No Tavern runtime emulation is performed.
