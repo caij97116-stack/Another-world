@@ -5,17 +5,18 @@ import vm from 'node:vm';
 
 const source = await readFile(new URL('../src/js/character-card.js', import.meta.url), 'utf8');
 const exposed = source.replace(/\}\)\(\);\s*$/, `
-    window.__test = { getCardData, parsePng, stageCharacterResourceBundle, restoreStagedBundleResource, restoreLastBundleBackup, getStagedBundle: () => stagedResourceBundle };
+    window.__test = { getCardData, parsePng, stageCharacterResourceBundle, restoreStagedBundleResource, restoreLastBundleBackup, exportCharacterResourceBundle, setExportState: (card, key) => { currentCard = card; currentCardLinkKey = key; }, getStagedBundle: () => stagedResourceBundle };
 })();
 `);
 assert.notEqual(exposed, source, 'test seam must match the character-card IIFE');
 
 const messages = [];
+const downloads = [];
 const preview = { hidden: true, innerHTML: '' };
 const windowStub = {};
 const context = {
   window: windowStub,
-  document: { getElementById: id => id === 'characterCardBundleImportPreview' ? preview : null },
+  document: { getElementById: id => id === 'characterCardBundleImportPreview' ? preview : null, createElement: () => ({ click: () => {}, remove: () => {} }), body: { appendChild: () => {} } },
   localStorage: (() => {
     const values = new Map();
     return { getItem: key => values.has(key) ? values.get(key) : null,
@@ -45,7 +46,8 @@ const context = {
   },
   showToast: (message, type) => messages.push({ message: String(message), type }),
   console, TextEncoder, TextDecoder, Uint8Array, ArrayBuffer, DataView, Blob, Response,
-  DecompressionStream, atob, btoa, setTimeout, clearTimeout, URL
+  DecompressionStream, atob, btoa, setTimeout: fn => fn(), clearTimeout,
+  URL: { createObjectURL: blob => { downloads.push(blob); return 'blob:synthetic'; }, revokeObjectURL: () => {} }
 };
 vm.runInNewContext(exposed, context, { filename: 'character-card.js' });
 const api = windowStub.__test;
@@ -219,4 +221,50 @@ test('restores staged preset payload intact and rolls back stored preset state',
   assert.equal(context.localStorage.getItem('tavern_preset_editor_version'), originalStorage.version);
   assert.equal(context.localStorage.getItem('tavern_preset_editor_envelope'), originalStorage.envelope);
   assert.equal(context.localStorage.getItem('tavern_preset_editor_array_paths'), originalStorage.paths);
+});
+
+
+test('exports linked live resources, re-imports the actual download, and restores both snapshots intact', async () => {
+  const worldbook = {
+    name: 'Export Roundtrip Worldbook',
+    entries: { alpha: { uid: 'alpha', content: 'Roundtrip worldbook', future: { keep: [1, 'x'] } } },
+    vendor_worldbook_extension: { nested: { flag: true } }
+  };
+  const preset = {
+    name: 'Export Roundtrip Preset',
+    prompts: [{ identifier: 'system', content: 'Roundtrip prompt', extra: { retain: true } }],
+    regex_scripts: [{ id: 'r1', script: 'inert sample' }],
+    vendor_preset_extension: { nested: ['preserve', 2026] }
+  };
+  context.worldBookData = JSON.parse(JSON.stringify(worldbook));
+  context.presetData = JSON.parse(JSON.stringify(preset));
+  const key = 'synthetic-roundtrip-card';
+  context.localStorage.setItem('tavern_character_card_resource_links_v1', JSON.stringify({
+    [key]: {
+      worldbook: { name: worldbook.name, label: '1 个条目', fingerprint: fingerprint(worldbook), linkedAt: 'test' },
+      preset: { name: preset.name, label: '1 个提示词条目', fingerprint: fingerprint(preset), linkedAt: 'test' }
+    }
+  }));
+  api.setExportState({
+    spec: 'chara_card_v3', spec_version: '3.0',
+    data: { name: 'Roundtrip Character', extensions: { cardExtra: { keep: 'yes' } } }
+  }, key);
+
+  const downloadCount = downloads.length;
+  api.exportCharacterResourceBundle();
+  assert.equal(downloads.length, downloadCount + 1, 'export should create one downloadable JSON blob');
+  const exportedRaw = await downloads.at(-1).text();
+  const exported = JSON.parse(exportedRaw);
+  assert.equal(exported.format, 'another-world-character-resource-bundle');
+  assert.equal(exported.format_version, 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(exported.resources.worldbook)), worldbook);
+  assert.deepEqual(JSON.parse(JSON.stringify(exported.resources.preset)), preset);
+  assert.deepEqual(JSON.parse(JSON.stringify(exported.character_card.data.extensions)), { cardExtra: { keep: 'yes' } });
+
+  await stage(exportedRaw);
+  assert.ok(api.getStagedBundle(), 'the exact exported JSON should pass the importer');
+  api.restoreStagedBundleResource('worldbook');
+  assert.deepEqual(JSON.parse(JSON.stringify(context.worldBookData)), worldbook);
+  api.restoreStagedBundleResource('preset');
+  assert.deepEqual(JSON.parse(JSON.stringify(context.presetData)), preset);
 });
