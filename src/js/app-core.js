@@ -12,8 +12,12 @@ function switchPage(page){
                 toggleBtn.style.display='none';
                 closeSidebar();
                 exitFullscreenEdit();
-                renderPresetUI();
-                if(page==='extensions')refreshExtensionWorkspace();
+                if(page==='extensions'){
+                    renderPresetUI();
+                    refreshExtensionWorkspace();
+                }else if(page!=='character-card'){
+                    renderPresetUI();
+                }
             }
         }
 
@@ -66,6 +70,14 @@ function switchPage(page){
                     <button class="btn btn-ghost" data-action="toggle-theme" title="切换主题" id="btnTheme">${document.body.classList.contains('dark-theme')?'☀️':'🌙'}</button>
                     <button class="btn" data-action="trigger-preset-import">导入预设</button>
                     <button class="btn btn-primary" data-action="export-preset" ${presetData?'':'disabled'}>导出预设</button>`;
+            }else if(currentPage==='character-card'){
+                titleEl.textContent='角色卡工作区';
+                iconEl.textContent='✦';
+                badgeEl.textContent='PNG / JSON';
+                actionsEl.innerHTML=`
+                    <button class="btn btn-ghost" data-action="toggle-theme" title="切换主题" id="btnTheme">${document.body.classList.contains('dark-theme')?'☀️':'🌙'}</button>
+                    <button class="btn" data-action="trigger-character-card-import">导入角色卡</button>
+                    <button class="btn btn-primary" data-action="export-character-card-json" id="toolbarExportCharacterCard" disabled>导出 JSON</button>`;
             }else{
                 titleEl.textContent='预设编辑器';
                 iconEl.textContent='⚙️';
