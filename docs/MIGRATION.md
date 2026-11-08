@@ -439,3 +439,8 @@ The prompt-items bulk toolbar now supports deleting selected visible prompts. De
 ### Duplicate prompt items
 
 Prompt cards can be duplicated with all unknown fields retained. A fresh unique identifier is assigned. Where the original identifier has a single unambiguous reference in a prompt-order group, the duplicate reference is inserted immediately after it; ambiguous groups are left unchanged and reported. Duplication is one undoable preset edit.
+
+
+### Bulk collapse and expand for extension cards
+
+The Regex and Scripts workspaces now provide controls to collapse or expand all cards in the current list. These controls only change the visible editor layout and do not alter preset data or undo history.
