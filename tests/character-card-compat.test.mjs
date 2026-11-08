@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const source = await readFile(new URL('../src/js/character-card.js', import.meta.url), 'utf8');
 const exposed = source.replace(/\}\)\(\);\s*$/, `
-    window.__test = { getCardData, parsePng, importCharacterCard, stageCharacterResourceBundle, restoreStagedBundleResource, restoreLastBundleBackup, exportCharacterResourceBundle, exportCharacterCardPng, updateCharacterCardField, applyCharacterCardRawJson, setExportState: (card, key, png) => { currentCard = card; currentCardLinkKey = key; currentPngBuffer = png || null; currentCardFile = { name: 'synthetic.json', type: 'application/json' }; }, getStagedBundle: () => stagedResourceBundle };
+    window.__test = { getCardData, parsePng, importCharacterCard, stageCharacterResourceBundle, restoreStagedBundleResource, restoreLastBundleBackup, exportCharacterResourceBundle, exportCharacterCardPng, updateCharacterCardField, applyCharacterCardRawJson, getCurrentCard: () => currentCard, setExportState: (card, key, png) => { currentCard = card; currentCardLinkKey = key; currentPngBuffer = png || null; currentCardFile = { name: 'synthetic.json', type: 'application/json' }; }, getStagedBundle: () => stagedResourceBundle };
 })();
 `);
 assert.notEqual(exposed, source, 'test seam must match the character-card IIFE');
@@ -398,4 +398,19 @@ test('invalid raw character-card JSON does not replace the current card', () => 
   assert.deepEqual(JSON.parse(JSON.stringify(card.data.extensions)), { nested: { keep: true } });
   assert.match(status.textContent, /校验失败/);
   assert.match(messages.at(-1).message, /JSON 未应用/);
+});
+
+
+test('failed JSON import leaves the currently loaded card untouched', async () => {
+  const current = { spec: 'chara_card_v3', spec_version: '3.0', data: {
+    name: 'Already Loaded', extensions: { keep: { value: 1 } }
+  } };
+  api.setExportState(current, 'import-failure-test');
+  const invalidFile = {
+    name: 'broken.json', type: 'application/json', size: 12,
+    text: async () => '{"data":'
+  };
+  await assert.rejects(() => api.importCharacterCard(invalidFile), /JSON 语法错误/);
+  assert.equal(api.getCurrentCard(), current);
+  assert.equal(api.getCurrentCard().data.name, 'Already Loaded');
 });
