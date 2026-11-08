@@ -20,6 +20,63 @@ document.addEventListener('click', (event) => {
         case 'toggle-section':
             window.toggleSection(target.dataset.target);
             break;
+        case 'add-new-entry':
+            window.addNewEntry();
+            break;
+        case 'toggle-select-mode':
+            window.toggleSelectMode();
+            break;
+        case 'bulk-enable':
+            window.bulkSetEnabled(true);
+            break;
+        case 'bulk-disable':
+            window.bulkSetEnabled(false);
+            break;
+        case 'bulk-delete':
+            window.bulkDelete();
+            break;
+        case 'clear-selection':
+            window.clearSelection();
+            break;
+        case 'exit-fullscreen-edit':
+            window.exitFullscreenEdit();
+            break;
+        case 'copy-current-entry':
+            window.copyCurrentEntry();
+            break;
+        case 'enter-fullscreen-edit':
+            window.enterFullscreenEdit();
+            break;
+        case 'create-empty-preset':
+            window.createEmptyPreset();
+            break;
+        case 'add-prompt-item':
+            window.addPromptItem();
+            break;
+        case 'refresh-prompt-order':
+            window.refreshPromptOrderJson();
+            break;
+        case 'add-regex-script':
+            window.addRegexScript();
+            break;
+        case 'add-script':
+            window.addScript();
+            break;
+        case 'refresh-raw-json':
+            window.refreshRawJson();
+            break;
+        case 'apply-raw-json':
+            window.applyRawJson();
+            break;
+        case 'import-overwrite':
+            window.doImport('overwrite');
+            break;
+        case 'import-merge':
+            window.doImport('merge');
+            break;
+        case 'close-import-modal':
+            window.closeImportModal();
+            break;
     }
 });
 
@@ -78,5 +135,24 @@ document.addEventListener('focusout', (event) => {
 
     if (target.dataset.focusoutAction === 'apply-raw-json') {
         window.applyRawJson();
+    }
+});
+
+
+// File inputs use a dedicated delegated change action so the original Event
+// object is preserved for the legacy import handlers.
+document.addEventListener('change', (event) => {
+    const target = event.target instanceof Element
+        ? event.target.closest('[data-file-action]')
+        : null;
+    if (!target) return;
+
+    switch (target.dataset.fileAction) {
+        case 'worldbook-import':
+            window.onFileChosen(event);
+            break;
+        case 'preset-import':
+            window.onPresetFileChosen(event);
+            break;
     }
 });
