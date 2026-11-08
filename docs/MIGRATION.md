@@ -332,3 +332,12 @@ The local trigger preview remains intentionally simplified and does not simulate
 A read-only diagnostics center is available from the worldbook sidebar. It scans the currently loaded entries without modifying them and reports structural or likely configuration issues: empty content, missing activation keys, selective entries without secondary keys, invalid probabilities/order/depth/positions, unsupported trigger values, malformed character-filter shapes, missing Outlet names, invalid slash-delimited regex keys, duplicate plain-text keys, and possible recursive cycles inferred from entry content mentioning other entries' keys.
 
 Findings are classified as errors, warnings, or informational notes. Selecting a finding navigates to its entry. Duplicate keywords and recursive cycles are informational because they can be intentional authoring patterns; they are not automatically treated as defects. The scan is heuristic and data-only: it does not emulate SillyTavern's prompt-building engine, global settings, actual chat context, vector search, extension hooks, or generation-time activation. It never edits or repairs data automatically.
+
+
+## Preset diagnostics center
+
+The Preset Studio now includes a read-only diagnostics center. It checks common sampling-parameter types and ranges, conflicting aliases for fields such as prompt text and generation length, malformed `prompts` / `prompt_order` structures, missing or duplicate prompt identifiers, empty enabled prompt content, and order entries that reference identifiers absent from the prompt list.
+
+Findings are grouped as errors or warnings and can navigate to the related parameter control, prompt item, or prompt-order section. The scanner does not repair data, rewrite identifiers, reorder prompts, or change export content. A warning about a parameter range is advisory rather than a guarantee of backend rejection: API providers and compatible preset formats can differ.
+
+This is static JSON inspection only. It does not emulate a particular Tavern version's prompt assembly, provider-side parameter validation, script execution, or the active chat context. The diagnostics scanner has isolated Node tests for malformed structures, alias conflicts, identifier references, empty enabled prompts, and read-only behavior.
