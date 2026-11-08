@@ -291,7 +291,7 @@ function normalizeRegexScript(raw, index){
                         </div>
                     </div>
                     <div class="regex-field">
-                        <label>脚本内容</label>
+                        <div class="script-code-toolbar"><label>脚本内容</label><button class="btn btn-sm" type="button" data-action="toggle-script-fullscreen" data-index="${i}">全屏编辑</button></div>
                         <textarea class="form-control script-code" rows="16" spellcheck="false" data-input-action="update-script-field" data-index="${i}" data-field="code">${escapeHtml(s.code || '')}</textarea>
                     </div>
                     <div class="script-testbench">
@@ -396,6 +396,27 @@ function normalizeRegexScript(raw, index){
             document.body.appendChild(frame);
         }
 
+        function exitScriptEditorFocus(){
+            const active=document.querySelector('.script-code.is-fullscreen');
+            if(!active)return;
+            active.classList.remove('is-fullscreen');
+            document.body.classList.remove('script-editor-focus');
+            const button=active.closest('.script-card')?.querySelector('[data-action="toggle-script-fullscreen"]');
+            if(button)button.textContent='全屏编辑';
+        }
+        function toggleScriptEditorFocus(idx){
+            const card=document.querySelector('.script-card[data-idx="'+idx+'"]');
+            const textarea=card&&card.querySelector('.script-code');
+            if(!textarea)return;
+            const active=document.querySelector('.script-code.is-fullscreen');
+            if(active&&active!==textarea)exitScriptEditorFocus();
+            if(textarea.classList.contains('is-fullscreen')){exitScriptEditorFocus();return}
+            textarea.classList.add('is-fullscreen');
+            document.body.classList.add('script-editor-focus');
+            const button=card.querySelector('[data-action="toggle-script-fullscreen"]');
+            if(button)button.textContent='退出全屏（Esc）';
+            textarea.focus();
+        }
         function updateScriptField(idx, key, value){
             if(!presetData || !getActivePresetArray('scripts') || !getActivePresetArray('scripts')[idx]) return;
             const item=getActivePresetArray('scripts')[idx];
@@ -494,3 +515,6 @@ window.applyExtensionFilters=applyExtensionFilters;
 window.bulkExtensionAction=bulkExtensionAction;
 window.setExtensionSelectVisible=setExtensionSelectVisible;
 window.updateExtensionSelectionSummary=updateExtensionSelectionSummary;
+
+window.toggleScriptEditorFocus=toggleScriptEditorFocus;
+window.exitScriptEditorFocus=exitScriptEditorFocus;
