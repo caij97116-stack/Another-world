@@ -56,6 +56,15 @@ document.addEventListener('click', (event) => {
         case 'toggle-prompt-editor':
             window.togglePromptEditor(Number(target.dataset.index));
             break;
+        case 'switch-extension-tab':
+            window.switchExtensionTab(target.dataset.tab);
+            break;
+        case 'test-regex-script':
+            window.testRegexScript(Number(target.dataset.index));
+            break;
+        case 'run-script-sandbox':
+            window.runScriptSandbox(Number(target.dataset.index));
+            break;
         case 'refresh-prompt-order':
             window.refreshPromptOrderJson();
             break;
