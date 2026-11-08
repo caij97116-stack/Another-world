@@ -174,14 +174,14 @@ function isPresetPayloadObject(value){
                     <div class="regex-card-header">
                         <div class="regex-card-title">${escapeHtml(title)}</div>
                         <div class="regex-card-actions">
-                            <button class="btn btn-sm" type="button" onclick="movePromptItem(${i},-1)" ${i===0?'disabled':''}>上移</button>
-                            <button class="btn btn-sm" type="button" onclick="movePromptItem(${i},1)" ${i===list.length-1?'disabled':''}>下移</button>
-                            <button class="btn btn-sm btn-danger" type="button" onclick="deletePromptItem(${i})">删除</button>
+                            <button class="btn btn-sm" type="button" data-action="move-prompt-item" data-index="${i}" data-direction="-1" ${i===0?'disabled':''}>上移</button>
+                            <button class="btn btn-sm" type="button" data-action="move-prompt-item" data-index="${i}" data-direction="1" ${i===list.length-1?'disabled':''}>下移</button>
+                            <button class="btn btn-sm btn-danger" type="button" data-action="delete-prompt-item" data-index="${i}">删除</button>
                         </div>
                     </div>
                     <div class="regex-field">
                         <label>完整条目 JSON</label>
-                        <textarea class="form-control" rows="8" spellcheck="false" onchange="updatePromptItemJson(${i},this.value)">${escapeHtml(JSON.stringify(item,null,2))}</textarea>
+                        <textarea class="form-control" rows="8" spellcheck="false" data-change-action="update-prompt-item-json" data-index="${i}">${escapeHtml(JSON.stringify(item,null,2))}</textarea>
                     </div>
                 </div>`;
             }).join('');
