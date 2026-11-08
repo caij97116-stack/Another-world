@@ -388,6 +388,29 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
                         <div class="form-group"><label>Jailbreak Prompt <span class="char-count" id="cnt_jb">0 字</span></label><textarea id="p_jailbreak" class="form-control" rows="4" placeholder="Jailbreak..." oninput="syncPreset();updateCharCounts()"></textarea></div>
                         <div class="form-group"><label>System Prompt <span class="char-count" id="cnt_sys">0 字</span></label><textarea id="p_system" class="form-control" rows="3" placeholder="System..." oninput="syncPreset();updateCharCounts()"></textarea></div>
                         <div class="form-group"><label>Stop Sequences <span class="hint">(逗号或换行分隔)</span></label><textarea id="p_stop" class="form-control" rows="2" placeholder="例: &lt;|end|&gt;, ###" oninput="syncPreset()"></textarea></div>
+                        <div class="glass-panel-box" style="margin-top:14px">
+                            <div class="panel-header">
+                                <h3>提示词条目 <span class="regex-badge" id="promptItemsBadge">0</span></h3>
+                                <div style="display:flex;gap:6px;align-items:center">
+                                    <button class="btn btn-sm btn-primary" type="button" onclick="addPromptItem()">＋ 新建条目</button>
+                                    <button class="panel-toggle" type="button" onclick="toggleSection('secPromptItems')">折叠/展开</button>
+                                </div>
+                            </div>
+                            <div class="collapsible-body" id="secPromptItems">
+                                <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px">直接编辑每条提示词的完整 JSON 对象。未识别字段会随原对象一起保留；支持调整顺序和删除。</p>
+                                <div class="regex-list" id="promptItemsContainer"></div>
+                            </div>
+                        </div>
+                        <div class="glass-panel-box" style="margin-top:12px">
+                            <div class="panel-header"><h3>提示词顺序配置（prompt_order）</h3><button class="panel-toggle" type="button" onclick="toggleSection('secPromptOrder')">折叠/展开</button></div>
+                            <div class="collapsible-body" id="secPromptOrder">
+                                <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px">保留原始 prompt_order 结构。修改后必须是合法 JSON；不修改时不会主动重写。</p>
+                                <textarea id="p_prompt_order" class="form-control" rows="8" spellcheck="false" placeholder="导入预设后显示 prompt_order JSON" onchange="applyPromptOrderJson()"></textarea>
+                                <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:6px">
+                                    <button class="btn btn-sm" type="button" onclick="refreshPromptOrderJson()">重新载入</button>
+                                </div>
+                            </div>
+                        </div>
                         </div>
                     </div>
 
@@ -997,7 +1020,89 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
                 stream:true,nsfw:false,regex_scripts:[]
             };
             renderPresetUI();schedulePresetSave();showToast('已创建空白预设');
-        }        function renderPresetUI(){
+        }        function getPresetPromptItems(){
+            if(!presetData) return [];
+            return Array.isArray(presetData.prompts) ? presetData.prompts : [];
+        }
+        function renderPromptItems(){
+            const container=document.getElementById('promptItemsContainer');
+            const badge=document.getElementById('promptItemsBadge');
+            if(!container) return;
+            const list=getPresetPromptItems();
+            if(badge) badge.textContent=String(list.length);
+            if(!list.length){
+                container.innerHTML='<div class="regex-empty">当前预设没有 prompts 条目，点击「新建条目」添加</div>';
+                return;
+            }
+            container.innerHTML=list.map((item,i)=>{
+                const title=item && typeof item==='object' ? (item.name||item.identifier||('提示词 '+(i+1))) : ('提示词 '+(i+1));
+                return `
+                <div class="regex-card">
+                    <div class="regex-card-header">
+                        <div class="regex-card-title">${escapeHtml(title)}</div>
+                        <div class="regex-card-actions">
+                            <button class="btn btn-sm" type="button" onclick="movePromptItem(${i},-1)" ${i===0?'disabled':''}>上移</button>
+                            <button class="btn btn-sm" type="button" onclick="movePromptItem(${i},1)" ${i===list.length-1?'disabled':''}>下移</button>
+                            <button class="btn btn-sm btn-danger" type="button" onclick="deletePromptItem(${i})">删除</button>
+                        </div>
+                    </div>
+                    <div class="regex-field">
+                        <label>完整条目 JSON</label>
+                        <textarea class="form-control" rows="8" spellcheck="false" onchange="updatePromptItemJson(${i},this.value)">${escapeHtml(JSON.stringify(item,null,2))}</textarea>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        function updatePromptItemJson(index,raw){
+            try{
+                const parsed=JSON.parse(raw);
+                if(!parsed||typeof parsed!=='object'||Array.isArray(parsed)) throw new Error('每条提示词必须是 JSON 对象');
+                if(!Array.isArray(presetData.prompts)) presetData.prompts=[];
+                if(index<0||index>=presetData.prompts.length) throw new Error('条目位置已变化，请重新载入');
+                presetData.prompts[index]=parsed;
+                renderPromptItems();schedulePresetSave();refreshRawJson();
+                showToast('提示词条目已更新','success');
+            }catch(err){showToast('条目 JSON 无效：'+err.message,'error');renderPromptItems()}
+        }
+        function addPromptItem(){
+            if(!presetData) return;
+            if(!Array.isArray(presetData.prompts)) presetData.prompts=[];
+            presetData.prompts.push({name:'New Prompt',system_prompt:false,role:'system',content:'',identifier:'custom_prompt_'+Date.now(),enabled:true});
+            renderPromptItems();schedulePresetSave();refreshRawJson();
+            const sec=document.getElementById('secPromptItems');if(sec)sec.classList.remove('collapsed');
+            showToast('已新增提示词条目','success');
+        }
+        function deletePromptItem(index){
+            if(!presetData||!Array.isArray(presetData.prompts)||index<0||index>=presetData.prompts.length)return;
+            presetData.prompts.splice(index,1);renderPromptItems();schedulePresetSave();refreshRawJson();
+            showToast('已删除提示词条目');
+        }
+        function movePromptItem(index,delta){
+            if(!presetData||!Array.isArray(presetData.prompts))return;
+            const target=index+delta;
+            if(index<0||target<0||target>=presetData.prompts.length)return;
+            const list=presetData.prompts;[list[index],list[target]]=[list[target],list[index]];
+            renderPromptItems();schedulePresetSave();refreshRawJson();
+        }
+        function refreshPromptOrderJson(){
+            const el=document.getElementById('p_prompt_order');
+            if(!el||!presetData)return;
+            el.value=Object.prototype.hasOwnProperty.call(presetData,'prompt_order')?JSON.stringify(presetData.prompt_order,null,2):'';
+        }
+        function applyPromptOrderJson(){
+            const el=document.getElementById('p_prompt_order');
+            if(!el||!presetData)return;
+            if(!el.value.trim()){
+                delete presetData.prompt_order;
+                schedulePresetSave();refreshRawJson();showToast('已清空 prompt_order');return;
+            }
+            try{
+                presetData.prompt_order=JSON.parse(el.value);
+                schedulePresetSave();refreshRawJson();showToast('prompt_order 已更新','success');
+            }catch(err){showToast('prompt_order JSON 格式错误，请检查后重试','error');refreshPromptOrderJson()}
+        }
+
+        function renderPresetUI(){
             const empty=document.getElementById('presetEmpty');
             const editor=document.getElementById('presetEditor');
             if(!presetData){
@@ -1050,6 +1155,8 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             if(typeof updateCharCounts==='function')updateCharCounts();
             if(typeof refreshRawJson==='function')refreshRawJson();
             if(typeof renderRegexList==='function')renderRegexList();
+            if(typeof renderPromptItems==='function')renderPromptItems();
+            if(typeof refreshPromptOrderJson==='function')refreshPromptOrderJson();
             if(typeof renderScriptList==='function')renderScriptList();
             if(typeof renderFieldOverview==='function')renderFieldOverview();
             if(typeof autoExpandPresetSections==='function')autoExpandPresetSections();
