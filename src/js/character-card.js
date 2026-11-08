@@ -223,6 +223,7 @@
         try{await importCharacterCard(file);}catch(error){showToast(error.message||'角色卡导入失败','error');}
     }
 
+    window.hasImportedCharacterCard=()=>!!currentCard;
     window.importCharacterCard=importCharacterCard;
     window.triggerCharacterCardImport=triggerCharacterCardImport;
     window.onCharacterCardFileChosen=onCharacterCardFileChosen;
