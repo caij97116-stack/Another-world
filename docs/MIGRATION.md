@@ -352,3 +352,12 @@ The user must explicitly confirm the import. Before applying it, the editor seri
 After a successful import, the preset status area exposes `撤销上次导入`. Undo requires confirmation and restores the prior preset snapshot, including wrapper and array-path metadata; if there was no preset before import, undo returns the editor to its empty state. The backup is one-level and is cleared after a successful undo; a subsequent import replaces the previous rollback point. The backup is browser-local and is not included in preset exports.
 
 The preview is a structural summary, not a full schema validator. Provider-specific fields and nested extension data are preserved as-is. LocalStorage quota or browser storage restrictions can prevent backup creation; in that case the import is blocked and the existing preset remains active. Browser UI interaction and real Tavern compatibility still require separate testing.
+
+
+## Preset export integrity preview
+
+Preset export now opens a pre-download report after synchronizing the visible editor fields and applying the user's disabled-regex / disabled-script export choices. The report summarizes top-level fields, prompts, prompt-order groups, regex entries, script entries, and JSON node counts before and after serialization.
+
+The final export object (including its recognized outer wrapper) is serialized and parsed again in memory. A recursive comparison reports fields dropped by JSON serialization, type/value changes, array-length changes, and non-finite numbers. Values that JSON cannot serialize, such as cyclic structures or BigInt, block export rather than producing a broken file. The report lists a bounded set of differences; it does not modify the active preset.
+
+The user must explicitly confirm the export from the preview. Cancelling closes the preview without downloading or incrementing the export version. A successful confirmation downloads the exact JSON string that was inspected. The check validates JSON serialization integrity, not semantic compatibility with every Tavern fork or provider. Browser download behavior and real Tavern import round-trips still require separate runtime testing.
