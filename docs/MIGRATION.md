@@ -115,3 +115,12 @@ A compatibility bridge, `src/ts/utils/legacy-bridge.ts`, now provides `installLe
 - The unwrapping helper retains the existing Chinese validation error for non-object imports.
 - Exported the helpers and parsed-import result type from `src/ts/state/index.ts`.
 - These helpers are not wired into the active application yet. The legacy import/export implementation remains authoritative until the TypeScript build and integration path are verified.
+
+
+### Grouped preset data helpers
+
+- Added `src/ts/state/preset-items.ts` as a cohesive preset-data module rather than splitting each helper into its own file.
+- The module groups original-path array lookup and alias selection, active regex/script array access, canonical view-field adapters, and regex/script item normalization.
+- Regex and script normalization accept the legacy boolean parser as a dependency, keeping coercion rules supplied by the existing application rather than silently reimplementing them.
+- Script normalization preserves unrecognized source keys; array selection continues to prefer populated candidate arrays and records the selected original path.
+- Exported the grouped helpers from `src/ts/state/index.ts`. The active classic-script functions remain unchanged and authoritative; this module is not wired into the live entrypoint.
