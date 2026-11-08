@@ -1482,7 +1482,9 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         function exportPreset(){
             if(!presetData){showToast('请先导入或新建预设','error');return}
             syncPreset();
-            presetVersion+=1;updateToolbar();localStorage.setItem(PRESET_VERSION_KEY,String(presetVersion));
+            presetVersion+=1;
+            updateToolbar();
+            // 版本号由后续自动保存统一写入；缓存不可用时也不能阻断文件导出。
 
             // 按开关过滤正则/脚本
             const includeDisRegex = presetData._exportIncludeDisabledRegex !== false;
