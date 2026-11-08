@@ -210,7 +210,7 @@ function normalizeRegexScript(raw, index){
                     </div>
                     <div class="regex-field">
                         <label>脚本内容</label>
-                        <textarea class="form-control script-code" rows="16" spellcheck="false" data-change-action="update-script-field" data-index="${i}" data-field="code">${escapeHtml(s.code || '')}</textarea>
+                        <textarea class="form-control script-code" rows="16" spellcheck="false" data-input-action="update-script-field" data-index="${i}" data-field="code">${escapeHtml(s.code || '')}</textarea>
                     </div>
                     <div class="script-testbench">
                         <div class="regex-testbench-heading"><strong>脚本沙盒测试</strong><span>不提供酒馆 API / 网络访问</span></div>
