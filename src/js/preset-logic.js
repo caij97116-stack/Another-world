@@ -22,6 +22,28 @@ function normalizeRegexScript(raw, index){
             setActivePresetArray('regex_scripts',list.map((item, i) => normalizeRegexScript(item, i)));
         }
 
+        function applyExtensionFilters(kind){
+            const isRegex=kind==='regex';
+            const container=document.getElementById(isRegex?'regexListContainer':'scriptListContainer');
+            const search=document.getElementById(isRegex?'regexSearchInput':'scriptSearchInput');
+            const status=document.getElementById(isRegex?'regexStatusFilter':'scriptStatusFilter');
+            const summary=document.getElementById(isRegex?'regexFilterSummary':'scriptFilterSummary');
+            if(!container)return;
+            const query=String(search?.value||'').trim().toLocaleLowerCase();
+            const mode=status?.value||'all';
+            const cards=[...container.querySelectorAll(isRegex?'.regex-card':'.script-card')];
+            let visible=0;
+            cards.forEach(card=>{
+                const matchesText=!query||String(card.dataset.search||'').toLocaleLowerCase().includes(query);
+                const disabled=card.dataset.disabled==='true';
+                const matchesStatus=mode==='all'||(mode==='enabled'&&!disabled)||(mode==='disabled'&&disabled);
+                card.hidden=!(matchesText&&matchesStatus);
+                if(!card.hidden)visible++;
+            });
+            if(summary)summary.textContent=cards.length?'显示 '+visible+' / '+cards.length+' 项':'';
+            let empty=container.querySelector('.extension-filter-empty');
+            if(cards.length&&visible===0){if(!empty){empty=document.createElement('div');empty.className='regex-empty extension-filter-empty';empty.textContent='没有符合条件的项目，试试调整搜索词或筛选条件。';container.appendChild(empty)}empty.hidden=false}else if(empty)empty.hidden=true;
+        }
         function renderRegexList(){
             const container = document.getElementById('regexListContainer');
             const badge = document.getElementById('regexCountBadge');
@@ -39,8 +61,9 @@ function normalizeRegexScript(raw, index){
 
             container.innerHTML = list.map((r, i) => {
                 const disabled = parseEntryBoolean(r.disabled,false);
+                const searchText=[r.scriptName,r.findRegex,r.replaceString,(r.placement||[]).join(',')].join(' ');
                 return `
-                <div class="regex-card" data-idx="${i}">
+                <div class="regex-card" data-idx="${i}" data-disabled="${disabled?'true':'false'}" data-search="${escapeHtml(searchText)}">
                     <div class="regex-card-header">
                         <div class="regex-card-title">${escapeHtml(r.scriptName || '未命名正则')} ${disabled ? '<span class="regex-badge off">已禁用</span>' : '<span class="regex-badge">启用</span>'}</div>
                         <div class="regex-card-actions">
@@ -89,6 +112,7 @@ function normalizeRegexScript(raw, index){
                     </div>
                 </div>`;
             }).join('');
+            applyExtensionFilters('regex');
         }
 
         function updateRegexField(idx, key, value){
@@ -210,8 +234,9 @@ function normalizeRegexScript(raw, index){
 
             container.innerHTML = list.map((s, i) => {
                 const disabled = parseEntryBoolean(s.disabled,false);
+                const searchText=[s.name,s.type,s.trigger,s.code].join(' ');
                 return `
-                <div class="script-card" data-idx="${i}">
+                <div class="script-card" data-idx="${i}" data-disabled="${disabled?'true':'false'}" data-search="${escapeHtml(searchText)}">
                     <div class="script-card-header">
                         <div class="script-card-title">${escapeHtml(s.name || '未命名脚本')} ${disabled ? '<span class="regex-badge off">已禁用</span>' : '<span class="regex-badge">启用</span>'}</div>
                         <div class="regex-card-actions">
@@ -244,6 +269,7 @@ function normalizeRegexScript(raw, index){
                     </div>
                 </div>`;
             }).join('');
+            applyExtensionFilters('scripts');
         }
 
 
@@ -390,3 +416,5 @@ function normalizeRegexScript(raw, index){
             const sec = document.getElementById('secScripts');
             if(sec) sec.classList.remove('collapsed');
         }
+
+window.applyExtensionFilters=applyExtensionFilters;
