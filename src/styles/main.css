@@ -342,3 +342,12 @@ body.dark-theme .regex-test-result.is-error{color:#fca5a5;background:rgba(220,38
   .character-card-empty{min-height:250px;padding:20px}
 }
 body.dark-theme .character-card-hero{background:linear-gradient(120deg,rgba(14,165,233,.15),rgba(99,102,241,.12),rgba(15,40,70,.35))}
+
+
+.character-card-export-actions{display:flex;gap:8px;flex-wrap:wrap}
+.character-card-edit-status{margin:10px 0 0;font-size:.68rem;color:var(--text-muted)}
+.character-edit-field{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.character-edit-field>span{font-size:.73rem;font-weight:700;color:var(--text-main)}
+.character-edit-field textarea,.character-edit-field input{width:100%;box-sizing:border-box;border:1px solid var(--glass-border);border-radius:10px;padding:10px 12px;background:var(--glass-panel);color:var(--text-main);font: .76rem/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical;min-height:42px}
+.character-edit-field textarea:focus,.character-edit-field input:focus{outline:2px solid rgba(14,165,233,.22);border-color:var(--sky-accent)}
+@media(max-width:600px){.character-card-export-actions{width:100%}.character-card-export-actions .btn{flex:1}}
