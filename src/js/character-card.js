@@ -9,6 +9,7 @@
     let currentPngName = '';
     let currentCardFile = null;
     let cardDirty = false;
+    let stagedResourceBundle = null;
 
     function isObject(value){
         return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -283,6 +284,94 @@
         anchor.remove();
         setTimeout(()=>URL.revokeObjectURL(url),1000);
         showToast('关联资源包已导出；原始资源未被修改','success');
+    }
+
+    function stageCharacterResourceBundle(file){
+        if(!file)return;
+        if(file.size>MAX_FILE_BYTES)throw new Error('资源包超过 100 MB，已停止读取。');
+        const textPromise=file.text();
+        textPromise.then(raw=>{
+            let bundle;
+            try{bundle=JSON.parse(raw)}catch(error){throw new Error('资源包 JSON 无法解析：'+error.message)}
+            if(!isObject(bundle)||bundle.format!=='another-world-character-resource-bundle'||bundle.format_version!==1)throw new Error('不支持的资源包格式或版本。');
+            if(!isObject(bundle.manifest)||!isObject(bundle.manifest.character)||!Array.isArray(bundle.manifest.resources)||!isObject(bundle.character_card)||!isObject(bundle.resources))throw new Error('资源包缺少必要的清单、角色卡或资源数据。');
+            const cardInfo=getCardData(bundle.character_card);
+            const allowed=new Set(['worldbook','preset']);
+            const seen=new Set();
+            const validated=[];
+            bundle.manifest.resources.forEach(item=>{
+                if(!isObject(item)||!allowed.has(item.type)||seen.has(item.type))throw new Error('资源清单包含未知或重复的资源类型。');
+                seen.add(item.type);
+                const payload=bundle.resources[item.type];
+                if(!isObject(payload))throw new Error('资源包缺少 '+item.type+' 数据。');
+                if(item.type==='worldbook'){
+                    if(!isObject(payload.entries)||Array.isArray(payload.entries))throw new Error('世界书数据结构无效。');
+                    Object.entries(payload.entries).forEach(([uid,entry])=>{if(!uid||!isObject(entry))throw new Error('世界书条目结构无效。')});
+                }else if(!isPresetPayloadObject(payload)){
+                    throw new Error('预设数据结构无法识别。');
+                }
+                const fingerprint=resourceFingerprint(payload);
+                if(item.fingerprint&&item.fingerprint!==fingerprint)throw new Error('资源 '+(item.name||item.type)+' 的内容指纹不匹配，资源包可能已损坏。');
+                validated.push({type:item.type,name:String(item.name||item.type),summary:String(item.summary||''),fingerprint});
+            });
+            if(!validated.length)throw new Error('资源包没有可恢复的独立世界书或预设。');
+            stagedResourceBundle=bundle;
+            const host=document.getElementById('characterCardBundleImportPreview');
+            if(host){
+                host.hidden=false;
+                host.innerHTML='<div class="character-bundle-preview-head"><strong>'+escapeCardHtml(cardInfo.name)+'</strong><span>'+validated.length+' 项独立资源已通过结构检查</span></div>'+validated.map(item=>'<div class="character-bundle-preview-item"><strong>'+escapeCardHtml(item.type==='worldbook'?'独立世界书':'独立预设')+'</strong><span>'+escapeCardHtml(item.name)+' · '+escapeCardHtml(item.summary)+'</span></div>').join('')+'<div class="character-bundle-import-actions"><button class="btn btn-sm btn-primary" type="button" data-action="bundle-import-card">导入角色卡</button>'+validated.map(item=>'<button class="btn btn-sm" type="button" data-action="bundle-restore-resource" data-kind="'+item.type+'">恢复'+(item.type==='worldbook'?'世界书':'预设')+'</button>').join('')+'<button class="btn btn-sm btn-ghost" type="button" data-action="bundle-clear-stage">清除待导入包</button></div>';
+            }
+            showToast('资源包检查完成；尚未修改任何现有资源','success');
+        }).catch(error=>showToast(error.message||'资源包读取失败','error'));
+    }
+
+    function clearStagedCharacterResourceBundle(){
+        stagedResourceBundle=null;
+        const host=document.getElementById('characterCardBundleImportPreview');
+        if(host){host.hidden=true;host.innerHTML=''}
+    }
+
+    async function importStagedBundleCharacter(){
+        if(!stagedResourceBundle)return;
+        const card=stagedResourceBundle.character_card;
+        const info=getCardData(card);
+        const file=new File([JSON.stringify(card)],(info.name||'character')+'_bundle.json',{type:'application/json'});
+        await importCharacterCard(file);
+    }
+
+    function restoreStagedBundleResource(kind){
+        if(!stagedResourceBundle||!['worldbook','preset'].includes(kind))return;
+        const payload=stagedResourceBundle.resources[kind];
+        if(!isObject(payload))throw new Error('资源包中不存在该资源。');
+        const label=kind==='worldbook'?'独立世界书':'独立预设';
+        if(!confirm('即将用资源包中的'+label+'替换当前工作区内容。\n\n系统会先在本地保存一份恢复前备份。是否继续？'))return;
+        if(kind==='worldbook'){
+            if(!isObject(payload.entries)||Array.isArray(payload.entries))throw new Error('世界书 entries 结构无效。');
+            const backup={saved_at:new Date().toISOString(),data:JSON.parse(JSON.stringify(worldBookData))};
+            localStorage.setItem('another_world_pre_bundle_worldbook_backup',JSON.stringify(backup));
+            pushHistory();
+            const entries={};
+            Object.entries(payload.entries).forEach(([uid,entry])=>{entries[String(uid)]=sanitizeEntry(entry,String(uid))});
+            worldBookData={...JSON.parse(JSON.stringify(payload)),entries};
+            const keys=Object.keys(entries);
+            activeUid=keys[0]||null;
+            selectedUids.clear();selectMode=false;
+            renderEntryList();loadActiveEntry();updateEntryCount();scheduleAutoSave();updateToolbar();
+        }else{
+            if(!isPresetPayloadObject(payload))throw new Error('预设数据结构无效。');
+            const keys=['tavern_preset_editor_data','tavern_preset_editor_version','tavern_preset_editor_envelope','tavern_preset_editor_array_paths'];
+            const backup={saved_at:new Date().toISOString(),items:{}};
+            keys.forEach(key=>{backup.items[key]=localStorage.getItem(key)});
+            localStorage.setItem('another_world_pre_bundle_preset_backup',JSON.stringify(backup));
+            setPresetFromParsed(JSON.parse(JSON.stringify(payload)));
+            renderPresetUI();
+            refreshExtensionWorkspace();
+            schedulePresetSave();
+            updateToolbar();
+        }
+        const status=document.getElementById('characterCardBundleRestoreStatus');
+        if(status)status.textContent=label+'已恢复；恢复前备份已保存在本地浏览器。';
+        showToast(label+'恢复完成；原数据备份已保存','success');
     }
 
     function fieldPreview(data,key){
@@ -599,6 +688,10 @@
     window.unlinkCurrentCardResource=unlinkCurrentCardResource;
     window.refreshCharacterCardLinks=refreshCharacterCardLinks;
     window.exportCharacterResourceBundle=exportCharacterResourceBundle;
+    window.stageCharacterResourceBundle=stageCharacterResourceBundle;
+    window.clearStagedCharacterResourceBundle=clearStagedCharacterResourceBundle;
+    window.importStagedBundleCharacter=importStagedBundleCharacter;
+    window.restoreStagedBundleResource=restoreStagedBundleResource;
     window.updateCharacterCardField=updateCharacterCardField;
     window.applyCharacterCardRawJson=applyCharacterCardRawJson;
     window.exportCharacterCardPng=exportCharacterCardPng;
