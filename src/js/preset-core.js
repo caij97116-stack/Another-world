@@ -257,6 +257,30 @@ function isPresetPayloadObject(value){
             element.style.height=nextHeight+'px';
             element.style.overflowY=element.scrollHeight>maxHeight?'auto':'hidden';
         }
+        function applyPromptFilters(){
+            const container=document.getElementById('promptItemsContainer');
+            const search=document.getElementById('promptSearchInput');
+            const status=document.getElementById('promptStatusFilter');
+            const summary=document.getElementById('promptFilterSummary');
+            if(!container)return;
+            const query=String(search?.value||'').trim().toLocaleLowerCase();
+            const mode=status?.value||'all';
+            const cards=[...container.querySelectorAll('.prompt-item-card')];
+            let visible=0;
+            cards.forEach(card=>{
+                const matchesText=!query||String(card.dataset.search||'').toLocaleLowerCase().includes(query);
+                const disabled=card.dataset.disabled==='true';
+                const matchesStatus=mode==='all'||(mode==='enabled'&&!disabled)||(mode==='disabled'&&disabled);
+                const show=matchesText&&matchesStatus;
+                card.hidden=!show;
+                if(!show){const checkbox=card.querySelector('.prompt-item-select');if(checkbox)checkbox.checked=false}
+                else visible++;
+            });
+            if(summary)summary.textContent=cards.length?'显示 '+visible+' / '+cards.length+' 项':'';
+            let empty=container.querySelector('.prompt-filter-empty');
+            if(cards.length&&visible===0){if(!empty){empty=document.createElement('div');empty.className='regex-empty prompt-filter-empty';empty.textContent='没有符合条件的提示词，试试调整搜索词或筛选条件。';container.appendChild(empty)}empty.hidden=false}else if(empty)empty.hidden=true;
+            updatePromptBulkSelectionUI();
+        }
         function renderPromptItems(){
             document.body.classList.remove('prompt-editor-open');
             const container=document.getElementById('promptItemsContainer');
@@ -266,6 +290,7 @@ function isPresetPayloadObject(value){
             if(badge) badge.textContent=String(list.length);
             if(!list.length){
                 container.innerHTML='<div class="regex-empty">当前预设没有 prompts 条目，点击「新建条目」添加</div>';
+                applyPromptFilters();
                 return;
             }
             container.innerHTML=list.map((item,i)=>{
@@ -278,7 +303,7 @@ function isPresetPayloadObject(value){
                 const enabled=prompt.enabled!==false;
                 const systemPrompt=prompt.system_prompt===true;
                 return `
-                <article class="regex-card prompt-item-card" id="prompt-item-${i}">
+                <article class="regex-card prompt-item-card" id="prompt-item-${i}" data-disabled="${enabled?'false':'true'}" data-search="${escapeHtml([title,identifier,role,content].join(' '))}">
                     <div class="regex-card-header">
                         <label class="prompt-bulk-item-check" title="选择此提示词"><input type="checkbox" class="prompt-item-select" data-index="${i}" aria-label="选择提示词 ${escapeHtml(title)}"></label>
                         <div class="prompt-item-heading">
@@ -329,6 +354,7 @@ function isPresetPayloadObject(value){
                     </div>
                 </article>`;
             }).join('');
+            applyPromptFilters();
             container.querySelectorAll('.prompt-content-editor').forEach(autoResizeLongPrompt);
             list.forEach((item,index)=>refreshPromptContentPreview(index));
             container.querySelectorAll('.prompt-item-select').forEach(input=>input.addEventListener('change',updatePromptBulkSelectionUI));
@@ -386,7 +412,7 @@ function isPresetPayloadObject(value){
             if(count)count.textContent=String(found.length);
         }
         function getSelectedPromptIndexes(){
-            return [...document.querySelectorAll('.prompt-item-select:checked')]
+            return [...document.querySelectorAll('.prompt-item-card:not([hidden]) .prompt-item-select:checked')]
                 .map(input=>Number(input.dataset.index))
                 .filter(index=>Number.isInteger(index)&&index>=0&&index<getPresetPromptItems().length)
                 .sort((a,b)=>a-b);
@@ -395,7 +421,8 @@ function isPresetPayloadObject(value){
             const selected=getSelectedPromptIndexes();
             const count=document.getElementById('promptBulkSelectionCount');
             const selectAll=document.getElementById('promptSelectAll');
-            const total=getPresetPromptItems().length;
+            const visibleInputs=[...document.querySelectorAll('.prompt-item-card:not([hidden]) .prompt-item-select')];
+            const total=visibleInputs.length;
             if(count)count.textContent='已选 '+selected.length+' 项';
             if(selectAll){
                 selectAll.checked=total>0&&selected.length===total;
@@ -404,7 +431,7 @@ function isPresetPayloadObject(value){
             }
         }
         function setPromptSelectAll(checked){
-            document.querySelectorAll('.prompt-item-select').forEach(input=>{input.checked=Boolean(checked)});
+            document.querySelectorAll('.prompt-item-card:not([hidden]) .prompt-item-select').forEach(input=>{input.checked=Boolean(checked)});
             updatePromptBulkSelectionUI();
         }
         function swapPromptOrderReferences(first,second){
@@ -1463,3 +1490,5 @@ function jumpToPresetDiagnostic(targetId,promptIndex){
         if(target.matches('input,textarea,select'))target.focus({preventScroll:true});
     }
 }
+
+window.applyPromptFilters=applyPromptFilters;
