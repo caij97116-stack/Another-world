@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const source = await readFile(new URL('../src/js/character-card.js', import.meta.url), 'utf8');
 const exposed = source.replace(/\}\)\(\);\s*$/, `
-    window.__test = { getCardData, stageCharacterResourceBundle, getStagedBundle: () => stagedResourceBundle };
+    window.__test = { getCardData, parsePng, stageCharacterResourceBundle, getStagedBundle: () => stagedResourceBundle };
 })();
 `);
 assert.notEqual(exposed, source, 'test seam must match the character-card IIFE');
@@ -103,4 +103,49 @@ test('rejects malformed worldbook entries', async () => {
   invalid.manifest.resources[0].fingerprint = fingerprint(invalid.resources.worldbook);
   await stage(JSON.stringify(invalid)); assert.equal(api.getStagedBundle(), null);
   assert.match(messages.at(-1).message, /世界书条目结构无效/);
+});
+
+
+function pngChunk(type, payload) {
+  const typeBytes = new TextEncoder().encode(type);
+  const chunk = new Uint8Array(payload.length + 12);
+  const view = new DataView(chunk.buffer);
+  view.setUint32(0, payload.length);
+  chunk.set(typeBytes, 4);
+  chunk.set(payload, 8);
+  view.setUint32(payload.length + 8, 0);
+  return chunk;
+}
+function makePng(textChunks) {
+  const signature = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+  const chunks = textChunks.map(([key, value]) =>
+    pngChunk('tEXt', new TextEncoder().encode(key + '\\0' + value))
+  );
+  chunks.push(pngChunk('IEND', new Uint8Array()));
+  const size = signature.length + chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const output = new Uint8Array(size);
+  let offset = 0;
+  output.set(signature, offset); offset += signature.length;
+  for (const chunk of chunks) { output.set(chunk, offset); offset += chunk.length; }
+  return output.buffer;
+}
+
+test('reads legacy V1 flat PNG text metadata', async () => {
+  const png = makePng([['name', 'Legacy PNG'], ['description', 'legacy description']]);
+  const parsed = await api.parsePng(png);
+  assert.equal(parsed.name, 'Legacy PNG');
+  assert.equal(parsed.data.description, 'legacy description');
+  assert.equal(parsed.chunk, 'V1 flat tEXt');
+});
+
+test('prefers ccv3 PNG metadata when both ccv3 and chara are present', async () => {
+  const v2 = JSON.stringify({ spec: 'chara_card_v2', spec_version: '2.0', data: { name: 'Fallback V2' } });
+  const v3 = JSON.stringify({ spec: 'chara_card_v3', spec_version: '3.0', data: {
+    name: 'Preferred V3', assets: [{ type: 'icon', uri: 'embedded://v3' }]
+  } });
+  const png = makePng([['chara', v2], ['ccv3', v3]]);
+  const parsed = await api.parsePng(png);
+  assert.equal(parsed.name, 'Preferred V3');
+  assert.equal(parsed.chunk, 'ccv3');
+  assert.equal(parsed.data.assets[0].uri, 'embedded://v3');
 });
