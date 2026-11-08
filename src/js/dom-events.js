@@ -59,6 +59,12 @@ document.addEventListener('click', (event) => {
         case 'switch-extension-tab':
             window.switchExtensionTab(target.dataset.tab);
             break;
+        case 'trigger-character-card-import':
+            window.triggerCharacterCardImport();
+            break;
+        case 'export-character-card-json':
+            window.exportCharacterCardJson();
+            break;
         case 'test-regex-script':
             window.testRegexScript(Number(target.dataset.index));
             break;
@@ -251,6 +257,9 @@ document.addEventListener('change', (event) => {
             break;
         case 'preset-import':
             window.onPresetFileChosen(event);
+            break;
+        case 'character-card-import':
+            window.onCharacterCardFileChosen(event);
             break;
     }
 });
