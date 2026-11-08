@@ -351,6 +351,40 @@
         await importCharacterCard(file);
     }
 
+    function restoreLastBundleBackup(kind){
+        if(!['worldbook','preset'].includes(kind))return;
+        const key=kind==='worldbook'?'another_world_pre_bundle_worldbook_backup':'another_world_pre_bundle_preset_backup';
+        const raw=localStorage.getItem(key);
+        if(!raw){showToast('没有找到该工作区的恢复前备份','error');return}
+        const backup=JSON.parse(raw);
+        if(kind==='worldbook'){
+            if(!isObject(backup.data)||!isObject(backup.data.entries))throw new Error('世界书备份结构无效。');
+            pushHistory();
+            worldBookData=JSON.parse(JSON.stringify(backup.data));
+            Object.keys(worldBookData.entries).forEach(uid=>{worldBookData.entries[uid]=sanitizeEntry(worldBookData.entries[uid],uid)});
+            const keys=Object.keys(worldBookData.entries);
+            activeUid=keys[0]||null;
+            selectedUids.clear();selectMode=false;
+            renderEntryList();loadActiveEntry();updateEntryCount();scheduleAutoSave();updateToolbar();
+        }else{
+            const items=backup.items;
+            if(!isObject(items))throw new Error('预设备份结构无效。');
+            const keys=['tavern_preset_editor_data','tavern_preset_editor_version','tavern_preset_editor_envelope','tavern_preset_editor_array_paths'];
+            keys.forEach(storageKey=>{
+                const value=Object.prototype.hasOwnProperty.call(items,storageKey)?items[storageKey]:null;
+                if(value===null)localStorage.removeItem(storageKey);else localStorage.setItem(storageKey,value);
+            });
+            presetData=items.tavern_preset_editor_data?JSON.parse(items.tavern_preset_editor_data):null;
+            presetVersion=parseInt(items.tavern_preset_editor_version,10)||1;
+            presetEnvelope=items.tavern_preset_editor_envelope?JSON.parse(items.tavern_preset_editor_envelope):null;
+            presetArrayPaths=items.tavern_preset_editor_array_paths?JSON.parse(items.tavern_preset_editor_array_paths):{};
+            renderPresetUI();refreshExtensionWorkspace();updateToolbar();
+        }
+        const status=document.getElementById('characterCardBundleRestoreStatus');
+        if(status)status.textContent='已恢复最近一次资源包导入前备份。';
+        showToast('已恢复最近一次本地备份','success');
+    }
+
     function restoreStagedBundleResource(kind){
         if(!stagedResourceBundle||!['worldbook','preset'].includes(kind))return;
         const payload=stagedResourceBundle.resources[kind];
@@ -382,7 +416,7 @@
             updateToolbar();
         }
         const status=document.getElementById('characterCardBundleRestoreStatus');
-        if(status)status.textContent=label+'已恢复；恢复前备份已保存在本地浏览器。';
+        if(status)status.innerHTML=escapeCardHtml(label+'已恢复；恢复前备份已保存在本地浏览器。')+' <button class="btn btn-sm btn-ghost" type="button" data-action="bundle-restore-backup" data-kind="'+kind+'">撤销并恢复导入前备份</button>';
         showToast(label+'恢复完成；原数据备份已保存','success');
     }
 
@@ -706,6 +740,7 @@
     window.clearStagedCharacterResourceBundle=clearStagedCharacterResourceBundle;
     window.importStagedBundleCharacter=importStagedBundleCharacter;
     window.restoreStagedBundleResource=restoreStagedBundleResource;
+    window.restoreLastBundleBackup=restoreLastBundleBackup;
     window.updateCharacterCardField=updateCharacterCardField;
     window.applyCharacterCardRawJson=applyCharacterCardRawJson;
     window.exportCharacterCardPng=exportCharacterCardPng;
