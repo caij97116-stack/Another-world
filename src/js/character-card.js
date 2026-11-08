@@ -233,8 +233,6 @@
 
     function exportCharacterResourceBundle(){
         if(!currentCard||!currentCardLinkKey){showToast('请先载入角色卡','error');return}
-        if(typeof syncCurrentEntry==='function'&&typeof worldBookData!=='undefined'&&activeUid)syncCurrentEntry(true);
-        if(typeof syncPreset==='function'&&typeof presetData!=='undefined'&&presetData)syncPreset();
 
         const store=loadCardLinkStore();
         const links=store[currentCardLinkKey]||{};
