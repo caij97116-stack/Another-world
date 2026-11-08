@@ -314,6 +314,7 @@ function isPresetPayloadObject(value){
                         </div>
                         <div class="regex-card-actions">
                             <button class="btn btn-sm" type="button" data-action="toggle-prompt-editor" data-index="${i}">展开编辑</button>
+                            <button class="btn btn-sm" type="button" data-action="duplicate-prompt-item" data-index="${i}">复制</button>
                             <button class="btn btn-sm" type="button" data-action="move-prompt-item" data-index="${i}" data-direction="-1" ${i===0?'disabled':''}>上移</button>
                             <button class="btn btn-sm" type="button" data-action="move-prompt-item" data-index="${i}" data-direction="1" ${i===list.length-1?'disabled':''}>下移</button>
                             <button class="btn btn-sm btn-danger" type="button" data-action="delete-prompt-item" data-index="${i}">删除</button>
@@ -696,6 +697,36 @@ function isPresetPayloadObject(value){
             renderPromptItems();refreshPromptOrderAfterSync();
             const sec=document.getElementById('secPromptItems');if(sec)sec.classList.remove('collapsed');
             showToast('已新增提示词条目','success');
+        }
+        function duplicatePromptItem(index){
+            if(!presetData||!Array.isArray(presetData.prompts)||index<0||index>=presetData.prompts.length)return;
+            const source=presetData.prompts[index];
+            if(!source||typeof source!=='object'||Array.isArray(source)){showToast('该提示词不是可复制的对象结构','warning');return}
+            let copy;
+            try{copy=JSON.parse(JSON.stringify(source))}catch(error){showToast('无法复制该提示词：数据无法序列化','error');return}
+            const oldId=typeof source.identifier==='string'?source.identifier:'';
+            const sourceUnique=!!oldId&&presetData.prompts.filter((item,i)=>i!==index&&item&&item.identifier===oldId).length===0;
+            const newId=makeUniquePromptIdentifier();
+            copy.identifier=newId;
+            copy.name=(copy.name||source.identifier||('提示词 '+(index+1)))+'（副本）';
+            recordPresetEditHistory(false);
+            presetData.prompts.splice(index+1,0,copy);
+            let skipped=false,inserted=0;
+            if(sourceUnique){
+                getPromptOrderGroups().forEach(group=>{
+                    const matches=[];
+                    group.order.forEach((entry,entryIndex)=>{if(entry&&typeof entry==='object'&&!Array.isArray(entry)&&entry.identifier===oldId)matches.push(entryIndex)});
+                    if(matches.length===1){
+                        const original=group.order[matches[0]];
+                        const clonedEntry=Object.assign({},original,{identifier:newId});
+                        group.order.splice(matches[0]+1,0,clonedEntry);
+                        inserted++;
+                    }else if(matches.length>1)skipped=true;
+                });
+            }else if(oldId)skipped=true;
+            renderPromptItems();refreshPromptOrderAfterSync();
+            if(skipped)showToast('已复制提示词；部分排序组因 identifier 不唯一，未自动插入引用','warning');
+            else showToast('已复制提示词并同步 '+inserted+' 个可识别排序位置','success');
         }
         function deletePromptItem(index){
             if(!presetData||!Array.isArray(presetData.prompts)||index<0||index>=presetData.prompts.length)return;
