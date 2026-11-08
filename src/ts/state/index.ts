@@ -29,3 +29,17 @@ export {
   buildPresetExportObject
 } from "./preset-import";
 export type { ParsedPresetImport } from "./preset-import";
+export {
+  getPresetArrayAtPath,
+  ensurePresetArrayAlias,
+  getActivePresetArray,
+  setActivePresetArray,
+  definePresetViewField,
+  normalizeRegexScript,
+  normalizeScript,
+  normalizeScripts
+} from "./preset-items";
+export type {
+  PresetBooleanParser,
+  PresetArrayLocation as PresetItemArrayLocation
+} from "./preset-items";
