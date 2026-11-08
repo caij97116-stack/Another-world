@@ -79,6 +79,12 @@ function normalizeRegexScript(raw, index){
                         <label class="switch-row"><input type="checkbox" ${r.promptOnly?'checked':''} data-change-action="update-regex-field" data-index="${i}" data-field="promptOnly" data-value-type="boolean"><span>仅 Prompt</span></label>
                         <label class="switch-row"><input type="checkbox" ${r.runOnEdit?'checked':''} data-change-action="update-regex-field" data-index="${i}" data-field="runOnEdit" data-value-type="boolean"><span>编辑时运行</span></label>
                     </div>
+                    <div class="regex-testbench">
+                        <div class="regex-testbench-heading"><strong>正则测试台</strong><span>仅测试，不会修改预设</span></div>
+                        <textarea class="form-control regex-test-input" rows="4" placeholder="粘贴一段待处理文本……"></textarea>
+                        <div class="regex-test-actions"><button class="btn btn-sm btn-primary" type="button" data-action="test-regex-script" data-index="${i}">运行匹配与替换</button></div>
+                        <pre class="regex-test-result" id="regex-test-result-${i}" aria-live="polite">等待测试</pre>
+                    </div>
                 </div>`;
             }).join('');
         }
@@ -204,10 +210,106 @@ function normalizeRegexScript(raw, index){
                     </div>
                     <div class="regex-field">
                         <label>脚本内容</label>
-                        <textarea class="form-control script-code" rows="8" data-change-action="update-script-field" data-index="${i}" data-field="code">${escapeHtml(s.code || '')}</textarea>
+                        <textarea class="form-control script-code" rows="16" spellcheck="false" data-change-action="update-script-field" data-index="${i}" data-field="code">${escapeHtml(s.code || '')}</textarea>
+                    </div>
+                    <div class="script-testbench">
+                        <div class="regex-testbench-heading"><strong>脚本沙盒测试</strong><span>不提供酒馆 API / 网络访问</span></div>
+                        <textarea class="form-control script-test-input" rows="3" placeholder='测试输入，可填写 JSON，例如 {"text":"hello"}'></textarea>
+                        <div class="regex-test-actions"><button class="btn btn-sm btn-primary" type="button" data-action="run-script-sandbox" data-index="${i}">在隔离环境中运行</button></div>
+                        <pre class="regex-test-result" id="script-test-result-${i}" aria-live="polite">脚本不会自动执行，点击按钮后才会测试</pre>
                     </div>
                 </div>`;
             }).join('');
+        }
+
+
+        // 正则测试在独立 Worker 中运行，避免复杂表达式阻塞主界面。
+        function testRegexScript(index){
+            const list=getActivePresetArray('regex_scripts')||[];
+            const rule=list[index];
+            const card=document.querySelector('.regex-card[data-idx="'+index+'"]');
+            const input=card&&card.querySelector('.regex-test-input');
+            const output=document.getElementById('regex-test-result-'+index);
+            if(!rule||!input||!output)return;
+            if(!String(rule.findRegex||'')){output.textContent='请先填写查找正则表达式。';return}
+            const workerSource=[
+                "self.onmessage=function(event){",
+                "try{",
+                "let source=String(event.data.pattern||'');let flags='g';",
+                "if(source.charAt(0)==='/'){const end=source.lastIndexOf('/');if(end>0){flags=source.slice(end+1)||'g';source=source.slice(1,end);}}",
+                "if(!flags.includes('g'))flags+='g';",
+                "const expression=new RegExp(source,flags);",
+                "const input=String(event.data.input||'');",
+                "const matches=Array.from(input.matchAll(expression));",
+                "const replaced=input.replace(expression,String(event.data.replacement||''));",
+                "self.postMessage({ok:true,count:matches.length,result:replaced});",
+                "}catch(error){self.postMessage({ok:false,error:String(error&&error.message||error)});}",
+                "};"
+            ].join("\n");
+            let worker,url,timer;
+            try{
+                url=URL.createObjectURL(new Blob([workerSource],{type:'text/javascript'}));
+                worker=new Worker(url);
+                output.textContent='正在测试……';
+                timer=setTimeout(()=>{worker.terminate();URL.revokeObjectURL(url);output.textContent='测试超时，已终止本次正则运行。';},1500);
+                worker.onmessage=event=>{
+                    clearTimeout(timer);worker.terminate();URL.revokeObjectURL(url);
+                    const data=event.data||{};
+                    output.textContent=data.ok?'匹配数量：'+data.count+'\n\n替换结果：\n'+data.result:'正则错误：'+data.error;
+                    output.classList.toggle('is-error',!data.ok);
+                };
+                worker.onerror=()=>{
+                    clearTimeout(timer);worker.terminate();URL.revokeObjectURL(url);
+                    output.textContent='测试 Worker 启动失败，请检查浏览器是否允许本地 Worker。';
+                    output.classList.add('is-error');
+                };
+                worker.postMessage({pattern:rule.findRegex,replacement:rule.replaceString,input:input.value});
+            }catch(error){
+                if(worker)worker.terminate();
+                if(url)URL.revokeObjectURL(url);
+                output.textContent='无法启动正则测试：'+String(error.message||error);
+                output.classList.add('is-error');
+            }
+        }
+
+        let scriptSandboxSequence=0;
+        function runScriptSandbox(index){
+            const list=getActivePresetArray('scripts')||[];
+            const script=list[index];
+            const card=document.querySelector('.script-card[data-idx="'+index+'"]');
+            const inputField=card&&card.querySelector('.script-test-input');
+            const output=document.getElementById('script-test-result-'+index);
+            if(!script||!inputField||!output)return;
+            let inputValue=inputField.value;
+            try{inputValue=JSON.parse(inputValue)}catch(e){/* 普通文本作为字符串输入 */}
+            const id='aw-script-'+(++scriptSandboxSequence);
+            const frame=document.createElement('iframe');
+            frame.setAttribute('sandbox','allow-scripts');
+            frame.setAttribute('aria-hidden','true');
+            frame.className='script-sandbox-frame';
+            frame.srcdoc='<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\' \'unsafe-eval\'; connect-src \'none\'; img-src \'none\'; media-src \'none\'; font-src \'none\'; style-src \'unsafe-inline\'; object-src \'none\'; base-uri \'none\'; form-action \'none\'"><script>window.addEventListener("message",async function(event){var data=event.data||{};if(data.type!=="aw-run-script")return;var logs=[];function format(value){try{var json=JSON.stringify(value);return json===undefined?String(value):json}catch(error){return String(value)}}var mockConsole={log:function(){logs.push(Array.from(arguments).map(format).join(" "))},info:function(){logs.push(Array.from(arguments).map(format).join(" "))},warn:function(){logs.push("WARN: "+Array.from(arguments).map(format).join(" "))},error:function(){logs.push("ERROR: "+Array.from(arguments).map(format).join(" "))}};try{var runner=new Function("input","console","context","\\\"use strict\\\";\\n"+data.code);var result=await runner(data.input,mockConsole,{sandbox:true});parent.postMessage({type:"aw-script-result",id:data.id,ok:true,result:format(result),logs:logs},"*")}catch(error){parent.postMessage({type:"aw-script-result",id:data.id,ok:false,error:String(error&&error.stack||error),logs:logs},"*")}});<\\/script>';
+            let finished=false;
+            const cleanup=()=>{window.removeEventListener('message',onMessage);clearTimeout(timeout);frame.remove()};
+            const onMessage=event=>{
+                if(event.source!==frame.contentWindow||!event.data||event.data.type!=='aw-script-result'||event.data.id!==id)return;
+                finished=true;cleanup();
+                const data=event.data;
+                output.textContent=(data.ok?'执行完成':'执行错误')+
+                    (data.result&&data.result!=='undefined'?'\n返回值：\n'+data.result:'')+
+                    (data.logs&&data.logs.length?'\n\n控制台：\n'+data.logs.join('\n'):'')+
+                    (data.error?'\n\n'+data.error:'');
+                output.classList.toggle('is-error',!data.ok);
+            };
+            window.addEventListener('message',onMessage);
+            const timeout=setTimeout(()=>{
+                if(finished)return;
+                cleanup();output.textContent='运行超时，已销毁测试沙盒。请检查是否存在无限循环或耗时操作。';output.classList.add('is-error');
+            },1800);
+            frame.addEventListener('load',()=>{
+                if(frame.contentWindow)frame.contentWindow.postMessage({type:'aw-run-script',id,code:String(script.code||''),input:inputValue},'*');
+            },{once:true});
+            output.textContent='正在隔离环境中运行……';output.classList.remove('is-error');
+            document.body.appendChild(frame);
         }
 
         function updateScriptField(idx, key, value){
