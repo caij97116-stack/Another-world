@@ -7,6 +7,7 @@
     let currentImageUrl = null;
     let currentPngBuffer = null;
     let currentPngName = '';
+    let currentCardFile = null;
     let cardDirty = false;
 
     function isObject(value){
@@ -180,6 +181,11 @@
         const isPngFile=file.type==='image/png'||file.name.toLowerCase().endsWith('.png');
         currentPngBuffer=isPngFile?file.slice(0,file.size).arrayBuffer():null;
         currentPngName=isPngFile?file.name:'';
+        currentCardFile=file;
+        const rawEditor=document.getElementById('characterCardRawJson');
+        if(rawEditor)rawEditor.value=JSON.stringify(card.root,null,2);
+        const rawStatus=document.getElementById('characterCardRawStatus');
+        if(rawStatus)rawStatus.textContent='修改不会自动应用';
         cardDirty=false;
         updateCardSaveStatus();
         const image=document.getElementById('characterCardImage');
@@ -239,7 +245,32 @@
         if(title)title.textContent=name;
         const tags=document.getElementById('characterCardTags');
         if(tags)tags.textContent=Array.isArray(data.tags)&&data.tags.length?data.tags.join(' · '):'暂无标签';
+        const rawEditor=document.getElementById('characterCardRawJson');
+        if(rawEditor)rawEditor.value=JSON.stringify(currentCard,null,2);
+        const rawStatus=document.getElementById('characterCardRawStatus');
+        if(rawStatus)rawStatus.textContent='结构化字段已同步到 JSON 编辑器';
         updateCardSaveStatus();
+    }
+
+    function applyCharacterCardRawJson(){
+        const editor=document.getElementById('characterCardRawJson');
+        const status=document.getElementById('characterCardRawStatus');
+        if(!editor||!currentCardFile)return;
+        try{
+            const root=JSON.parse(editor.value);
+            const parsed=getCardData(root);
+            const prior=currentCard;
+            const card={...parsed,container:prior.container,chunk:prior.chunk};
+            currentCard=root;
+            renderCard(card,currentCardFile);
+            cardDirty=true;
+            updateCardSaveStatus();
+            if(status)status.textContent='JSON 已通过校验并应用';
+            showToast('完整角色卡 JSON 已应用','success');
+        }catch(error){
+            if(status)status.textContent='校验失败：'+error.message;
+            showToast('JSON 未应用：'+error.message,'error');
+        }
     }
 
     function crc32(bytes){
@@ -354,6 +385,7 @@
 
     window.hasImportedCharacterCard=()=>!!currentCard;
     window.updateCharacterCardField=updateCharacterCardField;
+    window.applyCharacterCardRawJson=applyCharacterCardRawJson;
     window.exportCharacterCardPng=exportCharacterCardPng;
     window.importCharacterCard=importCharacterCard;
     window.triggerCharacterCardImport=triggerCharacterCardImport;
