@@ -1078,19 +1078,59 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         }
 
         function loadPresetFromStorage(){
-            try{
-                const raw=localStorage.getItem(PRESET_STORAGE_KEY);
-                const ver=localStorage.getItem(PRESET_VERSION_KEY);
-                const envelopeRaw=localStorage.getItem(PRESET_ENVELOPE_STORAGE_KEY);
-                const arrayPathsRaw=localStorage.getItem(PRESET_ARRAY_PATHS_KEY);
-                if(arrayPathsRaw)presetArrayPaths=JSON.parse(arrayPathsRaw)||{};
-                if(ver)presetVersion=parseInt(ver,10)||1;
-                if(envelopeRaw)presetEnvelope=JSON.parse(envelopeRaw);
-                if(raw){
-                    presetData=JSON.parse(raw);
+            const raw=localStorage.getItem(PRESET_STORAGE_KEY);
+            const ver=localStorage.getItem(PRESET_VERSION_KEY);
+            const envelopeRaw=localStorage.getItem(PRESET_ENVELOPE_STORAGE_KEY);
+            const arrayPathsRaw=localStorage.getItem(PRESET_ARRAY_PATHS_KEY);
+
+            // 辅助元数据分别恢复；某一项损坏不应阻断主体预设数据。
+            presetVersion=1;
+            if(ver){
+                const parsedVersion=parseInt(ver,10);
+                if(Number.isFinite(parsedVersion)&&parsedVersion>0)presetVersion=parsedVersion;
+            }
+
+            presetEnvelope=null;
+            if(envelopeRaw){
+                try{
+                    const parsedEnvelope=JSON.parse(envelopeRaw);
+                    if(parsedEnvelope&&typeof parsedEnvelope==='object'&&!Array.isArray(parsedEnvelope)
+                        &&typeof parsedEnvelope.key==='string'
+                        &&parsedEnvelope.wrapper&&typeof parsedEnvelope.wrapper==='object'&&!Array.isArray(parsedEnvelope.wrapper)
+                        &&Object.prototype.hasOwnProperty.call(parsedEnvelope.wrapper,parsedEnvelope.key)){
+                        presetEnvelope=parsedEnvelope;
+                    }
+                }catch(e){console.warn('预设包装缓存无效，已忽略',e)}
+            }
+
+            presetArrayPaths={};
+            if(arrayPathsRaw){
+                try{
+                    const parsedPaths=JSON.parse(arrayPathsRaw);
+                    if(parsedPaths&&typeof parsedPaths==='object'&&!Array.isArray(parsedPaths)){
+                        Object.keys(parsedPaths).forEach(alias=>{
+                            const path=parsedPaths[alias];
+                            if(Array.isArray(path)&&path.length>0&&path.every(part=>typeof part==='string'&&part.length>0)){
+                                presetArrayPaths[alias]=path.slice();
+                            }
+                        });
+                    }
+                }catch(e){console.warn('预设数组路径缓存无效，已忽略',e)}
+            }
+
+            if(raw){
+                try{
+                    const parsedData=JSON.parse(raw);
+                    if(!parsedData||typeof parsedData!=='object'||Array.isArray(parsedData))throw new Error('预设缓存主体不是有效对象');
+                    presetData=parsedData;
                     showToast('已恢复预设上次内容','success');
+                }catch(e){
+                    presetData=null;
+                    presetEnvelope=null;
+                    presetArrayPaths={};
+                    console.warn('预设主体缓存无效，无法恢复',e);
                 }
-            }catch(e){console.warn(e)}
+            }
         }
         function schedulePresetSave(){
             presetDirty=true;
