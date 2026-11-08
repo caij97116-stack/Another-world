@@ -399,3 +399,8 @@ The shared preset edit history also covers Regex and Scripts workspace changes: 
 ### Regex and script ordering
 
 The Regex and Scripts cards include adjacent move-up and move-down controls. Boundary controls are disabled, array order is preserved in the preset payload, and each reorder is recorded in the shared preset undo/redo history.
+
+
+### Extension workspace search, filters, and motion
+
+Regex and Scripts now each have a live search field and an enabled/disabled status filter. Search covers regex names, find/replace expressions and placement values; script search covers names, type, trigger and source code. Filtering is presentation-only: it hides nonmatching cards without changing the preset arrays or their order. Each toolbar reports visible versus total entries and provides an accessible empty-result message. Cards and tabs use restrained transition/entry effects, with motion disabled when the operating system requests reduced motion. The search field is filtered in place without rebuilding the input on each keystroke.
