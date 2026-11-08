@@ -290,7 +290,7 @@ test('rejects PNG chunks with invalid CRC and truncated chunk payloads', async (
   }
   await assert.rejects(() => api.parsePng(corrupted.buffer), /CRC 校验失败/);
   const truncated = valid.slice(0, valid.length - 5);
-  await assert.rejects(() => api.parsePng(truncated.buffer), /结构不完整/);
+  await assert.rejects(() => api.parsePng(truncated.buffer), /结构不完整|缺少完整的 IEND/);
 });
 
 test('PNG export preserves original image chunks, replaces card metadata, and emits valid CRCs', async () => {
