@@ -182,6 +182,9 @@ document.addEventListener('click', (event) => {
         case 'duplicate-script':
             window.duplicateScript(Number(target.dataset.index));
             break;
+        case 'toggle-script-fullscreen':
+            window.toggleScriptEditorFocus(Number(target.dataset.index));
+            break;
         case 'move-script':
             window.moveScript(Number(target.dataset.index),Number(target.dataset.direction));
             break;
@@ -394,3 +397,5 @@ document.addEventListener('keydown',event=>{
     if(key==='y'||(key==='z'&&event.shiftKey))window.redoPresetEdit();
     else window.undoPresetEdit();
 });
+
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.querySelector('.script-code.is-fullscreen')){event.preventDefault();window.exitScriptEditorFocus()}});
