@@ -295,9 +295,13 @@
                 </div>
                 <div class="character-card-fileline">
                     <span>已载入：<strong id="characterCardFileName"></strong></span>
-                    <button class="btn btn-sm btn-primary" type="button" data-action="export-character-card-json" id="characterCardExportJson" disabled>导出原始 JSON</button>
+                    <div class="character-card-export-actions">
+                        <button class="btn btn-sm" type="button" data-action="export-character-card-json" id="characterCardExportJson" disabled>导出 JSON</button>
+                        <button class="btn btn-sm btn-primary" type="button" data-action="export-character-card-png" id="characterCardExportPng" disabled>写回并导出 PNG</button>
+                    </div>
                 </div>
                 <div class="character-card-stats" id="characterCardStats"></div>
+                <p class="character-card-edit-status" id="characterCardEditStatus">修改会同步到导出数据</p>
                 <div class="character-card-section">
                     <div class="panel-header"><h3>角色内容</h3></div>
                     <div id="characterCardFields"></div>
