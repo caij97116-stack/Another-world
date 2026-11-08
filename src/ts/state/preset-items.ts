@@ -19,6 +19,13 @@ const SCRIPT_ARRAY_PATHS: PresetArrayPath[] = [
   ["tavernhelper", "scripts"], ["TavernHelper", "scripts"], ["mjs_scripts"]
 ];
 
+/** Validate a non-empty nested property path used by preset array aliases. */
+export function isPresetArrayPath(value: unknown): value is PresetArrayPath {
+  return Array.isArray(value)
+    && value.length > 0
+    && value.every((part): part is string => typeof part === "string" && part.length > 0);
+}
+
 function isRecord(value: unknown): value is PresetRecord {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -28,7 +35,7 @@ export function getPresetArrayAtPath(
   root: PresetRecord | null,
   path: PresetArrayPath
 ): PresetArrayLocation | null {
-  if (!root || path.length === 0) return null;
+  if (!root || !isPresetArrayPath(path)) return null;
   let current: unknown = root;
   for (let index = 0; index < path.length - 1; index += 1) {
     if (!isRecord(current)) return null;
@@ -38,6 +45,14 @@ export function getPresetArrayAtPath(
   const key = path[path.length - 1];
   const value = current[key];
   return Array.isArray(value) ? { owner: current, key, value } : null;
+}
+
+/** Backward-compatible descriptive alias for resolving an existing path. */
+export function findPresetArrayAtPath(
+  root: PresetRecord | null,
+  path: PresetArrayPath
+): PresetArrayLocation | null {
+  return getPresetArrayAtPath(root, path);
 }
 
 /**
