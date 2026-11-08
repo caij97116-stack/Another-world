@@ -394,3 +394,8 @@ Undo and redo restore the preset payload together with its recognized outer wrap
 ### Regex and script editor history coverage
 
 The shared preset edit history also covers Regex and Scripts workspace changes: regex field edits and placement updates, enable/disable, add, and delete; script name/type/trigger/code edits, enable/disable, add, and delete. Script code typing is coalesced into a single undo step while the user continues typing. Test runs and sandbox output are intentionally excluded because they do not mutate preset data. Undo/redo restores the same preset snapshot and refreshes the extension lists, so these edits remain part of the active preset and its normal import/export data.
+
+
+### Regex and script ordering
+
+The Regex and Scripts cards include adjacent move-up and move-down controls. Boundary controls are disabled, array order is preserved in the preset payload, and each reorder is recorded in the shared preset undo/redo history.
