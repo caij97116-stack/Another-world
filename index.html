@@ -779,12 +779,39 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             const value=Number.isFinite(parsed)?parsed:fallback;
             return typeof previousValue==='string'?String(value):value;
         }
+        function parseEntryBoolean(value,fallback=false){
+            if(value===undefined||value===null)return fallback;
+            if(typeof value==='string'){
+                const normalized=value.trim().toLowerCase();
+                if(['false','0','no','off',''].includes(normalized))return false;
+                if(['true','1','yes','on'].includes(normalized))return true;
+            }
+            return Boolean(value);
+        }
+        function getEntryEnabled(entry){
+            if(Object.prototype.hasOwnProperty.call(entry,'disable'))return !parseEntryBoolean(entry.disable,false);
+            if(Object.prototype.hasOwnProperty.call(entry,'enabled'))return parseEntryBoolean(entry.enabled,true);
+            return true;
+        }
+        function setEntryEnabled(entry,enabled){
+            const hasDisable=Object.prototype.hasOwnProperty.call(entry,'disable');
+            const hasEnabled=Object.prototype.hasOwnProperty.call(entry,'enabled');
+            if(hasDisable)entry.disable=!enabled;
+            if(hasEnabled)entry.enabled=enabled;
+            if(!hasDisable&&!hasEnabled)entry.enabled=enabled;
+        }
         function sanitizeEntry(raw,uid){
-            const enabled=raw.enabled!==undefined?!!raw.enabled:(raw.disable!==undefined?!raw.disable:true);
+            raw=raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{};
+            const enabled=getEntryEnabled(raw);
             // 始终以 entries 的键为准，避免 entry.uid 与键不一致导致点击后“消失”
             const canonicalUid = (uid !== undefined && uid !== null && uid !== '') ? String(uid) : String(raw.uid !== undefined && raw.uid !== null ? raw.uid : Date.now());
             // 以原始条目为底稿，只覆盖编辑器明确管理的字段；未知字段/嵌套扩展原样保留。
-            return{...raw,uid:canonicalUid,comment:raw.comment||raw.title||'未命名条目',content:raw.content||'',constant:!!raw.constant,selective:!!raw.selective,order:raw.order!==undefined?raw.order:100,position:raw.position!==undefined?raw.position:0,disable:!enabled,enabled:enabled,probability:raw.probability!==undefined?raw.probability:100};
+            const normalized={...raw,uid:canonicalUid,comment:raw.comment||raw.title||'未命名条目',content:raw.content||'',order:raw.order!==undefined?raw.order:100,position:raw.position!==undefined?raw.position:0,probability:raw.probability!==undefined?raw.probability:100};
+            if(Object.prototype.hasOwnProperty.call(raw,'constant'))normalized.constant=parseEntryBoolean(raw.constant);
+            if(Object.prototype.hasOwnProperty.call(raw,'selective'))normalized.selective=parseEntryBoolean(raw.selective);
+            if(Object.prototype.hasOwnProperty.call(raw,'disable'))normalized.disable=!enabled;
+            if(Object.prototype.hasOwnProperty.call(raw,'enabled'))normalized.enabled=enabled;
+            return normalized;
         }
         function exportWorldBook(){
             if(!worldBookData.entries||Object.keys(worldBookData.entries).length===0){showToast('当前没有可导出的条目','error');return}
@@ -808,7 +835,7 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         function clearSelection(){selectedUids.clear();selectMode=false;updateSelectModeUI();renderEntryList()}
         function bulkSetEnabled(enabled){
             if(selectedUids.size===0)return;pushHistory();
-            selectedUids.forEach(uid=>{if(worldBookData.entries[uid]){worldBookData.entries[uid].enabled=enabled;worldBookData.entries[uid].disable=!enabled}});
+            selectedUids.forEach(uid=>{if(worldBookData.entries[uid])setEntryEnabled(worldBookData.entries[uid],enabled)});
             renderEntryList();loadActiveEntry();scheduleAutoSave();showToast(`已${enabled?'启用':'禁用'} ${selectedUids.size} 个条目`);clearSelection();
         }
         function bulkDelete(){
@@ -841,7 +868,7 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
                 const title=entry.comment||'未命名条目',keys=listFieldText(entry.key),tags=listFieldText(entry.tags);
                 if(searchVal&&!title.toLowerCase().includes(searchVal)&&!keys.toLowerCase().includes(searchVal)&&!tags.toLowerCase().includes(searchVal)&&!(entry.content||'').toLowerCase().includes(searchVal))return;
                 visibleCount++;
-                const isEnabled=entry.enabled!==false&&!entry.disable,isSelected=selectedUids.has(uid);
+                const isEnabled=getEntryEnabled(entry),isSelected=selectedUids.has(uid);
                 const card=document.createElement('div');
                 card.className=`entry-card ${String(activeUid)===uid?'active':''} ${!isEnabled?'disabled-entry':''} ${isSelected?'selected':''}`;
                 card.dataset.uid=uid;
@@ -874,7 +901,7 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             const entry=worldBookData.entries[lookupUid];
             activeUid=lookupUid;
             form.style.display='block';empty.style.display='none';if(preview)preview.style.display='block';if(btnDelete)btnDelete.style.display='inline-flex';
-            document.getElementById('field_enabled').checked=entry.enabled!==false&&!entry.disable;
+            document.getElementById('field_enabled').checked=getEntryEnabled(entry);
             document.getElementById('field_comment').value=entry.comment||'';
             document.getElementById('field_tags').value=listFieldText(entry.tags);
             document.getElementById('field_key').value=listFieldText(entry.key);
@@ -884,15 +911,15 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             document.getElementById('field_order').value=entry.order!==undefined?entry.order:100;
             document.getElementById('field_depth').value=entry.scanDepth!==undefined?entry.scanDepth:(entry.depth!==undefined?entry.depth:4);
             document.getElementById('field_probability').value=entry.probability!==undefined?entry.probability:100;
-            document.getElementById('field_constant').checked=!!entry.constant;
-            document.getElementById('field_selective').checked=!!entry.selective;
+            document.getElementById('field_constant').checked=parseEntryBoolean(entry.constant);
+            document.getElementById('field_selective').checked=parseEntryBoolean(entry.selective);
             if(isFullscreen)document.getElementById('fsTitle').textContent=entry.comment||'编辑条目';
             updateFullscreenBtn();runTriggerPreview();
         }
         function syncCurrentEntry(skipRender){
             if(!activeUid||!worldBookData.entries[String(activeUid)])return;
             const entry=worldBookData.entries[String(activeUid)],isEnabled=document.getElementById('field_enabled').checked;
-            entry.enabled=isEnabled;entry.disable=!isEnabled;
+            setEntryEnabled(entry,isEnabled);
             entry.comment=document.getElementById('field_comment').value;
             entry.tags=writeListPreservingType(entry.tags,document.getElementById('field_tags').value);
             entry.key=writeListPreservingType(entry.key,document.getElementById('field_key').value);
