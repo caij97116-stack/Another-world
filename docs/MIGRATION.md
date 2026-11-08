@@ -221,7 +221,7 @@ Static checks performed for this change: all nine loaded JavaScript files parse 
 
 ## Independent character-card workspace: import and inspection
 
-The character-card workspace is a separate page and resource domain. It currently imports SillyTavern character-card JSON (flat V1 and V2/V3 envelopes) and PNG files containing `chara` or `ccv3` text metadata. When both PNG payloads exist, the parser prefers `ccv3`. It reads PNG `tEXt`, `zTXt`, and `iTXt` metadata chunks, including deflate-compressed text where the browser supports `DecompressionStream`.
+The character-card workspace is a separate page and resource domain. It currently imports SillyTavern character-card JSON (flat V1 and V2/V3 envelopes) and PNG files containing `chara` or `ccv3` text metadata, plus legacy V1 PNGs that store individual fields in separate text chunks. When both PNG payloads exist, the parser prefers `ccv3`. It reads PNG `tEXt`, `zTXt`, and `iTXt` metadata chunks, including deflate-compressed text where the browser supports `DecompressionStream`.
 
 The imported card is retained as its original parsed JSON object. The preview shows common character fields, tags, alternate-greeting count, embedded character-book count, extension-key count, and unknown field names. Export currently writes that preserved JSON object to a standalone `.json` file. PNG artwork is previewed from the original local file; this first phase does not rewrite or recompress PNG images.
 
