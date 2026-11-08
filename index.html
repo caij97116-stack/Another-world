@@ -1195,23 +1195,36 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
 
         
         // ========== 正则脚本管理 ==========
-        function ensureRegexScripts(){
+        function ensurePresetArrayAlias(alias, paths){
             if(!presetData) return [];
-            if(!Array.isArray(presetData.regex_scripts)){
-                if(Array.isArray(presetData.regexScripts)) presetData.regex_scripts = presetData.regexScripts;
-                else if(Array.isArray(presetData.regex)) presetData.regex_scripts = presetData.regex;
-                else if(Array.isArray(presetData.regexes)) presetData.regex_scripts = presetData.regexes;
-                else if(presetData.extensions && Array.isArray(presetData.extensions.regex_scripts))
-                    presetData.regex_scripts = presetData.extensions.regex_scripts;
-                else if(presetData.extensions && Array.isArray(presetData.extensions.regexScripts))
-                    presetData.regex_scripts = presetData.extensions.regexScripts;
-                else if(presetData.tavernhelper && Array.isArray(presetData.tavernhelper.regex_scripts))
-                    presetData.regex_scripts = presetData.tavernhelper.regex_scripts;
-                else if(presetData.TavernHelper && Array.isArray(presetData.TavernHelper.regex_scripts))
-                    presetData.regex_scripts = presetData.TavernHelper.regex_scripts;
-                else presetData.regex_scripts = [];
+            if(Object.prototype.hasOwnProperty.call(presetData,alias) && Array.isArray(presetData[alias]))
+                return presetData[alias];
+
+            let owner=null, key=null;
+            for(const path of paths){
+                let current=presetData;
+                for(let i=0;i<path.length-1;i++) current=current && current[path[i]];
+                const last=path[path.length-1];
+                if(current && Array.isArray(current[last])){ owner=current; key=last; break; }
             }
-            return presetData.regex_scripts;
+
+            if(!owner){ presetData[alias]=[]; return presetData[alias]; }
+
+            // 内部统一访问别名不参与 JSON 序列化，避免导出时制造重复字段。
+            Object.defineProperty(presetData,alias,{
+                configurable:true, enumerable:false,
+                get(){ return owner[key]; },
+                set(value){ owner[key]=value; }
+            });
+            return presetData[alias];
+        }
+
+        function ensureRegexScripts(){
+            return ensurePresetArrayAlias('regex_scripts',[
+                ['regexScripts'],['regex'],['regexes'],
+                ['extensions','regex_scripts'],['extensions','regexScripts'],
+                ['tavernhelper','regex_scripts'],['TavernHelper','regex_scripts']
+            ]);
         }
 
         function normalizeRegexScript(raw, index){
@@ -1351,23 +1364,11 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         
         // ========== 脚本管理（酒馆助手等） ==========
         function ensureScripts(){
-            if(!presetData) return [];
-            if(!Array.isArray(presetData.scripts)){
-                if(Array.isArray(presetData.tavern_helper_scripts)) presetData.scripts = presetData.tavern_helper_scripts;
-                else if(Array.isArray(presetData.tavernhelper_scripts)) presetData.scripts = presetData.tavernhelper_scripts;
-                else if(Array.isArray(presetData.tavernHelperScripts)) presetData.scripts = presetData.tavernHelperScripts;
-                else if(presetData.extensions && Array.isArray(presetData.extensions.scripts))
-                    presetData.scripts = presetData.extensions.scripts;
-                else if(presetData.extensions && Array.isArray(presetData.extensions.tavern_helper_scripts))
-                    presetData.scripts = presetData.extensions.tavern_helper_scripts;
-                else if(presetData.tavernhelper && Array.isArray(presetData.tavernhelper.scripts))
-                    presetData.scripts = presetData.tavernhelper.scripts;
-                else if(presetData.TavernHelper && Array.isArray(presetData.TavernHelper.scripts))
-                    presetData.scripts = presetData.TavernHelper.scripts;
-                else if(Array.isArray(presetData.mjs_scripts)) presetData.scripts = presetData.mjs_scripts;
-                else presetData.scripts = [];
-            }
-            return presetData.scripts;
+            return ensurePresetArrayAlias('scripts',[
+                ['tavern_helper_scripts'],['tavernhelper_scripts'],['tavernHelperScripts'],
+                ['extensions','scripts'],['extensions','tavern_helper_scripts'],
+                ['tavernhelper','scripts'],['TavernHelper','scripts'],['mjs_scripts']
+            ]);
         }
 
         function normalizeScript(raw, index){
