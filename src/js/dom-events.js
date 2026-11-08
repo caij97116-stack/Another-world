@@ -80,6 +80,18 @@ document.addEventListener('click', (event) => {
         case 'export-character-resource-bundle':
             window.exportCharacterResourceBundle();
             break;
+        case 'trigger-character-bundle-import':
+            window.triggerCharacterBundleImport();
+            break;
+        case 'bundle-import-card':
+            window.importStagedBundleCharacter().catch(error=>showToast(error.message||'角色卡导入失败','error'));
+            break;
+        case 'bundle-restore-resource':
+            try{window.restoreStagedBundleResource(target.dataset.kind)}catch(error){showToast(error.message||'资源恢复失败','error')}
+            break;
+        case 'bundle-clear-stage':
+            window.clearStagedCharacterResourceBundle();
+            break;
         case 'test-regex-script':
             window.testRegexScript(Number(target.dataset.index));
             break;
@@ -280,6 +292,9 @@ document.addEventListener('change', (event) => {
             break;
         case 'character-card-import':
             window.onCharacterCardFileChosen(event);
+            break;
+        case 'character-bundle-import':
+            window.onCharacterBundleFileChosen(event);
             break;
     }
 });
