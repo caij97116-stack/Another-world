@@ -159,6 +159,7 @@ document.addEventListener('input', (event) => {
         case 'sync-preset-counts':
             window.syncPreset();
             window.updateCharCounts();
+            window.autoResizeLongPrompt(target);
             break;
         case 'update-prompt-item-field':
             window.updatePromptItemField(Number(target.dataset.index), target.dataset.field, target.value);
