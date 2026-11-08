@@ -932,6 +932,11 @@ function jumpToPresetDiagnostic(targetId,promptIndex){
     }
     const target=document.getElementById(String(targetId||''));
     if(target){
+        let parent=target;
+        while(parent&&parent!==document.body){
+            if(parent.classList?.contains('collapsible-body'))parent.classList.remove('collapsed');
+            parent=parent.parentElement;
+        }
         target.scrollIntoView({behavior:'smooth',block:'center'});
         if(target.matches('input,textarea,select'))target.focus({preventScroll:true});
     }
