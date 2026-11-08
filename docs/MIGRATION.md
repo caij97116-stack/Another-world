@@ -134,3 +134,9 @@ A compatibility bridge, `src/ts/utils/legacy-bridge.ts`, now provides `installLe
 - Removed the two redundant files. This is a source-organization change only; the live classic-script entrypoint and runtime behavior remain unchanged.
 
 - Further consolidated `preset-import.ts` into `preset.ts`: wrapper recognition, unwrapping, and export-envelope reconstruction belong with the preset contracts and envelope metadata. The public exports remain available from `state/index.ts`.
+
+### Utility module consolidation
+
+- Grouped `escapeHtml` and `showToast` into `src/ts/utils/ui-utils.ts`, matching the existing legacy `src/js/ui-utils.js` responsibility boundary.
+- Kept `index.ts` as the single export surface and left `legacy-bridge.ts` separate because it adapts module exports to the classic-script global interface.
+- Removed the two single-purpose files. The active legacy utility script and live HTML script order remain unchanged.
