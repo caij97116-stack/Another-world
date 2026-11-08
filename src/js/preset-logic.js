@@ -291,7 +291,7 @@ function normalizeRegexScript(raw, index){
                         </div>
                     </div>
                     <div class="regex-field">
-                        <div class="script-code-toolbar"><label>脚本内容</label><button class="btn btn-sm" type="button" data-action="toggle-script-fullscreen" data-index="${i}">全屏编辑</button></div>
+                        <div class="script-code-toolbar"><label>脚本内容</label><button class="btn btn-sm" type="button" data-action="toggle-script-fullscreen" data-index="${i}" aria-expanded="false">全屏编辑</button></div>
                         <textarea class="form-control script-code" rows="16" spellcheck="false" data-input-action="update-script-field" data-index="${i}" data-field="code">${escapeHtml(s.code || '')}</textarea>
                     </div>
                     <div class="script-testbench">
