@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const source = await readFile(new URL('../src/js/character-card.js', import.meta.url), 'utf8');
 const exposed = source.replace(/\}\)\(\);\s*$/, `
-    window.__test = { getCardData, parsePng, stageCharacterResourceBundle, getStagedBundle: () => stagedResourceBundle };
+    window.__test = { getCardData, parsePng, stageCharacterResourceBundle, restoreStagedBundleResource, restoreLastBundleBackup, getStagedBundle: () => stagedResourceBundle };
 })();
 `);
 assert.notEqual(exposed, source, 'test seam must match the character-card IIFE');
@@ -16,7 +16,33 @@ const windowStub = {};
 const context = {
   window: windowStub,
   document: { getElementById: id => id === 'characterCardBundleImportPreview' ? preview : null },
-  localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+  localStorage: (() => {
+    const values = new Map();
+    return { getItem: key => values.has(key) ? values.get(key) : null,
+      setItem: (key, value) => values.set(key, String(value)),
+      removeItem: key => values.delete(key), _values: values };
+  })(),
+  confirm: () => true,
+  isPresetPayloadObject: value => !!value && typeof value === 'object' && !Array.isArray(value) &&
+    ['prompts','prompt_order','temperature','regex_scripts','scripts'].some(key => Object.prototype.hasOwnProperty.call(value,key)),
+  worldBookData: { name: 'Original Worldbook', entries: { old: { uid: 'old', content: 'before' } }, originalExtra: { untouched: true } },
+  presetData: { name: 'Original Preset', prompts: [{ identifier: 'old', content: 'before' }], originalExtra: { untouched: true } },
+  presetVersion: 1, presetEnvelope: null, presetArrayPaths: {},
+  selectedUids: new Set(), activeUid: 'old', selectMode: false,
+  pushHistory: () => {}, sanitizeEntry: entry => entry,
+  renderEntryList: () => {}, loadActiveEntry: () => {}, updateEntryCount: () => {},
+  scheduleAutoSave: () => {}, updateToolbar: () => {}, renderPresetUI: () => {},
+  refreshExtensionWorkspace: () => {}, schedulePresetSave: () => {},
+  setPresetFromParsed: payload => {
+    context.presetData = JSON.parse(JSON.stringify(payload));
+    context.presetVersion = 1;
+    context.presetEnvelope = null;
+    context.presetArrayPaths = {};
+    context.localStorage.setItem('tavern_preset_editor_data', JSON.stringify(payload));
+    context.localStorage.setItem('tavern_preset_editor_version', '1');
+    context.localStorage.removeItem('tavern_preset_editor_envelope');
+    context.localStorage.removeItem('tavern_preset_editor_array_paths');
+  },
   showToast: (message, type) => messages.push({ message: String(message), type }),
   console, TextEncoder, TextDecoder, Uint8Array, ArrayBuffer, DataView, Blob, Response,
   DecompressionStream, atob, btoa, setTimeout, clearTimeout, URL
@@ -148,4 +174,49 @@ test('prefers ccv3 PNG metadata when both ccv3 and chara are present', async () 
   assert.equal(parsed.name, 'Preferred V3');
   assert.equal(parsed.chunk, 'ccv3');
   assert.equal(parsed.data.assets[0].uri, 'embedded://v3');
+});
+
+
+test('restores staged worldbook payload intact and rolls back to the previous snapshot', async () => {
+  const original = JSON.parse(JSON.stringify(context.worldBookData));
+  const bundle = makeBundle();
+  bundle.resources.worldbook.unknownWorldbookField = { future: ['preserve', 2] };
+  bundle.resources.worldbook.entries['entry-1'].extensions.extraNested = { keep: ['a', 'b'] };
+  bundle.manifest.resources[0].fingerprint = fingerprint(bundle.resources.worldbook);
+  await stage(JSON.stringify(bundle));
+  api.restoreStagedBundleResource('worldbook');
+  assert.deepEqual(JSON.parse(JSON.stringify(context.worldBookData)), bundle.resources.worldbook);
+  assert.deepEqual(JSON.parse(JSON.stringify(context.worldBookData.entries['entry-1'].extensions.extraNested)), { keep: ['a', 'b'] });
+  api.restoreLastBundleBackup('worldbook');
+  assert.deepEqual(JSON.parse(JSON.stringify(context.worldBookData)), original);
+});
+
+test('restores staged preset payload intact and rolls back stored preset state', async () => {
+  const originalPreset = JSON.parse(JSON.stringify(context.presetData));
+  const originalStorage = {
+    data: JSON.stringify(originalPreset), version: '7',
+    envelope: JSON.stringify({ wrapper: 'original' }), paths: JSON.stringify(['prompts'])
+  };
+  context.localStorage.setItem('tavern_preset_editor_data', originalStorage.data);
+  context.localStorage.setItem('tavern_preset_editor_version', originalStorage.version);
+  context.localStorage.setItem('tavern_preset_editor_envelope', originalStorage.envelope);
+  context.localStorage.setItem('tavern_preset_editor_array_paths', originalStorage.paths);
+
+  const bundle = makeBundle();
+  const preset = {
+    name: 'Synthetic Preset', prompts: [{ identifier: 'main', content: 'synthetic prompt', marker: { nested: true } }],
+    regex_scripts: [{ id: 9, script: 'not executed' }],
+    vendor_extension: { deeply: { nested: ['keep', 3] } }
+  };
+  bundle.resources.preset = preset;
+  bundle.manifest.resources.push({ type: 'preset', name: preset.name, summary: '1 prompt', fingerprint: fingerprint(preset) });
+  await stage(JSON.stringify(bundle));
+  api.restoreStagedBundleResource('preset');
+  assert.deepEqual(JSON.parse(JSON.stringify(context.presetData)), preset);
+  assert.deepEqual(JSON.parse(JSON.stringify(context.presetData.vendor_extension)), { deeply: { nested: ['keep', 3] } });
+  api.restoreLastBundleBackup('preset');
+  assert.deepEqual(JSON.parse(JSON.stringify(context.presetData)), originalPreset);
+  assert.equal(context.localStorage.getItem('tavern_preset_editor_version'), originalStorage.version);
+  assert.equal(context.localStorage.getItem('tavern_preset_editor_envelope'), originalStorage.envelope);
+  assert.equal(context.localStorage.getItem('tavern_preset_editor_array_paths'), originalStorage.paths);
 });
