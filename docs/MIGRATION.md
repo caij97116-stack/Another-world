@@ -375,3 +375,10 @@ The preview refreshes when prompt fields or the raw order JSON are updated. It d
 Each prompt item now has an expandable, read-only content preview. It renders a safe subset of Markdown for headings, paragraphs, emphasis, inline code, fenced code blocks, lists, blockquotes, and horizontal rules. The preview is updated as the prompt content is edited.
 
 Double-braced tokens such as `{{char}}`, `{{user}}`, and other `{{...}}` forms are highlighted and listed once per prompt. This is inspection only: macro values are not substituted, chat variables are not read, and no Tavern or extension macro is executed. Raw prompt text remains unchanged and is still the exported source.
+
+
+## Bulk prompt editing
+
+The preset prompt list supports selecting individual prompts or selecting all prompts currently displayed. Bulk actions can enable or disable selected prompts, move the selected block up or down by one position while preserving its relative order, or clear the selection.
+
+When moving prompts, the editor attempts to mirror each adjacent swap in every recognized `prompt_order` group only when both identifiers are unique and have exactly one corresponding order item in that group. If a mapping is ambiguous or missing, the prompt array is still moved and a warning is shown; the editor does not guess how to rewrite ambiguous order references. Bulk changes are saved through the existing preset save flow and remain part of the normal preset export.
