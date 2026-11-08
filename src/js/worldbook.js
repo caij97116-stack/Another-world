@@ -244,6 +244,12 @@ function makeUniqueEntryUid(preferred){
             document.getElementById('field_probability').value=entry.probability!==undefined?entry.probability:100;
             document.getElementById('field_constant').checked=parseEntryBoolean(entry.constant);
             document.getElementById('field_selective').checked=parseEntryBoolean(entry.selective);
+            document.getElementById('field_selectiveLogic').value=entry.selectiveLogic!==undefined?entry.selectiveLogic:0;
+            document.getElementById('field_caseSensitive').checked=parseEntryBoolean(entry.caseSensitive,false);
+            document.getElementById('field_matchWholeWords').checked=parseEntryBoolean(entry.matchWholeWords,true);
+            document.getElementById('field_group').value=typeof entry.group==='string'?entry.group:Array.isArray(entry.group)?entry.group.join(', '):'';
+            document.getElementById('field_groupWeight').value=entry.groupWeight!==undefined?entry.groupWeight:100;
+            document.getElementById('field_useGroupScoring').checked=parseEntryBoolean(entry.useGroupScoring,false);
             if(isFullscreen)document.getElementById('fsTitle').textContent=entry.comment||'编辑条目';
             updateFullscreenBtn();runTriggerPreview();
         }
@@ -266,6 +272,12 @@ function makeUniqueEntryUid(preferred){
             entry.probability=typeof entry.probability==='string'?String(probabilityValue):probabilityValue;
             entry.constant=document.getElementById('field_constant').checked;
             entry.selective=document.getElementById('field_selective').checked;
+            entry.selectiveLogic=writeNumberPreservingType(entry.selectiveLogic,document.getElementById('field_selectiveLogic').value,0);
+            entry.caseSensitive=document.getElementById('field_caseSensitive').checked;
+            entry.matchWholeWords=document.getElementById('field_matchWholeWords').checked;
+            entry.group=document.getElementById('field_group').value.trim();
+            entry.groupWeight=writeNumberPreservingType(entry.groupWeight,document.getElementById('field_groupWeight').value,100);
+            entry.useGroupScoring=document.getElementById('field_useGroupScoring').checked;
             if(!skipRender)renderEntryList();scheduleAutoSave();runTriggerPreview();
         }
         function addNewEntry(){
