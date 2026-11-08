@@ -580,16 +580,20 @@ function isPresetPayloadObject(value){
                 if(newId&&presetData.prompts.some((item,i)=>i!==index&&item&&item.identifier===newId)){
                     showToast('identifier 与其他提示词重复，请使用唯一值','error');renderPromptItems();return;
                 }
-                if(oldId&&oldId!==newId){
-                    const duplicate=presetData.prompts.some((item,i)=>i!==index&&item&&item.identifier===oldId);
-                    if(duplicate){showToast('原 identifier 存在重复，无法安全同步排序表','error');renderPromptItems();return}
-                    getPromptOrderGroups().forEach(group=>group.order.forEach(entry=>{
-                        if(entry&&typeof entry==='object'&&!Array.isArray(entry)&&entry.identifier===oldId)entry.identifier=newId;
-                    }));
+                if(oldId&&oldId!==newId&&presetData.prompts.some((item,i)=>i!==index&&item&&item.identifier===oldId)){
+                    showToast('原 identifier 存在重复，无法安全同步排序表','error');renderPromptItems();return;
                 }
                 value=newId;
             }
             recordPresetEditHistory(true);
+            if(field==='identifier'){
+                const oldId=typeof prompt.identifier==='string'?prompt.identifier:'';
+                if(oldId&&oldId!==value){
+                    getPromptOrderGroups().forEach(group=>group.order.forEach(entry=>{
+                        if(entry&&typeof entry==='object'&&!Array.isArray(entry)&&entry.identifier===oldId)entry.identifier=value;
+                    }));
+                }
+            }
             prompt[field]=value;
             const card=document.querySelector('.prompt-item-card:nth-child('+(index+1)+')');
             if(card){
@@ -944,6 +948,7 @@ function isPresetPayloadObject(value){
             try{
                 clearTimeout(presetSaveTimer);
                 setPresetFromParsed(pendingPresetImport.parsed);
+                resetPresetEditHistory();
                 renderPresetUI();
                 schedulePresetSave();
                 updateToolbar();
@@ -1166,6 +1171,7 @@ function isPresetPayloadObject(value){
             if(!ta||!ta.value.trim())return;
             try{
                 const parsed=JSON.parse(ta.value);
+                recordPresetEditHistory(false);
                 setPresetFromParsed(parsed);renderPresetUI();schedulePresetSave();showToast('已应用原始 JSON','success');
             }catch(e){showToast('JSON 解析失败，请检查格式','error')}
         }
