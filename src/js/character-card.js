@@ -140,6 +140,95 @@
         return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
     }
 
+    const CARD_LINK_STORAGE_KEY='tavern_character_card_resource_links_v1';
+    let currentCardLinkKey='';
+
+    function smallHash(value){
+        let hash=2166136261;
+        for(let i=0;i<value.length;i++){hash^=value.charCodeAt(i);hash=Math.imul(hash,16777619);}
+        return (hash>>>0).toString(16).padStart(8,'0');
+    }
+
+    function getCardLinkKey(card,file){
+        const data=card.data||card;
+        const identity=[data.name||'',data.creator||'',data.character_version||'',data.creation_date||'',file&&file.name||''].join('|');
+        return 'card_'+smallHash(identity);
+    }
+
+    function loadCardLinkStore(){
+        try{
+            const raw=localStorage.getItem(CARD_LINK_STORAGE_KEY);
+            const parsed=raw?JSON.parse(raw):{};
+            return isObject(parsed)?parsed:{};
+        }catch(error){console.warn('角色卡关联记录读取失败',error);return {}}
+    }
+
+    function saveCardLinkStore(store){
+        try{localStorage.setItem(CARD_LINK_STORAGE_KEY,JSON.stringify(store));return true}
+        catch(error){console.warn('角色卡关联记录保存失败',error);showToast('关联记录保存失败，请检查浏览器本地存储空间','error');return false}
+    }
+
+    function resourceFingerprint(value){
+        try{return smallHash(JSON.stringify(value)||'')}
+        catch(error){return ''}
+    }
+
+    function getActiveResourceInfo(kind){
+        if(kind==='worldbook'){
+            if(typeof worldBookData==='undefined'||!isObject(worldBookData)||!isObject(worldBookData.entries))return null;
+            const count=Object.keys(worldBookData.entries).length;
+            if(!count)return null;
+            return {kind,name:worldBookData.name||worldBookData.title||'当前世界书',count,label:count+' 个条目',fingerprint:resourceFingerprint(worldBookData)};
+        }
+        if(kind==='preset'){
+            if(typeof presetData==='undefined'||!isObject(presetData))return null;
+            const name=presetData.name||presetData.preset_name||'当前预设';
+            const prompts=Array.isArray(presetData.prompts)?presetData.prompts.length:0;
+            return {kind,name,count:prompts,label:prompts+' 个提示词条目',fingerprint:resourceFingerprint(presetData)};
+        }
+        return null;
+    }
+
+    function renderCharacterCardLinks(){
+        const host=document.getElementById('characterCardLinks');
+        if(!host)return;
+        if(!currentCard||!currentCardLinkKey){host.innerHTML='<p class="tool-help">请先载入角色卡。</p>';return}
+        const store=loadCardLinkStore();
+        const links=store[currentCardLinkKey]||{};
+        const labels={worldbook:'独立世界书',preset:'独立预设'};
+        host.innerHTML=['worldbook','preset'].map(kind=>{
+            const link=links[kind];
+            const active=getActiveResourceInfo(kind);
+            const matches=!!(link&&active&&link.fingerprint===active.fingerprint);
+            let status='尚未关联';
+            if(link)status=matches?'已关联 · 与当前载入资源一致':active?'关联记录存在 · 当前资源内容已变化':'关联记录存在 · 当前未载入对应资源';
+            const detail=link?escapeCardHtml(link.name)+' · '+escapeCardHtml(link.label||'')+' · '+escapeCardHtml(new Date(link.linkedAt).toLocaleString()):'';
+            const activeText=active?'当前：'+active.name+'（'+active.label+'）':'当前未载入可关联的'+labels[kind];
+            return '<div class="character-link-row"><div class="character-link-info"><strong>'+labels[kind]+'</strong><span class="character-link-status '+(matches?'is-match':link?'is-stale':'')+'">'+status+'</span>'+(link?'<small>已关联：'+detail+'</small>':'')+'<small>'+escapeCardHtml(activeText)+'</small></div><div class="character-link-actions"><button class="btn btn-sm btn-primary" type="button" data-action="link-card-resource" data-kind="'+kind+'" '+(active?'':'disabled')+'>'+(link?'重新关联当前':'关联当前')+'</button>'+(link?'<button class="btn btn-sm btn-ghost" type="button" data-action="unlink-card-resource" data-kind="'+kind+'">解除</button>':'')+'</div></div>';
+        }).join('');
+    }
+
+    function linkCurrentCardResource(kind){
+        if(!currentCard||!currentCardLinkKey)return;
+        const active=getActiveResourceInfo(kind);
+        if(!active){showToast('请先载入有效的'+(kind==='worldbook'?'世界书':'预设'),'error');return}
+        const store=loadCardLinkStore();
+        if(!isObject(store[currentCardLinkKey]))store[currentCardLinkKey]={};
+        store[currentCardLinkKey][kind]={name:active.name,label:active.label,fingerprint:active.fingerprint,linkedAt:new Date().toISOString()};
+        if(saveCardLinkStore(store)){renderCharacterCardLinks();showToast('已建立关联；资源内容没有被复制或修改','success')}
+    }
+
+    function unlinkCurrentCardResource(kind){
+        if(!currentCard||!currentCardLinkKey)return;
+        const store=loadCardLinkStore();
+        if(!isObject(store[currentCardLinkKey])||!store[currentCardLinkKey][kind])return;
+        delete store[currentCardLinkKey][kind];
+        if(!Object.keys(store[currentCardLinkKey]).length)delete store[currentCardLinkKey];
+        if(saveCardLinkStore(store)){renderCharacterCardLinks();showToast('已解除关联，原始资源未受影响','success')}
+    }
+
+    function refreshCharacterCardLinks(){renderCharacterCardLinks()}
+
     function fieldPreview(data,key){
         const value=data[key];
         if(typeof value==='string' && value.trim()) return value;
@@ -265,6 +354,8 @@
         const toolbarExport=document.getElementById('toolbarExportCharacterCard');
         if(toolbarExport)toolbarExport.disabled=false;
         currentCard=card.root;
+        currentCardLinkKey=getCardLinkKey(card,currentCardFile);
+        renderCharacterCardLinks();
         updateCardSaveStatus();
     }
 
@@ -447,6 +538,9 @@
     }
 
     window.hasImportedCharacterCard=()=>!!currentCard;
+    window.linkCurrentCardResource=linkCurrentCardResource;
+    window.unlinkCurrentCardResource=unlinkCurrentCardResource;
+    window.refreshCharacterCardLinks=refreshCharacterCardLinks;
     window.updateCharacterCardField=updateCharacterCardField;
     window.applyCharacterCardRawJson=applyCharacterCardRawJson;
     window.exportCharacterCardPng=exportCharacterCardPng;
