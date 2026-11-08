@@ -461,6 +461,21 @@ function isPresetPayloadObject(value){
             const selected=getSelectedPromptIndexes();
             if(!selected.length){showToast('请先选择至少一条提示词','warning');return;}
             if(action==='clear'){setPromptSelectAll(false);return;}
+            if(action==='delete'){
+                const names=selected.map(index=>{const item=presetData.prompts[index]||{};return item.name||item.identifier||('提示词 '+(index+1))});
+                if(!confirm('确定删除选中的 '+selected.length+' 条提示词？\\n'+names.slice(0,5).join('、')+(names.length>5?' 等':'')))return;
+                const removedIds=[...new Set(selected.map(index=>presetData.prompts[index]?.identifier).filter(id=>typeof id==='string'&&id))];
+                recordPresetEditHistory(false);
+                selected.slice().sort((a,b)=>b-a).forEach(index=>presetData.prompts.splice(index,1));
+                removedIds.forEach(id=>{
+                    if(!presetData.prompts.some(item=>item&&item.identifier===id)){
+                        getPromptOrderGroups().forEach(group=>{group.order=group.order.filter(entry=>!(entry&&typeof entry==='object'&&!Array.isArray(entry)&&entry.identifier===id))});
+                    }
+                });
+                renderPromptItems();refreshPromptOrderAfterSync();
+                showToast('已批量删除 '+selected.length+' 条提示词并清理可安全识别的排序引用','success');
+                return;
+            }
             if(action==='enable'||action==='disable'||action==='move-up'||action==='move-down')recordPresetEditHistory(false);
             const list=presetData.prompts;
             if(action==='enable'||action==='disable'){
