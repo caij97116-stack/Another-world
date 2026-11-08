@@ -419,3 +419,8 @@ When focus is outside editable fields, Ctrl/âŒ˜ + Z triggers preset undo, Ctrl/â
 ### Duplicate extension entries
 
 Regex and script cards can be duplicated in place. A duplicate retains its existing configuration and unknown fields, receives a fresh editor ID and a copy suffix in its name, and is inserted immediately after the source item. Duplication is one undoable preset edit.
+
+
+### Script editor focus mode
+
+Each script code editor has a full-screen focus mode with a dimmed, blurred backdrop and a larger editing surface. Escape exits focus mode. This is a presentation-only mode and does not change script content or bypass the existing manual sandbox-test action.
