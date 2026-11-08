@@ -381,7 +381,7 @@ document.addEventListener('keydown',event=>{
     if(!(event.ctrlKey||event.metaKey)||event.altKey)return;
     const key=String(event.key||'').toLowerCase();
     if(!['z','y'].includes(key))return;
-    if(!['preset','extensions'].includes(window.currentPage))return;
+    if(!['preset','extensions'].includes(currentPage))return;
     const target=event.target;
     if(target instanceof Element&&target.closest('input,textarea,select,[contenteditable="true"]'))return;
     event.preventDefault();
