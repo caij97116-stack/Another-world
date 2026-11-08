@@ -574,3 +574,22 @@ body.dark-theme .character-card-hero{background:linear-gradient(120deg,rgba(14,1
 .prompt-item-card .regex-card-header{align-items:center}
 .prompt-item-select{accent-color:var(--sky-accent);width:15px;height:15px;cursor:pointer}
 @media(max-width:620px){.prompt-bulk-actions{width:100%;margin-left:0}.prompt-bulk-actions .btn{flex:1 1 auto}.prompt-bulk-toolbar{align-items:flex-start}}
+
+/* Extension workspace: searchable filters and restrained motion feedback. */
+.extension-filterbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 14px;padding:9px;border:1px solid var(--glass-border-subtle);border-radius:13px;background:rgba(125,160,190,.055)}
+.extension-search{display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:0;color:var(--text-muted)}
+.extension-search>span:not(.sr-only){font-size:1.25rem;line-height:1}
+.extension-search .form-control{width:100%;min-width:0;min-height:36px}
+.extension-filter-select{flex:0 1 140px}
+.extension-filter-select .form-control{width:100%;min-height:36px;font-size:.75rem}
+.extension-filter-summary{margin-left:auto;color:var(--text-muted);font-size:.68rem;white-space:nowrap}
+.regex-card,.script-card{transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,opacity .18s ease;animation:extension-card-enter .24s ease both}
+.regex-card:hover,.script-card:hover{transform:translateY(-2px);border-color:var(--sky-light);box-shadow:var(--shadow-sm)}
+.regex-card[hidden],.script-card[hidden],.extension-filter-empty[hidden]{display:none!important}
+.extension-tab{transition:background .2s ease,color .2s ease,border-color .2s ease,transform .2s ease}
+.extension-tab:active{transform:scale(.985)}
+.extension-panel{animation:extension-panel-enter .22s ease both}
+@keyframes extension-card-enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@keyframes extension-panel-enter{from{opacity:.65;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.regex-card,.script-card,.extension-tab,.extension-panel{animation:none!important;transition:none!important}.regex-card:hover,.script-card:hover,.extension-tab:active{transform:none}}
+@media(max-width:520px){.extension-filterbar{align-items:stretch}.extension-search{flex-basis:100%}.extension-filter-select{flex:1}.extension-filter-summary{margin-left:0}}
