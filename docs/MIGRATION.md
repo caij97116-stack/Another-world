@@ -368,3 +368,10 @@ The user must explicitly confirm the export from the preview. Cancelling closes 
 The Preset Studio now shows a read-only structural preview beneath the raw `prompt_order` JSON editor. It groups entries by each order group's `character_id`, resolves order references against `prompts[].identifier`, displays each referenced prompt's name, role, and combined enabled state, and lists prompts that are not referenced by any recognized order group. Missing identifiers, unresolved references, and duplicate identifiers are surfaced as warnings rather than silently omitted.
 
 The preview refreshes when prompt fields or the raw order JSON are updated. It does not rewrite `prompt_order`, reorder the source `prompts` array, or change export data. This is deliberately not presented as the exact final prompt sent to a model: character-specific context, extension processing, primary prompt insertion, and runtime rules can affect the final assembled context. No Tavern runtime emulation is performed.
+
+
+## Prompt Markdown and macro preview
+
+Each prompt item now has an expandable, read-only content preview. It renders a safe subset of Markdown for headings, paragraphs, emphasis, inline code, fenced code blocks, lists, blockquotes, and horizontal rules. The preview is updated as the prompt content is edited.
+
+Double-braced tokens such as `{{char}}`, `{{user}}`, and other `{{...}}` forms are highlighted and listed once per prompt. This is inspection only: macro values are not substituted, chat variables are not read, and no Tavern or extension macro is executed. Raw prompt text remains unchanged and is still the exported source.
