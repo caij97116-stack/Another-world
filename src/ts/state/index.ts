@@ -23,3 +23,9 @@ export {
   findPresetArrayAtPath
 } from "./preset-paths";
 export type { PresetArrayLocation } from "./preset-paths";
+export {
+  isPresetPayloadObject,
+  unwrapPresetObject,
+  buildPresetExportObject
+} from "./preset-import";
+export type { ParsedPresetImport } from "./preset-import";
