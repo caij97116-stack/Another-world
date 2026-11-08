@@ -325,6 +325,18 @@
         }).catch(error=>showToast(error.message||'资源包读取失败','error'));
     }
 
+    function triggerCharacterBundleImport(){
+        const input=document.getElementById('characterCardBundleFileInput');
+        if(input)input.click();
+    }
+
+    async function onCharacterBundleFileChosen(event){
+        const input=event.target;
+        const file=input.files&&input.files[0];
+        input.value='';
+        if(file)stageCharacterResourceBundle(file);
+    }
+
     function clearStagedCharacterResourceBundle(){
         stagedResourceBundle=null;
         const host=document.getElementById('characterCardBundleImportPreview');
@@ -689,6 +701,8 @@
     window.refreshCharacterCardLinks=refreshCharacterCardLinks;
     window.exportCharacterResourceBundle=exportCharacterResourceBundle;
     window.stageCharacterResourceBundle=stageCharacterResourceBundle;
+    window.triggerCharacterBundleImport=triggerCharacterBundleImport;
+    window.onCharacterBundleFileChosen=onCharacterBundleFileChosen;
     window.clearStagedCharacterResourceBundle=clearStagedCharacterResourceBundle;
     window.importStagedBundleCharacter=importStagedBundleCharacter;
     window.restoreStagedBundleResource=restoreStagedBundleResource;
