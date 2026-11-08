@@ -195,7 +195,7 @@
                 </div>
 
                 <div id="presetEditor" style="display:none">
-                    <div class="preset-status"><span class="status-dot" id="presetSaveDot"></span><span id="presetSaveStatus">已自动保存</span><button class="btn btn-sm" type="button" data-action="open-preset-diagnostics">预设诊断</button></div>
+                    <div class="preset-status"><span class="status-dot" id="presetSaveDot"></span><span id="presetSaveStatus">已自动保存</span><button class="btn btn-sm" type="button" data-action="open-preset-diagnostics">预设诊断</button><button class="btn btn-sm" type="button" id="undoPresetImportButton" data-action="undo-preset-import" hidden>撤销上次导入</button></div>
 
                     <div class="glass-panel-box">
                         <div class="panel-header">
@@ -445,6 +445,20 @@
         <button class="nav-item" data-page="character-card" data-action="switch-page"><span class="nav-icon">✦</span><span>角色卡</span></button>
     </nav>
 
+
+    <div class="modal-mask" id="presetImportPreviewModal">
+        <div class="modal-box preset-import-preview-box">
+            <div class="diagnostics-heading">
+                <div><h3>预设导入预览</h3><p>先查看文件结构与内容数量。确认后才会替换当前预设，并自动保存导入前备份。</p></div>
+                <button class="btn btn-ghost btn-sm" type="button" data-action="close-preset-import-preview" aria-label="关闭">✕</button>
+            </div>
+            <div id="presetImportPreviewContent" class="preset-import-preview-content"></div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" type="button" data-action="apply-preset-import">确认导入并备份当前预设</button>
+                <button class="btn btn-ghost" type="button" data-action="close-preset-import-preview">取消</button>
+            </div>
+        </div>
+    </div>
 
     <div class="modal-mask" id="presetDiagnosticsModal">
         <div class="modal-box diagnostics-modal-box">
