@@ -429,3 +429,8 @@ Each script code editor has a full-screen focus mode with a dimmed, blurred back
 ### Prompt list search and status filters
 
 The prompt-items editor now supports live search across name, identifier, role, and prompt body, plus enabled/disabled filtering. The visible/total count updates without rebuilding the search field. Select-all and batch actions apply only to the currently visible filtered results; changing filters clears selections on hidden prompts to avoid accidental batch edits.
+
+
+### Prompt batch deletion
+
+The prompt-items bulk toolbar now supports deleting selected visible prompts. Deletion requires confirmation, records one undo-history entry, and removes matching prompt_order references only when no remaining prompt uses the same identifier. Ambiguous duplicate identifiers are preserved rather than guessed.
