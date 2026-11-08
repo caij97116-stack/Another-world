@@ -1047,12 +1047,13 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         function clearPresetData(){
             if(!presetData)return;
             if(!confirm('确定清空当前预设数据？'))return;
-            presetData=null;presetEnvelope=null;presetVersion=1;
-            localStorage.removeItem(PRESET_STORAGE_KEY);localStorage.removeItem(PRESET_ENVELOPE_STORAGE_KEY);localStorage.removeItem(PRESET_VERSION_KEY);
+            presetData=null;presetEnvelope=null;presetVersion=1;presetArrayPaths={};
+            localStorage.removeItem(PRESET_STORAGE_KEY);localStorage.removeItem(PRESET_ENVELOPE_STORAGE_KEY);localStorage.removeItem(PRESET_ARRAY_PATHS_KEY);localStorage.removeItem(PRESET_VERSION_KEY);
             renderPresetUI();updateToolbar();showToast('已清空预设数据');
         }
         function createEmptyPreset(){
             presetEnvelope=null;
+            presetArrayPaths={};
             presetData={
                 name:'新预设',temperature:0.8,top_p:0.9,top_k:0,min_p:0,top_a:0,
                 typical_p:1,tfs:1,repetition_penalty:1.1,presence_penalty:0,frequency_penalty:0,
@@ -1422,7 +1423,7 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         }
 
         function setActivePresetArray(alias,value){
-            const current=getActivePresetArray(alias);
+            getActivePresetArray(alias);
             const path=presetArrayPaths[alias];
             const target=getPresetArrayAtPath(path);
             if(target) target.owner[target.key]=value;
