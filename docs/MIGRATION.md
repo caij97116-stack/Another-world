@@ -140,3 +140,15 @@ A compatibility bridge, `src/ts/utils/legacy-bridge.ts`, now provides `installLe
 - Grouped `escapeHtml` and `showToast` into `src/ts/utils/ui-utils.ts`, matching the existing legacy `src/js/ui-utils.js` responsibility boundary.
 - Kept `index.ts` as the single export surface and left `legacy-bridge.ts` separate because it adapts module exports to the classic-script global interface.
 - Removed the two single-purpose files. The active legacy utility script and live HTML script order remain unchanged.
+
+### Existing JavaScript module size review
+
+A follow-up review checked the current classic-script modules before making further consolidation changes:
+
+- `preset-ui.js` remains separate from `preset-logic.js`: it owns field-overview rendering and section expansion, while `preset-logic.js` owns regex/script item editing and normalization. Their responsibilities are adjacent but not duplicates, so merging them solely because the UI file is smaller would blur the boundary.
+- `app.js` remains a minimal bootstrap by design; combining it with application logic would make startup order and entrypoint responsibilities less explicit.
+- `state.js` remains separate because it defines shared globals consumed by the classic scripts.
+- `dom-events.js` remains separate as the centralized delegated-event layer.
+- `ui-utils.js` remains the live classic-script utility file until the TypeScript/Vite integration is verified.
+
+No additional JavaScript files were merged in this pass. The review favors keeping these clear responsibility boundaries over reducing the raw file count. A source-level check also confirmed that the current HTML script order remains unchanged.
