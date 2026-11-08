@@ -83,3 +83,10 @@ A compatibility bridge, `src/ts/utils/legacy-bridge.ts`, now provides `installLe
 - The contracts deliberately preserve arbitrary imported Tavern fields; they do not narrow preset payloads to a fixed schema.
 - These files currently describe the existing classic-script state only. They do not instantiate a second store, replace `src/js/state.js`, or alter the live GitHub Pages entrypoint.
 - The legacy state migration remains pending until the global binding and mutation patterns have been fully mapped and a verified Vite build/deployment path is available.
+
+### World-book undo/redo state contracts
+
+- Added `src/ts/state/history.ts` with explicit snapshot, history-index, and history-limit contracts.
+- Confirmed from the legacy implementation that history snapshots are serialized JSON strings; `WorldBookStateContract.historyStack` now reflects `string[]` rather than an unconstrained array.
+- Removed the history limit from the storage-key contract because it is a separate configuration value, not a browser storage key.
+- The runtime history implementation remains in `src/js/app-core.js`; this step adds types only and does not change undo/redo behavior.
