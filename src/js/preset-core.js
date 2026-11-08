@@ -242,9 +242,18 @@ function isPresetPayloadObject(value){
         function togglePromptEditor(index){
             const card=document.querySelector('.prompt-item-card:nth-child('+(Number(index)+1)+')');
             if(!card)return;
-            const expanded=card.classList.toggle('prompt-editor-expanded');
-            const button=card.querySelector('[data-action="toggle-prompt-editor"]');
-            if(button)button.textContent=expanded?'收起编辑':'展开编辑';
+            const wasExpanded=card.classList.contains('prompt-editor-expanded');
+            document.querySelectorAll('.prompt-item-card.prompt-editor-expanded').forEach(item=>{
+                item.classList.remove('prompt-editor-expanded');
+                const control=item.querySelector('[data-action="toggle-prompt-editor"]');
+                if(control)control.textContent='展开编辑';
+            });
+            const expanded=!wasExpanded;
+            if(expanded){
+                card.classList.add('prompt-editor-expanded');
+                const control=card.querySelector('[data-action="toggle-prompt-editor"]');
+                if(control)control.textContent='收起编辑';
+            }
             document.body.classList.toggle('prompt-editor-open',expanded);
         }
         function updatePromptItemField(index,field,value){
