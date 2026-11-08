@@ -1145,21 +1145,34 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         function schedulePresetSave(){
             presetDirty=true;
             const dot=document.getElementById('presetSaveDot'),status=document.getElementById('presetSaveStatus');
-            if(dot){dot.classList.add('saving');status.textContent='保存中...'}
+            if(dot)dot.classList.add('saving');
+            if(status)status.textContent='保存中...';
             clearTimeout(presetSaveTimer);
             presetSaveTimer=setTimeout(savePresetToStorage,600);
         }
+        function writePresetStorageItem(key,value){
+            try{localStorage.setItem(key,value);return true}
+            catch(e){console.warn('预设缓存写入失败：'+key,e);return false}
+        }
         function savePresetToStorage(){
+            let success=true;
             try{
-                if(presetData)localStorage.setItem(PRESET_STORAGE_KEY,JSON.stringify(presetData));
-                if(presetEnvelope)localStorage.setItem(PRESET_ENVELOPE_STORAGE_KEY,JSON.stringify(presetEnvelope));
-                else localStorage.removeItem(PRESET_ENVELOPE_STORAGE_KEY);
-                localStorage.setItem(PRESET_ARRAY_PATHS_KEY,JSON.stringify(presetArrayPaths));
-                localStorage.setItem(PRESET_VERSION_KEY,String(presetVersion));
-                presetDirty=false;
-                const dot=document.getElementById('presetSaveDot'),status=document.getElementById('presetSaveStatus');
-                if(dot){dot.classList.remove('saving');status.textContent='已自动保存'}
-            }catch(e){showToast('预设自动保存失败','error')}
+                if(presetData&&!writePresetStorageItem(PRESET_STORAGE_KEY,JSON.stringify(presetData)))success=false;
+                if(presetEnvelope){
+                    if(!writePresetStorageItem(PRESET_ENVELOPE_STORAGE_KEY,JSON.stringify(presetEnvelope)))success=false;
+                }else if(!removePresetStorageItem(PRESET_ENVELOPE_STORAGE_KEY))success=false;
+                if(!writePresetStorageItem(PRESET_ARRAY_PATHS_KEY,JSON.stringify(presetArrayPaths)))success=false;
+                if(!writePresetStorageItem(PRESET_VERSION_KEY,String(presetVersion)))success=false;
+            }catch(e){
+                console.error('预设缓存序列化失败',e);
+                success=false;
+            }
+            presetDirty=!success;
+            const dot=document.getElementById('presetSaveDot'),status=document.getElementById('presetSaveStatus');
+            if(dot)dot.classList.toggle('saving',!success);
+            if(status)status.textContent=success?'已自动保存':'保存失败，修改仍保留在当前页面';
+            if(!success)showToast('预设自动保存失败，请导出备份','error');
+            return success;
         }
         function removePresetStorageItem(key){
             try{localStorage.removeItem(key);return true}
