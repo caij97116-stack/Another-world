@@ -239,6 +239,14 @@ function isPresetPayloadObject(value){
             while(used.has(id)){id='custom_prompt_'+Date.now()+'_'+suffix++;}
             return id;
         }
+        function togglePromptEditor(index){
+            const card=document.querySelector('.prompt-item-card:nth-child('+(Number(index)+1)+')');
+            if(!card)return;
+            const expanded=card.classList.toggle('prompt-editor-expanded');
+            const button=card.querySelector('[data-action="toggle-prompt-editor"]');
+            if(button)button.textContent=expanded?'收起编辑':'展开编辑';
+            document.body.classList.toggle('prompt-editor-open',expanded);
+        }
         function updatePromptItemField(index,field,value){
             if(!presetData||!Array.isArray(presetData.prompts)||index<0||index>=presetData.prompts.length)return;
             const prompt=presetData.prompts[index];
