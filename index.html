@@ -1297,16 +1297,35 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             const includeMeta = presetData._exportMeta !== false;
 
             const exportObj = Object.assign({}, presetData);
-            if(Array.isArray(exportObj.regex_scripts)){
-                exportObj.regex_scripts = includeDisRegex
-                    ? exportObj.regex_scripts.slice()
-                    : exportObj.regex_scripts.filter(r => !r.disabled);
+            // 按原始存储路径过滤，兼容顶层别名及 extensions / TavernHelper 等嵌套结构。
+            function filterExportArrayAtPath(root, path, includeDisabled){
+                let source=root;
+                for(let i=0;i<path.length-1;i++){
+                    if(!source || typeof source!=='object' || !source[path[i]] || typeof source[path[i]]!=='object') return;
+                    const key=path[i];
+                    const cloned=Array.isArray(source[key])?source[key].slice():Object.assign({},source[key]);
+                    source[key]=cloned;
+                    source=cloned;
+                }
+                if(!source || typeof source!=='object') return;
+                const key=path[path.length-1];
+                if(!Array.isArray(source[key])) return;
+                source[key]=includeDisabled
+                    ? source[key].slice()
+                    : source[key].filter(item=>!item || !item.disabled);
             }
-            if(Array.isArray(exportObj.scripts)){
-                exportObj.scripts = includeDisScripts
-                    ? exportObj.scripts.slice()
-                    : exportObj.scripts.filter(s => !s.disabled);
-            }
+            const regexExportPaths=[
+                ['regex_scripts'],['regexScripts'],['regex'],['regexes'],
+                ['extensions','regex_scripts'],['extensions','regexScripts'],
+                ['tavernhelper','regex_scripts'],['TavernHelper','regex_scripts']
+            ];
+            const scriptExportPaths=[
+                ['scripts'],['tavern_helper_scripts'],['tavernhelper_scripts'],['tavernHelperScripts'],
+                ['extensions','scripts'],['extensions','tavern_helper_scripts'],
+                ['tavernhelper','scripts'],['TavernHelper','scripts'],['mjs_scripts']
+            ];
+            regexExportPaths.forEach(path=>filterExportArrayAtPath(exportObj,path,includeDisRegex));
+            scriptExportPaths.forEach(path=>filterExportArrayAtPath(exportObj,path,includeDisScripts));
             // 不把内部导出开关写进文件（可选保留也可去掉）
             delete exportObj._exportIncludeDisabledRegex;
             delete exportObj._exportIncludeDisabledScripts;
