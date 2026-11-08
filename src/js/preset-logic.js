@@ -44,40 +44,40 @@ function normalizeRegexScript(raw, index){
                     <div class="regex-card-header">
                         <div class="regex-card-title">${escapeHtml(r.scriptName || '未命名正则')} ${disabled ? '<span class="regex-badge off">已禁用</span>' : '<span class="regex-badge">启用</span>'}</div>
                         <div class="regex-card-actions">
-                            <button class="btn btn-sm" type="button" onclick="toggleRegexDisabled(${i})">${disabled ? '启用' : '禁用'}</button>
-                            <button class="btn btn-sm btn-danger" type="button" onclick="deleteRegexScript(${i})">删除</button>
+                            <button class="btn btn-sm" type="button" data-action="toggle-regex-disabled" data-index="${i}">${disabled ? '启用' : '禁用'}</button>
+                            <button class="btn btn-sm btn-danger" type="button" data-action="delete-regex-script" data-index="${i}">删除</button>
                         </div>
                     </div>
                     <div class="regex-field">
                         <label>名称</label>
-                        <input type="text" class="form-control" value="${escapeHtml(r.scriptName || '')}" onchange="updateRegexField(${i},'scriptName',this.value)">
+                        <input type="text" class="form-control" value="${escapeHtml(r.scriptName || '')}" data-change-action="update-regex-field" data-index="${i}" data-field="scriptName">
                     </div>
                     <div class="regex-field">
                         <label>查找正则 (findRegex)</label>
-                        <textarea class="form-control" rows="2" onchange="updateRegexField(${i},'findRegex',this.value)">${escapeHtml(r.findRegex || '')}</textarea>
+                        <textarea class="form-control" rows="2" data-change-action="update-regex-field" data-index="${i}" data-field="findRegex">${escapeHtml(r.findRegex || '')}</textarea>
                     </div>
                     <div class="regex-field">
                         <label>替换内容 (replaceString)</label>
-                        <textarea class="form-control" rows="2" onchange="updateRegexField(${i},'replaceString',this.value)">${escapeHtml(r.replaceString || '')}</textarea>
+                        <textarea class="form-control" rows="2" data-change-action="update-regex-field" data-index="${i}" data-field="replaceString">${escapeHtml(r.replaceString || '')}</textarea>
                     </div>
                     <div class="form-grid" style="margin-top:4px">
                         <div class="regex-field">
                             <label>作用位置 placement</label>
-                            <input type="text" class="form-control" value="${escapeHtml((r.placement||[]).join(','))}" placeholder="如 1,2" onchange="updateRegexPlacement(${i},this.value)">
+                            <input type="text" class="form-control" value="${escapeHtml((r.placement||[]).join(','))}" placeholder="如 1,2" data-change-action="update-regex-placement" data-index="${i}">
                         </div>
                         <div class="regex-field">
                             <label>最小深度</label>
-                            <input type="number" class="form-control" value="${r.minDepth != null ? r.minDepth : ''}" onchange="updateRegexField(${i},'minDepth',this.value===''?null:Number(this.value))">
+                            <input type="number" class="form-control" value="${r.minDepth != null ? r.minDepth : ''}" data-change-action="update-regex-field" data-index="${i}" data-field="minDepth" data-value-type="nullable-number">
                         </div>
                         <div class="regex-field">
                             <label>最大深度</label>
-                            <input type="number" class="form-control" value="${r.maxDepth != null ? r.maxDepth : ''}" onchange="updateRegexField(${i},'maxDepth',this.value===''?null:Number(this.value))">
+                            <input type="number" class="form-control" value="${r.maxDepth != null ? r.maxDepth : ''}" data-change-action="update-regex-field" data-index="${i}" data-field="maxDepth" data-value-type="nullable-number">
                         </div>
                     </div>
                     <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:6px">
-                        <label class="switch-row"><input type="checkbox" ${r.markdownOnly?'checked':''} onchange="updateRegexField(${i},'markdownOnly',this.checked)"><span>仅 Markdown</span></label>
-                        <label class="switch-row"><input type="checkbox" ${r.promptOnly?'checked':''} onchange="updateRegexField(${i},'promptOnly',this.checked)"><span>仅 Prompt</span></label>
-                        <label class="switch-row"><input type="checkbox" ${r.runOnEdit?'checked':''} onchange="updateRegexField(${i},'runOnEdit',this.checked)"><span>编辑时运行</span></label>
+                        <label class="switch-row"><input type="checkbox" ${r.markdownOnly?'checked':''} data-change-action="update-regex-field" data-index="${i}" data-field="markdownOnly" data-value-type="boolean"><span>仅 Markdown</span></label>
+                        <label class="switch-row"><input type="checkbox" ${r.promptOnly?'checked':''} data-change-action="update-regex-field" data-index="${i}" data-field="promptOnly" data-value-type="boolean"><span>仅 Prompt</span></label>
+                        <label class="switch-row"><input type="checkbox" ${r.runOnEdit?'checked':''} data-change-action="update-regex-field" data-index="${i}" data-field="runOnEdit" data-value-type="boolean"><span>编辑时运行</span></label>
                     </div>
                 </div>`;
             }).join('');
@@ -187,24 +187,24 @@ function normalizeRegexScript(raw, index){
                     <div class="script-card-header">
                         <div class="script-card-title">${escapeHtml(s.name || '未命名脚本')} ${disabled ? '<span class="regex-badge off">已禁用</span>' : '<span class="regex-badge">启用</span>'}</div>
                         <div class="regex-card-actions">
-                            <button class="btn btn-sm" type="button" onclick="toggleScriptDisabled(${i})">${disabled ? '启用' : '禁用'}</button>
-                            <button class="btn btn-sm btn-danger" type="button" onclick="deleteScript(${i})">删除</button>
+                            <button class="btn btn-sm" type="button" data-action="toggle-script-disabled" data-index="${i}">${disabled ? '启用' : '禁用'}</button>
+                            <button class="btn btn-sm btn-danger" type="button" data-action="delete-script" data-index="${i}">删除</button>
                         </div>
                     </div>
                     <div class="regex-field">
                         <label>名称</label>
-                        <input type="text" class="form-control" value="${escapeHtml(s.name || '')}" onchange="updateScriptField(${i},'name',this.value)">
+                        <input type="text" class="form-control" value="${escapeHtml(s.name || '')}" data-change-action="update-script-field" data-index="${i}" data-field="name">
                     </div>
                     <div class="regex-field">
                         <label>类型 / 触发（可选）</label>
                         <div class="form-grid">
-                            <input type="text" class="form-control" value="${escapeHtml(s.type || 'js')}" placeholder="类型 js" onchange="updateScriptField(${i},'type',this.value)">
-                            <input type="text" class="form-control" value="${escapeHtml(s.trigger || '')}" placeholder="触发条件/事件" onchange="updateScriptField(${i},'trigger',this.value)">
+                            <input type="text" class="form-control" value="${escapeHtml(s.type || 'js')}" placeholder="类型 js" data-change-action="update-script-field" data-index="${i}" data-field="type">
+                            <input type="text" class="form-control" value="${escapeHtml(s.trigger || '')}" placeholder="触发条件/事件" data-change-action="update-script-field" data-index="${i}" data-field="trigger">
                         </div>
                     </div>
                     <div class="regex-field">
                         <label>脚本内容</label>
-                        <textarea class="form-control script-code" rows="8" onchange="updateScriptField(${i},'code',this.value)">${escapeHtml(s.code || '')}</textarea>
+                        <textarea class="form-control script-code" rows="8" data-change-action="update-script-field" data-index="${i}" data-field="code">${escapeHtml(s.code || '')}</textarea>
                     </div>
                 </div>`;
             }).join('');
