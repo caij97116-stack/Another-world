@@ -206,3 +206,14 @@ Important compatibility behavior:
 - Prompt content is saved through the existing preset persistence path and the existing raw-JSON view is refreshed.
 
 This is an incremental UI change on the legacy classic-script runtime. The production index.html entrypoint and script load order are unchanged. Static JavaScript parsing and source-level wiring checks passed; no browser interaction test, Vite build, or TypeScript type-check was run in this pass.
+## Dedicated regex and script workspace
+
+The regex rules and scripts have been moved out of the preset editor page into a dedicated extension workspace with separate Regex and Script tabs. This is a UI separation only: both collections continue to use the active preset's existing array-alias/path resolution, so edits remain bound to the imported preset and are exported with it. They are not moved into worldbook data and are not stored as an unrelated standalone resource.
+
+The Regex tab retains the existing rule editor and adds a test bench. A test runs the current rule's find/replace against text supplied in that card, using a short-lived Web Worker with a timeout so a problematic expression does not block the main UI. The test output is display-only and never writes back to the preset.
+
+The Script tab retains script metadata and code editing, expands the code editor, and adds an explicit sandbox test action. The test uses a sandboxed iframe with an opaque origin and a restrictive CSP that blocks network connections, external assets, forms, and navigation. It receives only the supplied test input and a small console/context object; it does not receive Tavern/TavernHelper host APIs, page storage, or access to the parent document. Scripts are never executed automatically on import or when opening the workspace. A timeout removes the test frame. This is a lightweight JavaScript test harness, not a full Tavern runtime emulator; scripts that depend on Tavern-specific APIs will need mocks or cannot be meaningfully exercised here.
+
+The bottom navigation now includes the extension workspace. The preset page no longer embeds regex/script editors, while the preset import/export actions remain available from the extension page. The original static `index.html` deployment entrypoint and classic-script load order are unchanged.
+
+Static checks performed for this change: all nine loaded JavaScript files parse with `new Function`; the extension page separation, preset-array binding, delegated actions, worker test, iframe sandbox/CSP, original script order, and responsive styles were checked in source. No browser interaction test, Vite build, TypeScript type-check, or real Tavern runtime test was performed.
