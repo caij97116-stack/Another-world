@@ -53,6 +53,12 @@ document.addEventListener('click', (event) => {
         case 'add-prompt-item':
             window.addPromptItem();
             break;
+        case 'undo-preset-edit':
+            window.undoPresetEdit();
+            break;
+        case 'redo-preset-edit':
+            window.redoPresetEdit();
+            break;
         case 'bulk-prompt-action':
             window.bulkPromptAction(target.dataset.bulkAction);
             break;
