@@ -460,6 +460,20 @@
         </div>
     </div>
 
+    <div class="modal-mask" id="presetExportPreviewModal">
+        <div class="modal-box diagnostics-modal-box">
+            <div class="diagnostics-heading">
+                <div><h3>预设导出完整性检查</h3><p>检查最终导出 JSON 的字段数量与序列化往返结果。</p></div>
+                <button class="btn btn-ghost btn-sm" type="button" data-action="close-preset-export-preview" aria-label="关闭">✕</button>
+            </div>
+            <div id="presetExportPreviewContent" class="preset-import-preview-content"></div>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" type="button" data-action="close-preset-export-preview">取消导出</button>
+                <button class="btn btn-primary" type="button" data-action="confirm-preset-export">确认导出 JSON</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-mask" id="presetDiagnosticsModal">
         <div class="modal-box diagnostics-modal-box">
             <div class="diagnostics-heading">
