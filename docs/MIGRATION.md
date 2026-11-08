@@ -106,3 +106,12 @@ A compatibility bridge, `src/ts/utils/legacy-bridge.ts`, now provides `installLe
 - `findPresetArrayAtPath` resolves an existing nested array and returns its owner/key/value without flattening, rewriting, or mutating the imported preset.
 - Exported the helpers and their result type from `src/ts/state/index.ts`.
 - These are standalone TypeScript helpers and are not yet called by the active classic-script application; integration waits for the verified build and compatibility migration.
+
+
+### Preset import and wrapper helpers
+
+- Added `src/ts/state/preset-import.ts` with typed, standalone equivalents of the legacy preset payload signature check, wrapper unwrapping, and export-envelope reconstruction.
+- Wrapper-key precedence and payload signatures mirror `src/js/preset-core.js`; unrelated wrapper fields remain preserved when rebuilding an export object.
+- The unwrapping helper retains the existing Chinese validation error for non-object imports.
+- Exported the helpers and parsed-import result type from `src/ts/state/index.ts`.
+- These helpers are not wired into the active application yet. The legacy import/export implementation remains authoritative until the TypeScript build and integration path are verified.
