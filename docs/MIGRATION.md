@@ -191,3 +191,18 @@ The global-state and function dependencies are intentional consequences of the c
 No additional source files were split or merged in this audit. The current boundaries are reasonable for the live classic-script application. The next meaningful architectural step is not more fragmentation: it is to establish and test explicit module imports and state/function contracts during the TypeScript/Vite migration. Until then, preserve the existing script order and runtime implementation.
 
 This was a static source review only. It did not run npm installation, Vite build, TypeScript type-checking, or browser runtime tests.
+## Preset Studio: long-form prompt editor
+
+The first Preset Studio UI pass replaces the prompt-item full-JSON-first workflow with structured editing controls for the common fields: name, role, identifier, enabled state, system-prompt flag, and content. The full JSON editor remains available under an advanced disclosure so uncommon fields can still be edited explicitly.
+
+Important compatibility behavior:
+
+- Ordinary field edits mutate only the selected property on the existing prompt object; they do not rebuild the object from a reduced form schema.
+- Unknown prompt properties therefore remain present during normal editing.
+- Identifier edits are validated for uniqueness and synchronized to matching entries in each existing prompt_order group.
+- Existing prompt ordering, add/delete behavior, and advanced JSON editing remain available.
+- Main Prompt, Jailbreak Prompt, System Prompt, and individual prompt content now use larger, automatically resized text areas.
+- A prompt item can be opened in a focused full-screen editing mode; only one item can be expanded at a time.
+- Prompt content is saved through the existing preset persistence path and the existing raw-JSON view is refreshed.
+
+This is an incremental UI change on the legacy classic-script runtime. The production index.html entrypoint and script load order are unchanged. Static JavaScript parsing and source-level wiring checks passed; no browser interaction test, Vite build, or TypeScript type-check was run in this pass.
