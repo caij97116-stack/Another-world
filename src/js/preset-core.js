@@ -231,10 +231,71 @@ function isPresetPayloadObject(value){
                 </article>`;
             }).join('');
             container.querySelectorAll('.prompt-content-editor').forEach(autoResizeLongPrompt);
+            renderPromptOrderPreview();
         }
         function getPromptOrderGroups(){
             if(!presetData||!Array.isArray(presetData.prompt_order))return [];
             return presetData.prompt_order.filter(group=>group&&typeof group==='object'&&!Array.isArray(group)&&Array.isArray(group.order));
+        }
+        function renderPromptOrderPreview(){
+            const container=document.getElementById('promptOrderPreview');
+            if(!container)return;
+            if(!presetData){
+                container.innerHTML='<div class="regex-empty">载入预设后显示顺序预览</div>';
+                return;
+            }
+            const prompts=getPresetPromptItems();
+            const groups=getPromptOrderGroups();
+            const byId=new Map();
+            prompts.forEach((prompt,index)=>{
+                const id=prompt&&typeof prompt.identifier==='string'?prompt.identifier:'';
+                if(!id)return;
+                if(!byId.has(id))byId.set(id,[]);
+                byId.get(id).push({prompt,index});
+            });
+            const referenced=new Set();
+            let listed=0,unresolved=0,disabled=0,duplicate=0;
+            const groupHtml=groups.map((group,groupIndex)=>{
+                const characterId=group.character_id??group.characterId??'未指定';
+                const rows=group.order.map((entry,orderIndex)=>{
+                    const id=entry&&typeof entry==='object'&&!Array.isArray(entry)?entry.identifier:'';
+                    if(typeof id!=='string'||!id){
+                        unresolved++;
+                        return '<li class="prompt-order-row is-warning"><span class="prompt-order-number">'+(orderIndex+1)+'</span><div><strong>无法识别的排序项</strong><small>该项缺少有效 identifier</small></div><span class="prompt-order-state">结构异常</span></li>';
+                    }
+                    referenced.add(id);
+                    const matches=byId.get(id)||[];
+                    if(matches.length!==1){
+                        unresolved++;
+                        if(matches.length>1)duplicate++;
+                        return '<li class="prompt-order-row is-warning"><span class="prompt-order-number">'+(orderIndex+1)+'</span><div><strong>'+escapeHtml(id)+'</strong><small>'+(matches.length?'存在 '+matches.length+' 个同标识提示词':'找不到对应提示词')+'</small></div><span class="prompt-order-state">'+(matches.length?'标识重复':'未匹配')+'</span></li>';
+                    }
+                    const match=matches[0],prompt=match.prompt||{};
+                    const promptEnabled=prompt.enabled!==false;
+                    const orderEnabled=entry.enabled!==false;
+                    const active=promptEnabled&&orderEnabled;
+                    listed++;
+                    if(!active)disabled++;
+                    const title=prompt.name||id||('提示词 '+(match.index+1));
+                    const role=typeof prompt.role==='string'?prompt.role:'system';
+                    return '<li class="prompt-order-row '+(active?'':'is-disabled')+'"><span class="prompt-order-number">'+(orderIndex+1)+'</span><div class="prompt-order-main"><strong>'+escapeHtml(title)+'</strong><small>'+escapeHtml(id)+' · '+escapeHtml(role)+'</small></div><span class="prompt-order-state">'+(active?'启用':'禁用')+'</span></li>';
+                }).join('');
+                return '<section class="prompt-order-group"><header><strong>排序组 '+(groupIndex+1)+'</strong><span>character_id：'+escapeHtml(String(characterId))+'</span><span>'+group.order.length+' 项</span></header><ol>'+rows+'</ol></section>';
+            }).join('');
+            const unlisted=prompts.map((prompt,index)=>{
+                const id=prompt&&typeof prompt.identifier==='string'?prompt.identifier:'';
+                if(id&&referenced.has(id))return '';
+                const title=prompt&&prompt.name||id||('提示词 '+(index+1));
+                return '<li><strong>'+escapeHtml(title)+'</strong><small>'+(id?'identifier：'+escapeHtml(id):'缺少 identifier')+' · '+(prompt&&prompt.enabled===false?'已禁用':'已启用')+'</small></li>';
+            }).filter(Boolean);
+            const totalOrder=groups.reduce((sum,group)=>sum+group.order.length,0);
+            const summary='<div class="prompt-order-summary"><span>排序组 '+groups.length+'</span><span>排序项 '+totalOrder+'</span><span>匹配 '+listed+'</span><span>未匹配 '+unresolved+'</span><span>禁用 '+disabled+'</span></div>';
+            const notes='<p class="prompt-order-note">这是根据当前 prompt_order 与 prompts.identifier 生成的结构预览。角色上下文、扩展处理、主提示词插入和运行时规则可能改变酒馆最终组装结果；此处不等同于实际发送给模型的完整提示词。</p>';
+            if(!groups.length){
+                container.innerHTML=summary+'<div class="regex-empty">当前预设没有可识别的 prompt_order 排序组。'+(prompts.length?'以下提示词仅按 prompts 原始数组列出。':'')+'</div>'+(prompts.length?'<ul class="prompt-order-unlisted">'+unlisted.join('')+'</ul>':'')+notes;
+                return;
+            }
+            container.innerHTML=summary+groupHtml+(unlisted.length?'<section class="prompt-order-unlisted-wrap"><h4>未被排序表引用的提示词 <span>'+unlisted.length+'</span></h4><ul class="prompt-order-unlisted">'+unlisted.join('')+'</ul></section>':'')+(duplicate?'<p class="prompt-order-warning">发现 '+duplicate+' 个存在重复 identifier 的排序引用，请检查提示词标识符。</p>':'')+notes;
         }
         function refreshPromptOrderAfterSync(){
             refreshPromptOrderJson();
@@ -302,7 +363,7 @@ function isPresetPayloadObject(value){
                 if(field==='content')autoResizeLongPrompt(card.querySelector('.prompt-content-editor'));
             }
             if(field==='identifier')refreshPromptOrderAfterSync();
-            else{refreshRawJson();schedulePresetSave()}
+            else{refreshRawJson();schedulePresetSave();renderPromptOrderPreview()}
         }
         function updatePromptItemJson(index,raw){
             try{
@@ -390,17 +451,18 @@ function isPresetPayloadObject(value){
             const el=document.getElementById('p_prompt_order');
             if(!el||!presetData)return;
             el.value=Object.prototype.hasOwnProperty.call(presetData,'prompt_order')?JSON.stringify(presetData.prompt_order,null,2):'';
+            renderPromptOrderPreview();
         }
         function applyPromptOrderJson(){
             const el=document.getElementById('p_prompt_order');
             if(!el||!presetData)return;
             if(!el.value.trim()){
                 delete presetData.prompt_order;
-                schedulePresetSave();refreshRawJson();showToast('已清空 prompt_order');return;
+                schedulePresetSave();refreshRawJson();renderPromptOrderPreview();showToast('已清空 prompt_order');return;
             }
             try{
                 presetData.prompt_order=JSON.parse(el.value);
-                schedulePresetSave();refreshRawJson();showToast('prompt_order 已更新','success');
+                schedulePresetSave();refreshRawJson();renderPromptOrderPreview();showToast('prompt_order 已更新','success');
             }catch(err){showToast('prompt_order JSON 格式错误，请检查后重试','error');refreshPromptOrderJson()}
         }
 
