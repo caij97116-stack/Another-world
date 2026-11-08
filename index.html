@@ -34,6 +34,7 @@
                         <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" class="search-input" id="searchInput" placeholder="搜索名称 / 关键词 / 标签..." data-input-action="render-entry-list"></div>
                         <div style="display:flex;gap:6px">
                             <button class="btn btn-primary" style="flex:1;justify-content:center" data-action="add-new-entry">＋ 新建</button>
+                            <button class="btn" style="flex:0 0 auto" data-action="open-worldbook-diagnostics" title="检查当前世界书">诊断</button>
                             <button class="btn" style="flex:0 0 auto" data-action="toggle-select-mode" id="btnSelectMode">多选</button>
                         </div>
                     </div>
@@ -443,6 +444,21 @@
         <button class="nav-item" data-page="extensions" data-action="switch-page"><span class="nav-icon">⌘</span><span>正则 / 脚本</span></button>
         <button class="nav-item" data-page="character-card" data-action="switch-page"><span class="nav-icon">✦</span><span>角色卡</span></button>
     </nav>
+
+    <div class="modal-mask" id="diagnosticsModal">
+        <div class="modal-box diagnostics-modal-box">
+            <div class="diagnostics-heading">
+                <div><h3>世界书诊断中心</h3><p>只检查、不自动修改。点击问题可定位到对应条目。</p></div>
+                <button class="btn btn-ghost btn-sm" data-action="close-worldbook-diagnostics" aria-label="关闭">✕</button>
+            </div>
+            <div id="diagnosticsSummary" class="diagnostics-summary"></div>
+            <div id="diagnosticsResults" class="diagnostics-results"></div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" data-action="run-worldbook-diagnostics">重新扫描</button>
+                <button class="btn btn-ghost" data-action="close-worldbook-diagnostics">关闭</button>
+            </div>
+        </div>
+    </div>
 
     <div class="modal-mask" id="importModal">
         <div class="modal-box">
