@@ -174,7 +174,8 @@ function normalizeRegexScript(raw, index){
             try{copy=JSON.parse(JSON.stringify(list[idx]))}catch(error){showToast('无法复制该正则：数据无法序列化');return}
             recordPresetEditHistory(false);
             copy.id='regex_'+Date.now()+'_'+(list.length+1);
-            copy.scriptName=(copy.scriptName||'未命名正则')+'（副本）';
+            copy.scriptName=(copy.scriptName||copy.name||'未命名正则')+'（副本）';
+            if(Object.prototype.hasOwnProperty.call(copy,'name'))copy.name=copy.scriptName;
             list.splice(idx+1,0,copy);
             renderRegexList();
             schedulePresetSave();
@@ -450,7 +451,8 @@ function normalizeRegexScript(raw, index){
             try{copy=JSON.parse(JSON.stringify(list[idx]))}catch(error){showToast('无法复制该脚本：数据无法序列化');return}
             recordPresetEditHistory(false);
             copy.id='script_'+Date.now()+'_'+(list.length+1);
-            copy.name=(copy.name||'未命名脚本')+'（副本）';
+            copy.name=(copy.name||copy.scriptName||'未命名脚本')+'（副本）';
+            ['scriptName','title'].forEach(alias=>{if(Object.prototype.hasOwnProperty.call(copy,alias))copy[alias]=copy.name});
             list.splice(idx+1,0,copy);
             renderScriptList();
             schedulePresetSave();
