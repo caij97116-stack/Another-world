@@ -80,6 +80,7 @@ function normalizeRegexScript(raw, index){
                         <label class="extension-card-select"><input type="checkbox" data-extension-select="regex" data-index="${i}" aria-label="选择正则 ${i+1}"><span>选择</span></label>
                         <div class="regex-card-title">${escapeHtml(r.scriptName || '未命名正则')} ${disabled ? '<span class="regex-badge off">已禁用</span>' : '<span class="regex-badge">启用</span>'}</div>
                         <div class="regex-card-actions">
+                            <button class="btn btn-sm" type="button" data-action="toggle-extension-card" aria-expanded="true">收起</button>
                             <button class="btn btn-sm" type="button" data-action="toggle-regex-disabled" data-index="${i}">${disabled ? '启用' : '禁用'}</button>
                             <button class="btn btn-sm" type="button" data-action="move-regex-script" data-index="${i}" data-direction="-1" ${i===0?'disabled':''} aria-label="上移正则">↑</button>
                             <button class="btn btn-sm" type="button" data-action="move-regex-script" data-index="${i}" data-direction="1" ${i===list.length-1?'disabled':''} aria-label="下移正则">↓</button>
@@ -254,6 +255,7 @@ function normalizeRegexScript(raw, index){
                         <label class="extension-card-select"><input type="checkbox" data-extension-select="scripts" data-index="${i}" aria-label="选择脚本 ${i+1}"><span>选择</span></label>
                         <div class="script-card-title">${escapeHtml(s.name || '未命名脚本')} ${disabled ? '<span class="regex-badge off">已禁用</span>' : '<span class="regex-badge">启用</span>'}</div>
                         <div class="regex-card-actions">
+                            <button class="btn btn-sm" type="button" data-action="toggle-extension-card" aria-expanded="true">收起</button>
                             <button class="btn btn-sm" type="button" data-action="toggle-script-disabled" data-index="${i}">${disabled ? '启用' : '禁用'}</button>
                             <button class="btn btn-sm" type="button" data-action="move-script" data-index="${i}" data-direction="-1" ${i===0?'disabled':''} aria-label="上移脚本">↑</button>
                             <button class="btn btn-sm" type="button" data-action="move-script" data-index="${i}" data-direction="1" ${i===list.length-1?'disabled':''} aria-label="下移脚本">↓</button>
