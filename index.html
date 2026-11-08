@@ -74,6 +74,46 @@
                             <label class="switch-row"><input type="checkbox" id="field_constant" data-change-action="sync-current-entry"><span>常驻</span></label>
                             <label class="switch-row"><input type="checkbox" id="field_selective" data-change-action="sync-current-entry"><span>选择性</span></label>
                         </div>
+                        <details class="wb-advanced-settings">
+                            <summary>高级触发设置 <span>匹配规则 / 互斥分组</span></summary>
+                            <div class="wb-advanced-body">
+                                <div class="wb-advanced-section">
+                                    <h4>关键词匹配</h4>
+                                    <div class="form-group">
+                                        <label>次要关键词逻辑 <span class="hint">(Selective Logic)</span></label>
+                                        <select id="field_selectiveLogic" class="form-control" data-change-action="sync-current-entry">
+                                            <option value="0">AND ANY · 至少匹配一个</option>
+                                            <option value="1">AND ALL · 必须全部匹配</option>
+                                            <option value="2">NOT ANY · 一个都不能匹配</option>
+                                            <option value="3">NOT ALL · 不允许全部匹配</option>
+                                        </select>
+                                        <p class="tool-help">仅在启用「选择性」且填写排除 / 次要关键词时发挥作用。</p>
+                                    </div>
+                                    <div class="wb-advanced-switches">
+                                        <label class="switch-row"><input type="checkbox" id="field_caseSensitive" data-change-action="sync-current-entry"><span>区分大小写</span></label>
+                                        <label class="switch-row"><input type="checkbox" id="field_matchWholeWords" data-change-action="sync-current-entry"><span>整词匹配</span></label>
+                                    </div>
+                                    <p class="tool-help">整词匹配对中文、日文等不以空格分词的语言可能造成漏匹配；这类条目通常建议关闭。关键词支持使用 JavaScript 正则表达式格式，例如 <code>/dragon/i</code>，无需额外开关。</p>
+                                </div>
+                                <div class="wb-advanced-section">
+                                    <h4>互斥分组</h4>
+                                    <div class="form-group">
+                                        <label>分组名称 <span class="hint">(Group)</span></label>
+                                        <input type="text" id="field_group" class="form-control" placeholder="例如：天气事件、随机遭遇" data-input-action="sync-current-entry">
+                                    </div>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label>分组权重 <span class="hint">(Group Weight)</span></label>
+                                            <input type="number" id="field_groupWeight" class="form-control" min="0" data-input-action="sync-current-entry">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="switch-row"><input type="checkbox" id="field_useGroupScoring" data-change-action="sync-current-entry"><span>启用分组评分</span></label>
+                                        </div>
+                                    </div>
+                                    <p class="tool-help">同组中多个条目同时触发时，通常只会选中其中一个。权重越高，被选中的相对机会越大；分组评分会优先比较匹配关键词的数量。</p>
+                                </div>
+                            </div>
+                        </details>
                     </div>
                     <div class="glass-panel-box preview-box" id="previewPanel" style="display:none">
                         <div class="panel-header"><h3>触发预览</h3></div>
