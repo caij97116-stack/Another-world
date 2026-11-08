@@ -396,3 +396,14 @@ body.dark-theme .character-card-hero{background:linear-gradient(120deg,rgba(14,1
 .character-link-panel-header{align-items:center;flex-wrap:wrap}
 .character-link-panel-header>div{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 @media(max-width:600px){.character-link-panel-header>button{width:100%;justify-content:center}}
+
+/* Resource bundle import staging */
+.character-bundle-import-preview{margin-top:12px;padding:13px;border:1px solid var(--glass-border);border-radius:13px;background:rgba(125,160,190,.05)}
+.character-bundle-import-preview[hidden]{display:none}
+.character-bundle-preview-head{display:flex;flex-direction:column;gap:4px;padding-bottom:10px;border-bottom:1px solid var(--glass-border)}
+.character-bundle-preview-head strong{font-size:.8rem;color:var(--text-main)}
+.character-bundle-preview-head span,.character-bundle-preview-item span{font-size:.67rem;color:var(--text-muted);overflow-wrap:anywhere}
+.character-bundle-preview-item{display:flex;flex-direction:column;gap:3px;padding:9px 0;border-bottom:1px solid var(--glass-border)}
+.character-bundle-preview-item strong{font-size:.72rem;color:var(--text-main)}
+.character-bundle-import-actions{display:flex;flex-wrap:wrap;gap:7px;padding-top:12px}
+@media(max-width:600px){.character-bundle-import-actions .btn{flex:1 1 45%}}
