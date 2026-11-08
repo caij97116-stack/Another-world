@@ -181,36 +181,6 @@
 
                     <div class="glass-panel-box">
                         <div class="panel-header">
-                            <h3>正则脚本 <span class="regex-badge" id="regexCountBadge">0</span></h3>
-                            <div style="display:flex;gap:6px;align-items:center">
-                                <button class="btn btn-sm btn-primary" type="button" data-action="add-regex-script">＋ 新建</button>
-                                <button class="panel-toggle" type="button" data-action="toggle-section" data-target="secRegex">折叠/展开</button>
-                            </div>
-                        </div>
-                        <div class="collapsible-body" id="secRegex">
-                            <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px">自动识别预设中的 regex_scripts。支持新建、编辑、启用/禁用与删除。</p>
-                            <div class="regex-list" id="regexListContainer"></div>
-                        </div>
-                    </div>
-
-
-                    <div class="glass-panel-box">
-                        <div class="panel-header">
-                            <h3>脚本 <span class="regex-badge" id="scriptCountBadge">0</span></h3>
-                            <div style="display:flex;gap:6px;align-items:center">
-                                <button class="btn btn-sm btn-primary" type="button" data-action="add-script">＋ 新建</button>
-                                <button class="panel-toggle" type="button" data-action="toggle-section" data-target="secScripts">折叠/展开</button>
-                            </div>
-                        </div>
-                        <div class="collapsible-body" id="secScripts">
-                            <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px">自动识别预设中的 scripts / 酒馆助手相关脚本。支持新建、编辑、启用/禁用与删除。</p>
-                            <div class="script-list" id="scriptListContainer"></div>
-                        </div>
-                    </div>
-
-
-                    <div class="glass-panel-box">
-                        <div class="panel-header">
                             <h3>插入方式与导出</h3>
                             <button class="panel-toggle" type="button" data-action="toggle-section" data-target="secInsertExport">折叠/展开</button>
                         </div>
@@ -257,9 +227,48 @@
         </div>
     </div>
 
+    <!-- 正则与脚本工作区：独立界面，数据仍绑定当前预设 -->
+    <div class="page" id="page-extensions">
+        <div class="tool-workspace">
+            <section class="glass-panel-box tool-binding-panel">
+                <div class="panel-header">
+                    <div>
+                        <h3>当前绑定预设</h3>
+                        <p class="tool-binding-name" id="toolPresetName">尚未载入预设</p>
+                    </div>
+                    <span class="regex-badge" id="toolBindingStatus">未绑定</span>
+                </div>
+                <p class="tool-help">正则与脚本仍保存在当前预设原有的数据字段中。这里仅提供独立编辑和测试界面，不会将它们转移到世界书。</p>
+            </section>
+            <div class="extension-tabs" role="tablist" aria-label="扩展工具类型">
+                <button class="extension-tab active" type="button" data-action="switch-extension-tab" data-tab="regex" role="tab" aria-selected="true">
+                    <span>正则规则</span><span class="regex-badge" id="regexCountBadge">0</span>
+                </button>
+                <button class="extension-tab" type="button" data-action="switch-extension-tab" data-tab="scripts" role="tab" aria-selected="false">
+                    <span>脚本</span><span class="regex-badge" id="scriptCountBadge">0</span>
+                </button>
+            </div>
+            <section class="glass-panel-box extension-panel" id="extensionRegexPanel">
+                <div class="panel-header">
+                    <div><h3>正则规则管理</h3><p class="tool-help">编辑匹配表达式、替换内容和应用位置，并使用独立测试台验证效果。</p></div>
+                    <button class="btn btn-primary btn-sm" type="button" data-action="add-regex-script">＋ 新建正则</button>
+                </div>
+                <div class="regex-list" id="regexListContainer"></div>
+            </section>
+            <section class="glass-panel-box extension-panel" id="extensionScriptsPanel" hidden>
+                <div class="panel-header">
+                    <div><h3>脚本管理</h3><p class="tool-help">脚本仅在你主动点击测试时运行；测试环境不提供酒馆宿主 API。</p></div>
+                    <button class="btn btn-primary btn-sm" type="button" data-action="add-script">＋ 新建脚本</button>
+                </div>
+                <div class="script-list" id="scriptListContainer"></div>
+            </section>
+        </div>
+    </div>
+
     <nav class="bottom-nav">
         <button class="nav-item active" data-page="worldbook" data-action="switch-page"><span class="nav-icon">📘</span><span>世界书</span></button>
         <button class="nav-item" data-page="preset" data-action="switch-page"><span class="nav-icon">⚙️</span><span>预设</span></button>
+        <button class="nav-item" data-page="extensions" data-action="switch-page"><span class="nav-icon">⌘</span><span>正则 / 脚本</span></button>
     </nav>
 
     <div class="modal-mask" id="importModal">
