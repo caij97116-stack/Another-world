@@ -25,3 +25,5 @@
         const PRESET_ENVELOPE_STORAGE_KEY='tavern_preset_editor_envelope';
         const PRESET_ARRAY_PATHS_KEY='tavern_preset_editor_array_paths';
         let presetArrayPaths={};
+        const PRESET_IMPORT_BACKUP_KEY='tavern_preset_editor_import_backup';
+        let pendingPresetImport=null;
