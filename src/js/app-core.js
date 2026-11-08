@@ -26,11 +26,11 @@ function switchPage(page){
                 iconEl.textContent='📘';
                 badgeEl.textContent='v'+exportVersion;
                 actionsEl.innerHTML=`
-                    <button class="btn btn-ghost" onclick="undo()" id="btnUndo" title="撤销" ${historyIndex<=0?'disabled':''}>↶</button>
-                    <button class="btn btn-ghost" onclick="redo()" id="btnRedo" title="重做" ${historyIndex>=historyStack.length-1?'disabled':''}>↷</button>
-                    <button class="btn" onclick="triggerImport()">导入</button>
-                    <button class="btn btn-primary" onclick="exportWorldBook()">导出</button>
-                    <button class="btn btn-danger" onclick="deleteCurrentEntry()" id="btnDelete" style="display:none">删除</button>`;
+                    <button class="btn btn-ghost" data-action="undo" id="btnUndo" title="撤销" ${historyIndex<=0?'disabled':''}>↶</button>
+                    <button class="btn btn-ghost" data-action="redo" id="btnRedo" title="重做" ${historyIndex>=historyStack.length-1?'disabled':''}>↷</button>
+                    <button class="btn" data-action="trigger-worldbook-import">导入</button>
+                    <button class="btn btn-primary" data-action="export-worldbook">导出</button>
+                    <button class="btn btn-danger" data-action="delete-current-entry" id="btnDelete" style="display:none">删除</button>`;
                 if(activeUid&&worldBookData.entries[activeUid]){
                     const btn=document.getElementById('btnDelete');
                     if(btn)btn.style.display='inline-flex';
@@ -40,10 +40,10 @@ function switchPage(page){
                 iconEl.textContent='⚙️';
                 badgeEl.textContent='v'+presetVersion;
                 actionsEl.innerHTML=`
-                    <button class="btn btn-ghost" onclick="toggleTheme()" title="切换主题" id="btnTheme">${document.body.classList.contains('dark-theme')?'☀️':'🌙'}</button>
-                    <button class="btn btn-ghost" onclick="clearPresetData()">清空</button>
-                    <button class="btn" onclick="triggerPresetImport()">导入</button>
-                    <button class="btn btn-primary" onclick="exportPreset()">导出</button>`;
+                    <button class="btn btn-ghost" data-action="toggle-theme" title="切换主题" id="btnTheme">${document.body.classList.contains('dark-theme')?'☀️':'🌙'}</button>
+                    <button class="btn btn-ghost" data-action="clear-preset-data">清空</button>
+                    <button class="btn" data-action="trigger-preset-import">导入</button>
+                    <button class="btn btn-primary" data-action="export-preset">导出</button>`;
             }
         }
 
