@@ -25,6 +25,7 @@ const isPresetPayloadObject = vm.runInNewContext(
 );
 const unwrapPresetObject = vm.runInNewContext(
   `(${extractFunction(source, 'unwrapPresetObject')})`,
+  { isPresetPayloadObject },
 );
 const countPresetArrayAtPaths = vm.runInNewContext(
   `(${extractFunction(source, 'countPresetArrayAtPaths')})`,
