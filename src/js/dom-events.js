@@ -284,7 +284,7 @@ document.addEventListener('input', (event) => {
 
 document.addEventListener('change', (event) => {
     const target = event.target instanceof Element
-        ? event.target.closest('[data-change-action], #regexStatusFilter, #scriptStatusFilter')
+        ? event.target.closest('[data-change-action], #regexStatusFilter, #scriptStatusFilter, [data-extension-select], [data-extension-select-all]')
         : null;
     if (!target) return;
 
