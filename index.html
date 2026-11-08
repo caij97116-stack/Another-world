@@ -764,7 +764,8 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             const previousActiveUid=activeUid;
             const incoming=pendingImportData.entries;
             if(mode==='overwrite'){
-                worldBookData={...(pendingImportData.source||{}),entries:incoming};
+                const sourceEnvelope=pendingImportData.source&&typeof pendingImportData.source==='object'&&!Array.isArray(pendingImportData.source)?pendingImportData.source:{};
+                worldBookData={...sourceEnvelope,entries:incoming};
                 if(pendingImportData.version)exportVersion=pendingImportData.version;
             }else{
                 let added=0,remapped=0;
@@ -858,7 +859,13 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             if(btn)btn.textContent=selectMode?'完成':'多选';
             if(bar){bar.classList.toggle('show',selectMode&&selectedUids.size>0);document.getElementById('bulkCount').textContent=`已选 ${selectedUids.size}`}
         }
-        function toggleSelect(uid,checked){if(checked)selectedUids.add(String(uid));else selectedUids.delete(String(uid));updateSelectModeUI();const card=document.querySelector(`.entry-card[data-uid="${uid}"]`);if(card)card.classList.toggle('selected',checked)}
+        function toggleSelect(uid,checked){
+            uid=String(uid);
+            if(checked)selectedUids.add(uid);else selectedUids.delete(uid);
+            updateSelectModeUI();
+            const card=Array.from(document.querySelectorAll('.entry-card')).find(item=>item.dataset.uid===uid);
+            if(card)card.classList.toggle('selected',checked);
+        }
         function clearSelection(){selectedUids.clear();selectMode=false;updateSelectModeUI();renderEntryList()}
         function bulkSetEnabled(enabled){
             if(selectedUids.size===0)return;pushHistory();
@@ -1022,12 +1029,12 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             if(!text.trim()){resultEl.innerHTML='<div class="preview-miss">输入文本后显示匹配结果</div>';return}
             const hits=[];
             Object.values(worldBookData.entries||{}).forEach(entry=>{
-                if(entry.enabled===false||entry.disable)return;
-                if(entry.constant){hits.push({entry,reason:'常驻'});return}
+                if(!getEntryEnabled(entry))return;
+                if(parseEntryBoolean(entry.constant,false)){hits.push({entry,reason:'常驻'});return}
                 const keys=listFieldItems(entry.key),keysec=listFieldItems(entry.keysecondary);
                 const hasKey=keys.length===0||keys.some(k=>k&&text.includes(k.toLowerCase()));
                 const hasExclude=keysec.some(k=>k&&text.includes(k.toLowerCase()));
-                if(hasKey&&!hasExclude)hits.push({entry,reason:keys.filter(k=>text.includes(k.toLowerCase())).join(', ')||'匹配'});
+                if(hasKey&&!hasExclude)hits.push({entry,reason:keys.filter(k=>k&&text.includes(k.toLowerCase())).join(', ')||'匹配'});
             });
             hits.sort((a,b)=>(Number(a.entry.order)||100)-(Number(b.entry.order)||100));
             if(hits.length===0)resultEl.innerHTML='<div class="preview-miss">当前文本没有触发任何启用中的条目</div>';
