@@ -147,6 +147,68 @@
         return '';
     }
 
+    function previewResourceValue(value,depth=0){
+        if(typeof value==='string'){
+            if(value.startsWith('data:'))return '[data URL 内容已折叠]';
+            return value.length>900?value.slice(0,900)+'…（预览已截断）':value;
+        }
+        if(value===null||typeof value!=='object')return value;
+        if(depth>=4)return '[嵌套层级较深，完整内容请查看高级 JSON]';
+        if(Array.isArray(value))return value.slice(0,20).map(item=>previewResourceValue(item,depth+1)).concat(value.length>20?['…其余 '+(value.length-20)+' 项已折叠']:[]);
+        const result={};
+        Object.keys(value).slice(0,40).forEach(key=>{result[key]=previewResourceValue(value[key],depth+1)});
+        if(Object.keys(value).length>40)result['…']=(Object.keys(value).length-40)+' 个字段已折叠';
+        return result;
+    }
+
+    function renderResourcePreview(data){
+        const host=document.getElementById('characterCardResources');
+        if(!host)return;
+        const book=isObject(data.character_book)?data.character_book:null;
+        const entries=book&&Array.isArray(book.entries)?book.entries:[];
+        const assets=Array.isArray(data.assets)?data.assets:[];
+        const extensions=isObject(data.extensions)?data.extensions:null;
+        const sections=[];
+
+        if(book){
+            const bookMeta=[book.name?'名称：'+book.name:'',book.scan_depth!==undefined?'扫描深度：'+book.scan_depth:'',book.token_budget!==undefined?'Token 预算：'+book.token_budget:''].filter(Boolean).join(' · ');
+            const entryHtml=entries.length?entries.map((entry,index)=>{
+                const item=isObject(entry)?entry:{content:String(entry)};
+                const title=item.name||item.comment||('世界书条目 '+(index+1));
+                const keys=Array.isArray(item.keys)?item.keys.join('、'):(typeof item.keys==='string'?item.keys:'无触发词');
+                const enabled=item.enabled===false?'已禁用':'启用状态未关闭';
+                const content=typeof item.content==='string'?item.content:JSON.stringify(previewResourceValue(item.content),null,2);
+                return '<details class="character-resource-item"><summary><strong>'+escapeCardHtml(title)+'</strong><span>'+escapeCardHtml(enabled)+' · '+escapeCardHtml(keys)+'</span></summary><pre>'+escapeCardHtml(content||'（空内容）')+'</pre></details>';
+            }).join(''):'<p class="tool-help">该内嵌世界书目前没有条目。</p>';
+            sections.push('<details class="character-resource-group" open><summary>内嵌世界书 <span>'+entries.length+' 条目</span></summary><div class="character-resource-body">'+(bookMeta?'<p class="tool-help">'+escapeCardHtml(bookMeta)+'</p>':'')+entryHtml+'</div></details>');
+        }else{
+            sections.push('<div class="character-resource-empty">未包含内嵌 character_book。</div>');
+        }
+
+        if(assets.length){
+            const assetHtml=assets.map((asset,index)=>{
+                const item=isObject(asset)?asset:{uri:asset};
+                const uri=typeof item.uri==='string'?(item.uri.startsWith('data:')?'data URL（内容已隐藏）':item.uri):'未提供 URI';
+                return '<div class="character-resource-asset"><strong>'+escapeCardHtml(item.name||('资源 '+(index+1)))+'</strong><span>'+escapeCardHtml(item.type||'未标注类型')+' · '+escapeCardHtml(item.ext||'未知格式')+'</span><code>'+escapeCardHtml(uri)+'</code></div>';
+            }).join('');
+            sections.push('<details class="character-resource-group"><summary>V3 附带资源 <span>'+assets.length+' 项</span></summary><div class="character-resource-body">'+assetHtml+'</div></details>');
+        }else{
+            sections.push('<div class="character-resource-empty">没有检测到 V3 assets 资源。</div>');
+        }
+
+        if(extensions){
+            const keys=Object.keys(extensions);
+            const extensionHtml=keys.length?keys.map(key=>{
+                const value=JSON.stringify(previewResourceValue(extensions[key]),null,2);
+                return '<details class="character-resource-item"><summary><strong>'+escapeCardHtml(key)+'</strong><span>'+escapeCardHtml(Array.isArray(extensions[key])?'数组':extensions[key]===null?'null':typeof extensions[key])+'</span></summary><pre>'+escapeCardHtml(value??'null')+'</pre></details>';
+            }).join(''):'<p class="tool-help">extensions 对象为空。</p>';
+            sections.push('<details class="character-resource-group"><summary>扩展数据 <span>'+keys.length+' 个字段</span></summary><div class="character-resource-body">'+extensionHtml+'</div></details>');
+        }else{
+            sections.push('<div class="character-resource-empty">没有检测到 extensions 对象。</div>');
+        }
+        host.innerHTML=sections.join('');
+    }
+
     function renderCard(card,file){
         const panel=document.getElementById('characterCardPreview');
         const empty=document.getElementById('characterCardEmpty');
@@ -169,14 +231,15 @@
         document.getElementById('characterCardTags').textContent=tags.length?tags.join(' · '):'暂无标签';
         document.getElementById('characterCardStats').innerHTML=[
             ['备用开场白',greetings],['世界书条目',book&&Array.isArray(book.entries)?book.entries.length:0],
-            ['扩展字段',isObject(data.extensions)?Object.keys(data.extensions).length:0],['未归类字段',extra.length]
+            ['扩展字段',isObject(data.extensions)?Object.keys(data.extensions).length:0],['V3 资源',Array.isArray(data.assets)?data.assets.length:0],['未归类字段',extra.length]
         ].map(([label,count])=>'<div class="character-stat"><strong>'+count+'</strong><span>'+label+'</span></div>').join('');
         document.getElementById('characterCardFields').innerHTML=fields.map(([key,label])=>{
             const value=typeof data[key]==='string'?data[key]:'';
             return '<label class="character-edit-field"><span>'+label+'</span><textarea rows="'+(key==='description'||key==='mes_example'?5:3)+'" data-card-field="'+key+'" spellcheck="false">'+escapeCardHtml(value)+'</textarea></label>';
         }).join('') + '<label class="character-edit-field"><span>标签（用逗号分隔）</span><input type="text" data-card-field="tags" value="'+escapeCardHtml(Array.isArray(data.tags)?data.tags.join(', '):'')+'"></label>';
         document.getElementById('characterCardExtra').textContent=extra.length?extra.join(', '):'无';
-        document.getElementById('characterCardBookStatus').textContent=book?'已包含 character_book'+(Array.isArray(book.entries)?' · '+book.entries.length+' 条目':''):'未内嵌世界书';
+        document.getElementById('characterCardBookStatus').textContent=book?'已识别内嵌 character_book':'未内嵌世界书';
+        renderResourcePreview(data);
         document.getElementById('characterCardFileName').textContent=file.name;
         const isPngFile=file.type==='image/png'||file.name.toLowerCase().endsWith('.png');
         currentPngBuffer=isPngFile?file.slice(0,file.size).arrayBuffer():null;
