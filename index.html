@@ -1095,36 +1095,104 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
                 </div>`;
             }).join('');
         }
+        function getPromptOrderGroups(){
+            if(!presetData||!Array.isArray(presetData.prompt_order))return [];
+            return presetData.prompt_order.filter(group=>group&&typeof group==='object'&&!Array.isArray(group)&&Array.isArray(group.order));
+        }
+        function refreshPromptOrderAfterSync(){
+            refreshPromptOrderJson();
+            refreshRawJson();
+            schedulePresetSave();
+        }
+        function makeUniquePromptIdentifier(){
+            const prompts=getPresetPromptItems();
+            const used=new Set(prompts.map(item=>item&&typeof item.identifier==='string'?item.identifier:'').filter(Boolean));
+            let id='custom_prompt_'+Date.now();
+            let suffix=1;
+            while(used.has(id)){id='custom_prompt_'+Date.now()+'_'+suffix++;}
+            return id;
+        }
         function updatePromptItemJson(index,raw){
             try{
                 const parsed=JSON.parse(raw);
                 if(!parsed||typeof parsed!=='object'||Array.isArray(parsed)) throw new Error('每条提示词必须是 JSON 对象');
                 if(!Array.isArray(presetData.prompts)) presetData.prompts=[];
                 if(index<0||index>=presetData.prompts.length) throw new Error('条目位置已变化，请重新载入');
+                const previous=presetData.prompts[index]||{};
+                const oldId=typeof previous.identifier==='string'?previous.identifier:'';
+                const newId=typeof parsed.identifier==='string'?parsed.identifier:'';
+                if(oldId&&!newId)throw new Error('原条目存在 identifier，不能直接删除或清空；请填写新的唯一 identifier');
+                if(newId&&presetData.prompts.some((item,i)=>i!==index&&item&&item.identifier===newId))throw new Error('identifier 与其他提示词重复，请使用唯一值');
+                if(oldId&&oldId!==newId){
+                    const oldMatches=presetData.prompts.filter((item,i)=>i!==index&&item&&item.identifier===oldId).length;
+                    if(oldMatches)throw new Error('原 identifier 在其他提示词中也存在，无法安全同步排序表');
+                    getPromptOrderGroups().forEach(group=>{
+                        group.order.forEach(entry=>{
+                            if(entry&&typeof entry==='object'&&!Array.isArray(entry)&&entry.identifier===oldId)entry.identifier=newId;
+                        });
+                    });
+                }
                 presetData.prompts[index]=parsed;
-                renderPromptItems();schedulePresetSave();refreshRawJson();
+                renderPromptItems();refreshPromptOrderAfterSync();
                 showToast('提示词条目已更新','success');
             }catch(err){showToast('条目 JSON 无效：'+err.message,'error');renderPromptItems()}
         }
         function addPromptItem(){
             if(!presetData) return;
             if(!Array.isArray(presetData.prompts)) presetData.prompts=[];
-            presetData.prompts.push({name:'New Prompt',system_prompt:false,role:'system',content:'',identifier:'custom_prompt_'+Date.now(),enabled:true});
-            renderPromptItems();schedulePresetSave();refreshRawJson();
+            const prompt={name:'New Prompt',system_prompt:false,role:'system',content:'',identifier:makeUniquePromptIdentifier(),enabled:true};
+            presetData.prompts.push(prompt);
+            getPromptOrderGroups().forEach(group=>{
+                if(!group.order.some(entry=>entry&&entry.identifier===prompt.identifier)){
+                    group.order.push({identifier:prompt.identifier,enabled:prompt.enabled!==false});
+                }
+            });
+            renderPromptItems();refreshPromptOrderAfterSync();
             const sec=document.getElementById('secPromptItems');if(sec)sec.classList.remove('collapsed');
             showToast('已新增提示词条目','success');
         }
         function deletePromptItem(index){
             if(!presetData||!Array.isArray(presetData.prompts)||index<0||index>=presetData.prompts.length)return;
-            presetData.prompts.splice(index,1);renderPromptItems();schedulePresetSave();refreshRawJson();
-            showToast('已删除提示词条目');
+            const prompt=presetData.prompts[index];
+            const id=prompt&&typeof prompt.identifier==='string'?prompt.identifier:'';
+            const duplicate=id&&presetData.prompts.some((item,i)=>i!==index&&item&&item.identifier===id);
+            presetData.prompts.splice(index,1);
+            if(id&&!duplicate){
+                getPromptOrderGroups().forEach(group=>{
+                    group.order=group.order.filter(entry=>!(entry&&typeof entry==='object'&&!Array.isArray(entry)&&entry.identifier===id));
+                });
+            }
+            renderPromptItems();refreshPromptOrderAfterSync();
+            showToast(duplicate?'已删除提示词；因 identifier 重复，未改动排序表':'已删除提示词条目'+(id?'并同步清理排序表':''));
         }
         function movePromptItem(index,delta){
             if(!presetData||!Array.isArray(presetData.prompts))return;
             const target=index+delta;
             if(index<0||target<0||target>=presetData.prompts.length)return;
-            const list=presetData.prompts;[list[index],list[target]]=[list[target],list[index]];
-            renderPromptItems();schedulePresetSave();refreshRawJson();
+            const list=presetData.prompts;
+            const first=list[index],second=list[target];
+            const firstId=first&&typeof first.identifier==='string'?first.identifier:'';
+            const secondId=second&&typeof second.identifier==='string'?second.identifier:'';
+            [list[index],list[target]]=[list[target],list[index]];
+            const firstPromptCount=firstId?list.filter(item=>item&&item.identifier===firstId).length:0;
+            const secondPromptCount=secondId?list.filter(item=>item&&item.identifier===secondId).length:0;
+            let skipped=false;
+            if(firstId&&secondId&&firstId!==secondId&&firstPromptCount===1&&secondPromptCount===1){
+                getPromptOrderGroups().forEach(group=>{
+                    const firstIndexes=[],secondIndexes=[];
+                    group.order.forEach((entry,i)=>{
+                        if(!entry||typeof entry!=='object'||Array.isArray(entry))return;
+                        if(entry.identifier===firstId)firstIndexes.push(i);
+                        if(entry.identifier===secondId)secondIndexes.push(i);
+                    });
+                    if(firstIndexes.length===1&&secondIndexes.length===1){
+                        const a=firstIndexes[0],b=secondIndexes[0];
+                        [group.order[a],group.order[b]]=[group.order[b],group.order[a]];
+                    }else if(firstIndexes.length||secondIndexes.length)skipped=true;
+                });
+            }else if(firstId||secondId)skipped=true;
+            renderPromptItems();refreshPromptOrderAfterSync();
+            if(skipped)showToast('提示词列表已调整；部分排序组因缺少或重复 identifier，未同步移动','warning');
         }
         function refreshPromptOrderJson(){
             const el=document.getElementById('p_prompt_order');
