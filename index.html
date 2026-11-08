@@ -1044,8 +1044,14 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         // ========== 预设功能 ==========
         function isPresetPayloadObject(value){
             if(!value||typeof value!=='object'||Array.isArray(value))return false;
-            const signatures=['prompts','prompt_order','temperature','top_p','top_k','max_tokens','max_length','main_prompt','system_prompt','jailbreak_prompt','stop_sequence','stop_sequences','regex_scripts','regexScripts','repetition_penalty','rep_pen'];
-            return signatures.some(key=>Object.prototype.hasOwnProperty.call(value,key));
+            const signatures=['prompts','prompt_order','temperature','top_p','top_k','max_tokens','max_length','main_prompt','system_prompt','jailbreak_prompt','stop_sequence','stop_sequences','regex_scripts','regexScripts','regex','regexes','scripts','tavern_helper_scripts','tavernhelper_scripts','tavernHelperScripts','mjs_scripts','repetition_penalty','rep_pen'];
+            if(signatures.some(key=>Object.prototype.hasOwnProperty.call(value,key)))return true;
+            const nestedArrays=[
+                [value.extensions,'regex_scripts'],[value.extensions,'regexScripts'],[value.extensions,'scripts'],[value.extensions,'tavern_helper_scripts'],
+                [value.tavernhelper,'regex_scripts'],[value.tavernhelper,'scripts'],
+                [value.TavernHelper,'regex_scripts'],[value.TavernHelper,'scripts']
+            ];
+            return nestedArrays.some(([owner,key])=>owner&&typeof owner==='object'&&Array.isArray(owner[key]));
         }
         function unwrapPresetObject(parsed){
             if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new Error('预设文件必须是 JSON 对象');
@@ -1735,7 +1741,7 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         // ========== 脚本管理（酒馆助手等） ==========
         function ensureScripts(){
             return ensurePresetArrayAlias('scripts',[
-                ['tavern_helper_scripts'],['tavernhelper_scripts'],['tavernHelperScripts'],
+                ['scripts'],['tavern_helper_scripts'],['tavernhelper_scripts'],['tavernHelperScripts'],
                 ['extensions','scripts'],['extensions','tavern_helper_scripts'],
                 ['tavernhelper','scripts'],['TavernHelper','scripts'],['mjs_scripts']
             ]);
