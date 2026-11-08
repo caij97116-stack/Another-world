@@ -354,7 +354,7 @@
         const toolbarExport=document.getElementById('toolbarExportCharacterCard');
         if(toolbarExport)toolbarExport.disabled=false;
         currentCard=card.root;
-        currentCardLinkKey=getCardLinkKey(card,currentCardFile);
+        if(!currentCardLinkKey)currentCardLinkKey=getCardLinkKey(card,currentCardFile);
         renderCharacterCardLinks();
         updateCardSaveStatus();
     }
@@ -374,6 +374,7 @@
         }else{
             throw new Error('目前仅支持 PNG 角色卡和 JSON 角色卡。');
         }
+        currentCardLinkKey='';
         renderCard(card,file);
         showToast('已在本地载入角色卡：'+card.name,'success');
     }
