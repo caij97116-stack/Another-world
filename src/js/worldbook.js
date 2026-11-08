@@ -199,6 +199,22 @@ function makeUniqueEntryUid(preferred){
             if(visibleCount===0&&searchVal)container.innerHTML=`<div style="text-align:center;color:var(--text-muted);padding:18px 10px;font-size:.78rem">没有匹配的条目</div>`;
             updateEntryCount();updateSelectModeUI();
         }
+        function handleEntryCardClick(uid,card){
+            uid=String(uid);
+            if(selectMode){
+                const check=card.querySelector('.entry-check');
+                if(!check)return;
+                check.checked=!check.checked;
+                toggleSelect(uid,check.checked);
+                return;
+            }
+            activeUid=uid;
+            renderEntryList();
+            loadActiveEntry();
+            closeSidebar();
+            updateFullscreenBtn();
+        }
+
         function updateEntryCount(){const count=Object.keys(worldBookData.entries||{}).length;const el=document.getElementById('entryCount');if(el)el.textContent=`${count} 条目`}
         function moveEntry(uid,direction){
             pushHistory();
