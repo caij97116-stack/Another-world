@@ -414,3 +414,8 @@ Regex and script cards can be individually collapsed to keep long workspaces nav
 ### Preset history keyboard shortcuts
 
 When focus is outside editable fields, Ctrl/⌘ + Z triggers preset undo, Ctrl/⌘ + Shift + Z or Ctrl/⌘ + Y triggers redo. Native text-editing undo inside inputs, textareas, selects, and contenteditable elements is left untouched.
+
+
+### Duplicate extension entries
+
+Regex and script cards can be duplicated in place. A duplicate retains its existing configuration and unknown fields, receives a fresh editor ID and a copy suffix in its name, and is inserted immediately after the source item. Duplication is one undoable preset edit.
