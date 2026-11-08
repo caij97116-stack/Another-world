@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const source = await readFile(new URL('../src/js/character-card.js', import.meta.url), 'utf8');
 const exposed = source.replace(/\}\)\(\);\s*$/, `
-    window.__test = { getCardData, parsePng, stageCharacterResourceBundle, restoreStagedBundleResource, restoreLastBundleBackup, exportCharacterResourceBundle, exportCharacterCardPng, setExportState: (card, key, png) => { currentCard = card; currentCardLinkKey = key; currentPngBuffer = png || null; }, getStagedBundle: () => stagedResourceBundle };
+    window.__test = { getCardData, parsePng, importCharacterCard, stageCharacterResourceBundle, restoreStagedBundleResource, restoreLastBundleBackup, exportCharacterResourceBundle, exportCharacterCardPng, setExportState: (card, key, png) => { currentCard = card; currentCardLinkKey = key; currentPngBuffer = png || null; }, getStagedBundle: () => stagedResourceBundle };
 })();
 `);
 assert.notEqual(exposed, source, 'test seam must match the character-card IIFE');
@@ -341,4 +341,19 @@ test('PNG export preserves original image chunks, replaces card metadata, and em
   assert.equal(parsed.name, 'PNG Roundtrip');
   assert.equal(parsed.data.description, 'updated');
   assert.deepEqual(JSON.parse(JSON.stringify(parsed.data.extensions)), { unknown: { deep: true } });
+});
+
+
+test('rejects oversized card and resource-bundle files before reading their contents', async () => {
+  let reads = 0;
+  const oversized = {
+    size: 100 * 1024 * 1024 + 1,
+    name: 'oversized.json',
+    type: 'application/json',
+    text: async () => { reads++; return '{}'; },
+    arrayBuffer: async () => { reads++; return new ArrayBuffer(0); }
+  };
+  await assert.rejects(() => api.importCharacterCard(oversized), /超过 100 MB/);
+  assert.throws(() => api.stageCharacterResourceBundle(oversized), /超过 100 MB/);
+  assert.equal(reads, 0, 'oversized files must be rejected before text or binary reads');
 });
