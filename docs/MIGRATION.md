@@ -262,3 +262,14 @@ The character-card workspace can now link the currently loaded card to the curre
 - The card association key is derived from the card's name, creator, character version, creation date, and imported filename. Cards sharing all of those identity fields may share an association key; users should avoid relying on the association layer as a globally unique identifier.
 
 This first linking phase supports the currently loaded worldbook and preset only. It does not yet provide a multi-file resource library, file picker for previously imported resources, bundle export, or automatic synchronization. Source-level checks and JavaScript syntax parsing are required before treating the phase as complete; no browser interaction or multi-card collision test is claimed.
+
+## Validated resource bundle export
+
+The character-card workspace can export a JSON resource bundle after at least one standalone resource has been explicitly associated with the active card:
+
+- The bundle contains a copy of the current character-card JSON object and exact snapshots of only the linked standalone worldbook and/or preset.
+- Before export, each linked resource's current content fingerprint is checked against its saved association. If a linked resource is unavailable or has changed, export is blocked until the user explicitly re-associates it.
+- Export reads the current in-memory data and does not call editor synchronization functions or mutate the source objects. The normal delegated input handlers remain responsible for reflecting edits into the in-memory data.
+- The bundle includes a small manifest with resource names, counts, fingerprints, and association timestamps. It does not include browser-local association records as a reusable global identity system.
+- The output is a JSON snapshot package. It includes the character card's JSON data but not the original PNG image pixels; keep the original PNG separately when its artwork is needed.
+- The bundle is an export-only container in this phase. It does not yet have an import/restore workflow, ZIP/CHARX packaging, or automatic resource synchronization.
