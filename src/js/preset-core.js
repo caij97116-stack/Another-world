@@ -684,13 +684,19 @@ function isPresetPayloadObject(value){
                 showToast('备份无法读取或内容无效，未执行恢复','error');
             }
         }
-        function countPresetJsonNodes(value,seen){
+        function countPresetJsonNodes(value,ancestors){
             if(value===null||typeof value!=='object')return 1;
-            const visited=seen||new WeakSet();
-            if(visited.has(value))return 1;
-            visited.add(value);
-            if(Array.isArray(value))return 1+value.reduce((sum,item)=>sum+countPresetJsonNodes(item,visited),0);
-            return 1+Object.keys(value).reduce((sum,key)=>sum+countPresetJsonNodes(value[key],visited),0);
+            const stack=ancestors||new WeakSet();
+            if(stack.has(value))return 1;
+            stack.add(value);
+            let count=1;
+            if(Array.isArray(value)){
+                for(const item of value)count+=countPresetJsonNodes(item,stack);
+            }else{
+                for(const key of Object.keys(value))count+=countPresetJsonNodes(value[key],stack);
+            }
+            stack.delete(value);
+            return count;
         }
         function countPresetExportPath(root,path){
             let value=root;
