@@ -281,7 +281,13 @@ test('exports linked live resources, re-imports the actual download, and restore
 test('rejects PNG chunks with invalid CRC and truncated chunk payloads', async () => {
   const valid = new Uint8Array(makePng([['name', 'CRC Sample']]));
   const corrupted = valid.slice();
-  corrupted[corrupted.length - 9] ^= 0x01;
+  let offset = 8;
+  while (offset + 12 <= corrupted.length) {
+    const length = new DataView(corrupted.buffer, offset, 4).getUint32(0);
+    const type = new TextDecoder().decode(corrupted.subarray(offset + 4, offset + 8));
+    if (type === 'tEXt') { corrupted[offset + 8 + length] ^= 0x01; break; }
+    offset += length + 12;
+  }
   await assert.rejects(() => api.parsePng(corrupted.buffer), /CRC 校验失败/);
   const truncated = valid.slice(0, valid.length - 5);
   await assert.rejects(() => api.parsePng(truncated.buffer), /结构不完整/);
@@ -294,7 +300,7 @@ test('PNG export preserves original image chunks, replaces card metadata, and em
     signature,
     pngChunk('IHDR', new Uint8Array([0,0,0,1,0,0,0,1,8,6,0,0,0])),
     pngChunk('IDAT', imagePayload),
-    pngChunk('tEXt', new TextEncoder().encode('chara\\0old-card-metadata')),
+    pngChunk('tEXt', new TextEncoder().encode('chara\0old-card-metadata')),
     pngChunk('IEND', new Uint8Array())
   ];
   const total = originalParts.reduce((sum, part) => sum + part.length, 0);
@@ -328,8 +334,8 @@ test('PNG export preserves original image chunks, replaces card metadata, and em
   assert.equal(chunks.filter(x => x.type === 'IDAT').length, 1);
   assert.deepEqual(Array.from(chunks.find(x => x.type === 'IDAT').data), Array.from(imagePayload));
   const metadata = chunks.filter(x => x.type === 'tEXt').map(x => new TextDecoder('latin1').decode(x.data));
-  assert.equal(metadata.filter(x => x.startsWith('chara\\0')).length, 1);
-  assert.equal(metadata.filter(x => x.startsWith('ccv3\\0')).length, 1);
+  assert.equal(metadata.filter(x => x.startsWith('chara\0')).length, 1);
+  assert.equal(metadata.filter(x => x.startsWith('ccv3\0')).length, 1);
   assert.ok(!metadata.some(x => x.includes('old-card-metadata')));
   const parsed = await api.parsePng(output.buffer);
   assert.equal(parsed.name, 'PNG Roundtrip');
