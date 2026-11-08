@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const source = await readFile(new URL('../src/js/character-card.js', import.meta.url), 'utf8');
 const exposed = source.replace(/\}\)\(\);\s*$/, `
-    window.__test = { getCardData, parsePng, stageCharacterResourceBundle, restoreStagedBundleResource, restoreLastBundleBackup, exportCharacterResourceBundle, setExportState: (card, key) => { currentCard = card; currentCardLinkKey = key; }, getStagedBundle: () => stagedResourceBundle };
+    window.__test = { getCardData, parsePng, stageCharacterResourceBundle, restoreStagedBundleResource, restoreLastBundleBackup, exportCharacterResourceBundle, exportCharacterCardPng, setExportState: (card, key, png) => { currentCard = card; currentCardLinkKey = key; currentPngBuffer = png || null; }, getStagedBundle: () => stagedResourceBundle };
 })();
 `);
 assert.notEqual(exposed, source, 'test seam must match the character-card IIFE');
@@ -134,6 +134,14 @@ test('rejects malformed worldbook entries', async () => {
 });
 
 
+function testCrc32(bytes) {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
 function pngChunk(type, payload) {
   const typeBytes = new TextEncoder().encode(type);
   const chunk = new Uint8Array(payload.length + 12);
@@ -141,7 +149,7 @@ function pngChunk(type, payload) {
   view.setUint32(0, payload.length);
   chunk.set(typeBytes, 4);
   chunk.set(payload, 8);
-  view.setUint32(payload.length + 8, 0);
+  view.setUint32(payload.length + 8, testCrc32(chunk.subarray(4, payload.length + 8)));
   return chunk;
 }
 function makePng(textChunks) {
@@ -267,4 +275,64 @@ test('exports linked live resources, re-imports the actual download, and restore
   assert.deepEqual(JSON.parse(JSON.stringify(context.worldBookData)), worldbook);
   api.restoreStagedBundleResource('preset');
   assert.deepEqual(JSON.parse(JSON.stringify(context.presetData)), preset);
+});
+
+
+test('rejects PNG chunks with invalid CRC and truncated chunk payloads', async () => {
+  const valid = new Uint8Array(makePng([['name', 'CRC Sample']]));
+  const corrupted = valid.slice();
+  corrupted[corrupted.length - 9] ^= 0x01;
+  await assert.rejects(() => api.parsePng(corrupted.buffer), /CRC 校验失败/);
+  const truncated = valid.slice(0, valid.length - 5);
+  await assert.rejects(() => api.parsePng(truncated.buffer), /结构不完整/);
+});
+
+test('PNG export preserves original image chunks, replaces card metadata, and emits valid CRCs', async () => {
+  const signature = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+  const imagePayload = new Uint8Array([9, 8, 7, 6, 5, 4]);
+  const originalParts = [
+    signature,
+    pngChunk('IHDR', new Uint8Array([0,0,0,1,0,0,0,1,8,6,0,0,0])),
+    pngChunk('IDAT', imagePayload),
+    pngChunk('tEXt', new TextEncoder().encode('chara\\0old-card-metadata')),
+    pngChunk('IEND', new Uint8Array())
+  ];
+  const total = originalParts.reduce((sum, part) => sum + part.length, 0);
+  const original = new Uint8Array(total);
+  let cursor = 0;
+  for (const part of originalParts) { original.set(part, cursor); cursor += part.length; }
+  const card = { spec: 'chara_card_v3', spec_version: '3.0', data: {
+    name: 'PNG Roundtrip', description: 'updated', assets: [{ type: 'icon', uri: 'embedded://keep' }],
+    extensions: { unknown: { deep: true } }
+  } };
+  api.setExportState(card, 'png-test', original.buffer);
+  const before = downloads.length;
+  await api.exportCharacterCardPng();
+  assert.equal(downloads.length, before + 1);
+  const output = new Uint8Array(await downloads.at(-1).arrayBuffer());
+  assert.deepEqual(Array.from(output.subarray(0, 8)), Array.from(signature));
+  const chunks = [];
+  let offset = 8;
+  while (offset + 12 <= output.length) {
+    const view = new DataView(output.buffer, output.byteOffset + offset, 4);
+    const length = view.getUint32(0);
+    const type = new TextDecoder().decode(output.subarray(offset + 4, offset + 8));
+    const end = offset + 8 + length;
+    assert.ok(end + 4 <= output.length, 'chunk bounds remain valid');
+    const expected = new DataView(output.buffer, output.byteOffset + end, 4).getUint32(0);
+    assert.equal(testCrc32(output.subarray(offset + 4, end)), expected, type + ' CRC');
+    chunks.push({ type, data: output.subarray(offset + 8, end) });
+    offset = end + 4;
+    if (type === 'IEND') break;
+  }
+  assert.equal(chunks.filter(x => x.type === 'IDAT').length, 1);
+  assert.deepEqual(Array.from(chunks.find(x => x.type === 'IDAT').data), Array.from(imagePayload));
+  const metadata = chunks.filter(x => x.type === 'tEXt').map(x => new TextDecoder('latin1').decode(x.data));
+  assert.equal(metadata.filter(x => x.startsWith('chara\\0')).length, 1);
+  assert.equal(metadata.filter(x => x.startsWith('ccv3\\0')).length, 1);
+  assert.ok(!metadata.some(x => x.includes('old-card-metadata')));
+  const parsed = await api.parsePng(output.buffer);
+  assert.equal(parsed.name, 'PNG Roundtrip');
+  assert.equal(parsed.data.description, 'updated');
+  assert.deepEqual(JSON.parse(JSON.stringify(parsed.data.extensions)), { unknown: { deep: true } });
 });
