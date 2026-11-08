@@ -195,7 +195,7 @@
                 </div>
 
                 <div id="presetEditor" style="display:none">
-                    <div class="preset-status"><span class="status-dot" id="presetSaveDot"></span><span id="presetSaveStatus">已自动保存</span></div>
+                    <div class="preset-status"><span class="status-dot" id="presetSaveDot"></span><span id="presetSaveStatus">已自动保存</span><button class="btn btn-sm" type="button" data-action="open-preset-diagnostics">预设诊断</button></div>
 
                     <div class="glass-panel-box">
                         <div class="panel-header">
@@ -444,6 +444,22 @@
         <button class="nav-item" data-page="extensions" data-action="switch-page"><span class="nav-icon">⌘</span><span>正则 / 脚本</span></button>
         <button class="nav-item" data-page="character-card" data-action="switch-page"><span class="nav-icon">✦</span><span>角色卡</span></button>
     </nav>
+
+
+    <div class="modal-mask" id="presetDiagnosticsModal">
+        <div class="modal-box diagnostics-modal-box">
+            <div class="diagnostics-heading">
+                <div><h3>预设诊断中心</h3><p>只检查、不自动修改。检查参数范围、字段冲突、提示词标识符与 prompt_order 引用关系。</p></div>
+                <button class="btn btn-ghost btn-sm" type="button" data-action="close-preset-diagnostics" aria-label="关闭">✕</button>
+            </div>
+            <div id="presetDiagnosticsSummary" class="diagnostics-summary"></div>
+            <div id="presetDiagnosticsResults" class="diagnostics-results"></div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" type="button" data-action="run-preset-diagnostics">重新扫描</button>
+                <button class="btn btn-ghost" type="button" data-action="close-preset-diagnostics">关闭</button>
+            </div>
+        </div>
+    </div>
 
     <div class="modal-mask" id="diagnosticsModal">
         <div class="modal-box diagnostics-modal-box">
