@@ -1,2 +1,1 @@
-export { escapeHtml } from './html';
-export { showToast } from './toast';
+export { escapeHtml, showToast } from './ui-utils';
