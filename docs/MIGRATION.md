@@ -382,3 +382,10 @@ Double-braced tokens such as `{{char}}`, `{{user}}`, and other `{{...}}` forms a
 The preset prompt list supports selecting individual prompts or selecting all prompts currently displayed. Bulk actions can enable or disable selected prompts, move the selected block up or down by one position while preserving its relative order, or clear the selection.
 
 When moving prompts, the editor attempts to mirror each adjacent swap in every recognized `prompt_order` group only when both identifiers are unique and have exactly one corresponding order item in that group. If a mapping is ambiguous or missing, the prompt array is still moved and a warning is shown; the editor does not guess how to rewrite ambiguous order references. Bulk changes are saved through the existing preset save flow and remain part of the normal preset export.
+
+
+## Preset edit undo and redo
+
+The Preset Studio now has a separate, bounded undo/redo history for edits made through the main preset fields and prompt editor. It records prompt field changes, prompt JSON replacement, prompt addition/deletion/reordering, bulk prompt actions, and prompt-order JSON changes. Consecutive typing is coalesced into one history step rather than storing every keystroke. The history holds up to 50 snapshots in memory for the current page session.
+
+Undo and redo restore the preset payload together with its recognized outer wrapper, editor version, and array-path metadata, then refresh the editor and schedule local persistence. This history is independent of the one-level “撤销上次导入” rollback and the worldbook's own history. It is session-local and is cleared when a new empty preset is created or the page is reloaded; it is not embedded in exported preset JSON. Regex/script-specific editing controls are not yet included in this history scope.
