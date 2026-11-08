@@ -89,6 +89,9 @@ document.addEventListener('click', (event) => {
         case 'bundle-restore-resource':
             try{window.restoreStagedBundleResource(target.dataset.kind)}catch(error){showToast(error.message||'资源恢复失败','error')}
             break;
+        case 'bundle-restore-backup':
+            try{window.restoreLastBundleBackup(target.dataset.kind)}catch(error){showToast(error.message||'备份恢复失败','error')}
+            break;
         case 'bundle-clear-stage':
             window.clearStagedCharacterResourceBundle();
             break;
