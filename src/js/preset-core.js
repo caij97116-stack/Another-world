@@ -157,6 +157,14 @@ function isPresetPayloadObject(value){
             if(!presetData) return [];
             return Array.isArray(presetData.prompts) ? presetData.prompts : [];
         }
+        function autoResizeLongPrompt(element){
+            if(!element)return;
+            element.style.height='auto';
+            const maxHeight=Math.max(240,Math.floor((window.innerHeight||800)*0.72));
+            const nextHeight=Math.min(element.scrollHeight,maxHeight);
+            element.style.height=nextHeight+'px';
+            element.style.overflowY=element.scrollHeight>maxHeight?'auto':'hidden';
+        }
         function renderPromptItems(){
             const container=document.getElementById('promptItemsContainer');
             const badge=document.getElementById('promptItemsBadge');
@@ -221,6 +229,7 @@ function isPresetPayloadObject(value){
                     </div>
                 </article>`;
             }).join('');
+            container.querySelectorAll('.prompt-content-editor').forEach(autoResizeLongPrompt);
         }
         function getPromptOrderGroups(){
             if(!presetData||!Array.isArray(presetData.prompt_order))return [];
@@ -289,6 +298,7 @@ function isPresetPayloadObject(value){
                 if(meta)meta.textContent=(typeof prompt.content==='string'?prompt.content.length:0).toLocaleString()+' 字 · '+(prompt.role||'system')+' · '+(prompt.enabled===false?'已禁用':'已启用');
                 const heading=card.querySelector('.regex-card-title');
                 if(heading&&field==='name')heading.textContent=value||prompt.identifier||('提示词 '+(index+1));
+                if(field==='content')autoResizeLongPrompt(card.querySelector('.prompt-content-editor'));
             }
             if(field==='identifier')refreshPromptOrderAfterSync();
             else{refreshRawJson();schedulePresetSave()}
@@ -422,6 +432,7 @@ function isPresetPayloadObject(value){
             document.getElementById('p_main_prompt').value=presetData.main_prompt||presetData.prompt||presetData.mainPrompt||'';
             document.getElementById('p_jailbreak').value=presetData.jailbreak_prompt||presetData.jailbreak||presetData.jb||'';
             document.getElementById('p_system').value=presetData.system_prompt||presetData.system||'';
+            ['p_main_prompt','p_jailbreak','p_system'].forEach(id=>autoResizeLongPrompt(document.getElementById(id)));
             const elStop=document.getElementById('p_stop');
             if(elStop){const stop=presetData.stop_sequence||presetData.stop||presetData.stop_sequences||'';elStop.value=Array.isArray(stop)?stop.join(', '):String(stop)}
             document.getElementById('p_stream').checked=parseEntryBoolean(presetData.stream??presetData.streaming,true);
