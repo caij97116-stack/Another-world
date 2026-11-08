@@ -546,6 +546,8 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         let presetDirty=false;
         const PRESET_STORAGE_KEY='tavern_preset_editor_data';
         const PRESET_VERSION_KEY='tavern_preset_editor_version';
+        let presetEnvelope=null;
+        const PRESET_ENVELOPE_STORAGE_KEY='tavern_preset_editor_envelope';
 
         function switchPage(page){
             if(page===currentPage)return;
@@ -977,11 +979,41 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         }
 
         // ========== 预设功能 ==========
+        function isPresetPayloadObject(value){
+            if(!value||typeof value!=='object'||Array.isArray(value))return false;
+            const signatures=['prompts','prompt_order','temperature','top_p','top_k','max_tokens','max_length','main_prompt','system_prompt','jailbreak_prompt','stop_sequence','stop_sequences','regex_scripts','regexScripts','repetition_penalty','rep_pen'];
+            return signatures.some(key=>Object.prototype.hasOwnProperty.call(value,key));
+        }
+        function unwrapPresetObject(parsed){
+            if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new Error('预设文件必须是 JSON 对象');
+            const wrapperKeys=['preset','data','settings','config','completion_preset','completionPreset'];
+            for(const key of wrapperKeys){
+                const candidate=parsed[key];
+                if(isPresetPayloadObject(candidate)){
+                    return {data:candidate,envelope:{key,wrapper:parsed}};
+                }
+            }
+            return {data:parsed,envelope:null};
+        }
+        function setPresetFromParsed(parsed){
+            const result=unwrapPresetObject(parsed);
+            presetData=result.data;
+            presetEnvelope=result.envelope;
+            if(presetData._editorVersion)presetVersion=parseInt(presetData._editorVersion,10)||presetVersion;
+            return result;
+        }
+        function buildPresetExportObject(payload){
+            if(!presetEnvelope||!presetEnvelope.wrapper||!presetEnvelope.key)return payload;
+            return Object.assign({},presetEnvelope.wrapper,{[presetEnvelope.key]:payload});
+        }
+
         function loadPresetFromStorage(){
             try{
                 const raw=localStorage.getItem(PRESET_STORAGE_KEY);
                 const ver=localStorage.getItem(PRESET_VERSION_KEY);
+                const envelopeRaw=localStorage.getItem(PRESET_ENVELOPE_STORAGE_KEY);
                 if(ver)presetVersion=parseInt(ver,10)||1;
+                if(envelopeRaw)presetEnvelope=JSON.parse(envelopeRaw);
                 if(raw){
                     presetData=JSON.parse(raw);
                     showToast('已恢复预设上次内容','success');
@@ -998,6 +1030,8 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         function savePresetToStorage(){
             try{
                 if(presetData)localStorage.setItem(PRESET_STORAGE_KEY,JSON.stringify(presetData));
+                if(presetEnvelope)localStorage.setItem(PRESET_ENVELOPE_STORAGE_KEY,JSON.stringify(presetEnvelope));
+                else localStorage.removeItem(PRESET_ENVELOPE_STORAGE_KEY);
                 localStorage.setItem(PRESET_VERSION_KEY,String(presetVersion));
                 presetDirty=false;
                 const dot=document.getElementById('presetSaveDot'),status=document.getElementById('presetSaveStatus');
@@ -1007,11 +1041,12 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         function clearPresetData(){
             if(!presetData)return;
             if(!confirm('确定清空当前预设数据？'))return;
-            presetData=null;presetVersion=1;
-            localStorage.removeItem(PRESET_STORAGE_KEY);localStorage.removeItem(PRESET_VERSION_KEY);
+            presetData=null;presetEnvelope=null;presetVersion=1;
+            localStorage.removeItem(PRESET_STORAGE_KEY);localStorage.removeItem(PRESET_ENVELOPE_STORAGE_KEY);localStorage.removeItem(PRESET_VERSION_KEY);
             renderPresetUI();updateToolbar();showToast('已清空预设数据');
         }
         function createEmptyPreset(){
+            presetEnvelope=null;
             presetData={
                 name:'新预设',temperature:0.8,top_p:0.9,top_k:0,min_p:0,top_a:0,
                 typical_p:1,tfs:1,repetition_penalty:1.1,presence_penalty:0,frequency_penalty:0,
@@ -1210,10 +1245,7 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             reader.onload=function(e){
                 try{
                     const parsed=JSON.parse(e.target.result);
-                    // 兼容直接对象或带 wrappers
-                    if(typeof parsed!=='object'||Array.isArray(parsed))throw new Error('格式不正确');
-                    presetData=parsed;
-                    if(parsed._editorVersion)presetVersion=parseInt(parsed._editorVersion,10)||presetVersion;
+                    const imported=setPresetFromParsed(parsed);
                     renderPresetUI();
                     schedulePresetSave();
                     updateToolbar();
@@ -1223,7 +1255,7 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
                     if(typeof renderScriptList==='function')renderScriptList();
                     const rc=(presetData.regex_scripts||[]).length, sc=(presetData.scripts||[]).length;
                     const topKeys=Object.keys(presetData).filter(k=>!k.startsWith('_')).length;
-                    let msg='预设导入成功';
+                    let msg=imported.envelope?'预设导入成功（已识别并保留外层包装）':'预设导入成功';
                     if(rc||sc) msg += `（正则 ${rc} · 脚本 ${sc}）`;
                     else msg += `（${topKeys} 个顶层字段）`;
                     showToast(msg,'success');
@@ -1265,7 +1297,8 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
                 exportObj._exportedAt = new Date().toISOString();
             }
 
-            const blob=new Blob([JSON.stringify(exportObj,null,2)],{type:'application/json;charset=utf-8'});
+            const finalExportObj=buildPresetExportObject(exportObj);
+            const blob=new Blob([JSON.stringify(finalExportObj,null,2)],{type:'application/json;charset=utf-8'});
             const url=URL.createObjectURL(blob);const a=document.createElement('a');
             a.href=url;a.download=`Preset_${(presetData.name||'unnamed').replace(/[\\/:*?"<>|]/g,'_')}_v${presetVersion}.json`;
             document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
@@ -1294,8 +1327,7 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             if(!ta||!ta.value.trim())return;
             try{
                 const parsed=JSON.parse(ta.value);
-                if(typeof parsed!=='object'||Array.isArray(parsed))throw new Error('需为对象');
-                presetData=parsed;renderPresetUI();schedulePresetSave();showToast('已应用原始 JSON','success');
+                setPresetFromParsed(parsed);renderPresetUI();schedulePresetSave();showToast('已应用原始 JSON','success');
             }catch(e){showToast('JSON 解析失败，请检查格式','error')}
         }
         function getStr(obj,...keys){for(const k of keys){if(obj[k]!==undefined&&obj[k]!==null)return String(obj[k])}return ''}
