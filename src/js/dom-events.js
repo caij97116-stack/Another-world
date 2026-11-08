@@ -159,6 +159,9 @@ document.addEventListener('click', (event) => {
         case 'move-regex-script':
             window.moveRegexScript(Number(target.dataset.index),Number(target.dataset.direction));
             break;
+        case 'bulk-extension-action':
+            window.bulkExtensionAction(target.dataset.kind,target.dataset.bulkAction);
+            break;
         case 'toggle-script-disabled':
             window.toggleScriptDisabled(Number(target.dataset.index));
             break;
@@ -287,6 +290,8 @@ document.addEventListener('change', (event) => {
 
     if(target.id==='regexStatusFilter'){window.applyExtensionFilters('regex');return}
     if(target.id==='scriptStatusFilter'){window.applyExtensionFilters('scripts');return}
+    if(target.dataset.extensionSelectAll){window.setExtensionSelectVisible(target.dataset.extensionSelectAll,target.checked);return}
+    if(target.dataset.extensionSelect){window.updateExtensionSelectionSummary(target.dataset.extensionSelect);return}
     if(target.id==='promptSelectAll'){
         window.setPromptSelectAll(target.checked);
         return;
