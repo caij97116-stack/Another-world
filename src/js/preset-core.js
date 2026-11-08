@@ -186,7 +186,7 @@ function isPresetPayloadObject(value){
                 const enabled=prompt.enabled!==false;
                 const systemPrompt=prompt.system_prompt===true;
                 return `
-                <article class="regex-card prompt-item-card">
+                <article class="regex-card prompt-item-card" id="prompt-item-${i}">
                     <div class="regex-card-header">
                         <div class="prompt-item-heading">
                             <div class="regex-card-title">${escapeHtml(title)}</div>
