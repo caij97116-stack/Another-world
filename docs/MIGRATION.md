@@ -223,7 +223,7 @@ Static checks performed for this change: all nine loaded JavaScript files parse 
 
 The character-card workspace is a separate page and resource domain. It currently imports SillyTavern character-card JSON (flat V1 and V2/V3 envelopes) and PNG files containing `chara` or `ccv3` text metadata, plus legacy V1 PNGs that store individual fields in separate text chunks. When both PNG payloads exist, the parser prefers `ccv3`. It reads PNG `tEXt`, `zTXt`, and `iTXt` metadata chunks, including deflate-compressed text where the browser supports `DecompressionStream`.
 
-The imported card is retained as its original parsed JSON object. The preview shows common character fields, tags, alternate-greeting count, embedded character-book count, extension-key count, and unknown field names. Export currently writes that preserved JSON object to a standalone `.json` file. PNG artwork is previewed from the original local file; this first phase does not rewrite or recompress PNG images.
+The imported card is retained as its original parsed JSON object. Common text fields and tags can be edited in place; edits update the retained object and are reflected in JSON / PNG exports. JSON export writes the complete preserved object to a standalone `.json` file. For PNG-origin cards, PNG export inserts a new base64 character-data `tEXt` chunk (`chara` for V1/V2, `ccv3` for V3), removes stale `chara` / `ccv3` metadata chunks, and copies all other original PNG chunks byte-for-byte. This avoids re-encoding the image pixels.
 
 Compatibility and safety boundaries:
 
@@ -232,6 +232,7 @@ Compatibility and safety boundaries:
 - Embedded `character_book`, `extensions`, and other nested data remain inside the character card. They are not silently copied into the separate worldbook or preset workspaces.
 - Imported script-like fields are treated as inert data and are never executed.
 - PNG screenshots or re-encoded images may no longer contain the original character metadata and will be reported as missing `chara` / `ccv3` data.
-- The parser supports the common V1/V2/V3 JSON and PNG layouts; it is not yet a full CHARX archive reader, card editor, PNG writer, or Tavern runtime emulator.
+- The parser supports common V1/V2/V3 JSON and PNG layouts. Editing currently covers name, description, personality, scenario, first message, example dialogue, creator notes, system prompt, post-history instructions, and tags; other nested fields are preserved but not yet edited through dedicated controls.
+- PNG writing preserves existing non-character PNG chunks as-is, but the browser implementation has not yet been tested against a broad real-world corpus of PNG variants. It is not a full CHARX archive reader or Tavern runtime emulator.
 
 Static source checks are required before treating this phase as complete. No browser-based PNG fixture round-trip or real SillyTavern import test is claimed unless performed separately.
