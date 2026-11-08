@@ -268,7 +268,9 @@ function isPresetPayloadObject(value){
             const cards=[...container.querySelectorAll('.prompt-item-card')];
             let visible=0;
             cards.forEach(card=>{
-                const matchesText=!query||String(card.dataset.search||'').toLocaleLowerCase().includes(query);
+                const body=card.querySelector('.prompt-content-editor')?.value||'';
+                const haystack=String(card.dataset.search||'')+' '+body;
+                const matchesText=!query||haystack.toLocaleLowerCase().includes(query);
                 const disabled=card.dataset.disabled==='true';
                 const matchesStatus=mode==='all'||(mode==='enabled'&&!disabled)||(mode==='disabled'&&disabled);
                 const show=matchesText&&matchesStatus;
@@ -303,7 +305,7 @@ function isPresetPayloadObject(value){
                 const enabled=prompt.enabled!==false;
                 const systemPrompt=prompt.system_prompt===true;
                 return `
-                <article class="regex-card prompt-item-card" id="prompt-item-${i}" data-disabled="${enabled?'false':'true'}" data-search="${escapeHtml([title,identifier,role,content].join(' '))}">
+                <article class="regex-card prompt-item-card" id="prompt-item-${i}" data-disabled="${enabled?'false':'true'}" data-search="${escapeHtml([title,identifier,role].join(' '))}">
                     <div class="regex-card-header">
                         <label class="prompt-bulk-item-check" title="选择此提示词"><input type="checkbox" class="prompt-item-select" data-index="${i}" aria-label="选择提示词 ${escapeHtml(title)}"></label>
                         <div class="prompt-item-heading">
