@@ -31,7 +31,7 @@
                 <div class="sidebar-overlay" id="sidebarOverlay" data-action="close-sidebar"></div>
                 <aside class="sidebar" id="sidebar">
                     <div class="sidebar-header">
-                        <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" class="search-input" id="searchInput" placeholder="搜索名称 / 关键词 / 标签..." oninput="renderEntryList()"></div>
+                        <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" class="search-input" id="searchInput" placeholder="搜索名称 / 关键词 / 标签..." data-input-action="render-entry-list"></div>
                         <div style="display:flex;gap:6px">
                             <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="addNewEntry()">＋ 新建</button>
                             <button class="btn" style="flex:0 0 auto" onclick="toggleSelectMode()" id="btnSelectMode">多选</button>
@@ -54,30 +54,30 @@
                         <div class="panel-header">
                             <h3>核心设定</h3>
                             <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-                                <label class="switch-row"><input type="checkbox" id="field_enabled" onchange="syncCurrentEntry()"><span>启用</span></label>
+                                <label class="switch-row"><input type="checkbox" id="field_enabled" data-change-action="sync-current-entry"><span>启用</span></label>
                                 <button class="btn btn-sm" onclick="copyCurrentEntry()">复制</button>
                                 <button class="btn btn-sm" onclick="enterFullscreenEdit()" id="btnFullscreen" style="display:none">全屏编辑</button>
                             </div>
                         </div>
-                        <div class="form-group"><label>备注名称 <span class="hint">(Comment)</span></label><input type="text" id="field_comment" class="form-control" placeholder="条目名称..." oninput="syncCurrentEntry()"></div>
-                        <div class="form-group"><label>标签 / 分类 <span class="hint">(逗号分隔)</span></label><input type="text" id="field_tags" class="form-control" placeholder="例: 角色, 世界观" oninput="syncCurrentEntry()"></div>
-                        <div class="form-group"><label>触发关键词 <span class="hint">(Key)</span></label><input type="text" id="field_key" class="form-control" placeholder="例: 巨龙, dragon" oninput="syncCurrentEntry()"></div>
-                        <div class="form-group"><label>排除关键词 <span class="hint">(KeySecondary)</span></label><input type="text" id="field_keysecondary" class="form-control" placeholder="例: 幼龙" oninput="syncCurrentEntry()"></div>
-                        <div class="form-group"><label>条目内容 <span class="hint">(Content)</span></label><textarea id="field_content" class="form-control" rows="5" placeholder="输入设定内容..." oninput="syncCurrentEntry()"></textarea></div>
+                        <div class="form-group"><label>备注名称 <span class="hint">(Comment)</span></label><input type="text" id="field_comment" class="form-control" placeholder="条目名称..." data-input-action="sync-current-entry"></div>
+                        <div class="form-group"><label>标签 / 分类 <span class="hint">(逗号分隔)</span></label><input type="text" id="field_tags" class="form-control" placeholder="例: 角色, 世界观" data-input-action="sync-current-entry"></div>
+                        <div class="form-group"><label>触发关键词 <span class="hint">(Key)</span></label><input type="text" id="field_key" class="form-control" placeholder="例: 巨龙, dragon" data-input-action="sync-current-entry"></div>
+                        <div class="form-group"><label>排除关键词 <span class="hint">(KeySecondary)</span></label><input type="text" id="field_keysecondary" class="form-control" placeholder="例: 幼龙" data-input-action="sync-current-entry"></div>
+                        <div class="form-group"><label>条目内容 <span class="hint">(Content)</span></label><textarea id="field_content" class="form-control" rows="5" placeholder="输入设定内容..." data-input-action="sync-current-entry"></textarea></div>
                         <div class="form-grid">
-                            <div class="form-group"><label>插入位置</label><select id="field_position" class="form-control" onchange="syncCurrentEntry()"><option value="0">0 · 角色前</option><option value="1">1 · 角色后</option><option value="2">2 · AN前</option><option value="3">3 · AN后</option><option value="4">4 · @D深度</option></select></div>
-                            <div class="form-group"><label>顺序</label><input type="number" id="field_order" class="form-control" value="100" oninput="syncCurrentEntry()"></div>
-                            <div class="form-group"><label>深度</label><input type="number" id="field_depth" class="form-control" value="4" min="0" oninput="syncCurrentEntry()"></div>
-                            <div class="form-group"><label>概率 (%)</label><input type="number" id="field_probability" class="form-control" value="100" min="0" max="100" oninput="syncCurrentEntry()"></div>
+                            <div class="form-group"><label>插入位置</label><select id="field_position" class="form-control" data-change-action="sync-current-entry"><option value="0">0 · 角色前</option><option value="1">1 · 角色后</option><option value="2">2 · AN前</option><option value="3">3 · AN后</option><option value="4">4 · @D深度</option></select></div>
+                            <div class="form-group"><label>顺序</label><input type="number" id="field_order" class="form-control" value="100" data-input-action="sync-current-entry"></div>
+                            <div class="form-group"><label>深度</label><input type="number" id="field_depth" class="form-control" value="4" min="0" data-input-action="sync-current-entry"></div>
+                            <div class="form-group"><label>概率 (%)</label><input type="number" id="field_probability" class="form-control" value="100" min="0" max="100" data-input-action="sync-current-entry"></div>
                         </div>
                         <div style="display:flex;gap:14px;margin-top:2px;flex-wrap:wrap">
-                            <label class="switch-row"><input type="checkbox" id="field_constant" onchange="syncCurrentEntry()"><span>常驻</span></label>
-                            <label class="switch-row"><input type="checkbox" id="field_selective" onchange="syncCurrentEntry()"><span>选择性</span></label>
+                            <label class="switch-row"><input type="checkbox" id="field_constant" data-change-action="sync-current-entry"><span>常驻</span></label>
+                            <label class="switch-row"><input type="checkbox" id="field_selective" data-change-action="sync-current-entry"><span>选择性</span></label>
                         </div>
                     </div>
                     <div class="glass-panel-box preview-box" id="previewPanel" style="display:none">
                         <div class="panel-header"><h3>触发预览</h3></div>
-                        <div class="form-group"><label>输入测试文本，查看触发结果</label><textarea id="previewText" class="form-control" rows="3" placeholder="输入一段对话或描述..." oninput="runTriggerPreview()"></textarea></div>
+                        <div class="form-group"><label>输入测试文本，查看触发结果</label><textarea id="previewText" class="form-control" rows="3" placeholder="输入一段对话或描述..." data-input-action="trigger-preview"></textarea></div>
                         <div class="preview-result" id="previewResult"><div class="preview-miss">输入文本后显示匹配结果</div></div>
                     </div>
                 </main>
@@ -110,10 +110,10 @@
 
                     <div class="glass-panel-box">
                         <div class="panel-header"><h3>基本信息</h3></div>
-                        <div class="form-group"><label>预设名称</label><input type="text" id="p_name" class="form-control" placeholder="Preset 名称" oninput="syncPreset()"></div>
+                        <div class="form-group"><label>预设名称</label><input type="text" id="p_name" class="form-control" placeholder="Preset 名称" data-input-action="sync-preset"></div>
                         <div class="form-grid">
-                            <div class="form-group"><label>Max Tokens</label><input type="number" id="p_max_tokens" class="form-control" min="0" oninput="syncPreset()"></div>
-                            <div class="form-group"><label>Seed（-1 随机）</label><input type="number" id="p_seed" class="form-control" oninput="syncPreset()"></div>
+                            <div class="form-group"><label>Max Tokens</label><input type="number" id="p_max_tokens" class="form-control" min="0" data-input-action="sync-preset"></div>
+                            <div class="form-group"><label>Seed（-1 随机）</label><input type="number" id="p_seed" class="form-control" data-input-action="sync-preset"></div>
                         </div>
                     </div>
 
@@ -121,18 +121,18 @@
                         <div class="panel-header"><h3>采样参数</h3><button class="panel-toggle" type="button" data-action="toggle-section" data-target="secSampling">折叠/展开</button></div>
                         <div class="collapsible-body" id="secSampling">
                         <div class="form-grid">
-                            <div class="form-group"><label>Temperature</label><input type="number" id="p_temp" class="form-control" step="0.01" min="0" max="2" oninput="syncPreset()"></div>
-                            <div class="form-group"><label>Top P</label><input type="number" id="p_top_p" class="form-control" step="0.01" min="0" max="1" oninput="syncPreset()"></div>
-                            <div class="form-group"><label>Top K</label><input type="number" id="p_top_k" class="form-control" step="1" min="0" oninput="syncPreset()"></div>
-                            <div class="form-group"><label>Min P</label><input type="number" id="p_min_p" class="form-control" step="0.01" min="0" max="1" oninput="syncPreset()"></div>
-                            <div class="form-group"><label>Top A</label><input type="number" id="p_top_a" class="form-control" step="0.01" min="0" oninput="syncPreset()"></div>
-                            <div class="form-group"><label>Typical P</label><input type="number" id="p_typical_p" class="form-control" step="0.01" min="0" max="1" oninput="syncPreset()"></div>
-                            <div class="form-group"><label>TFS</label><input type="number" id="p_tfs" class="form-control" step="0.01" min="0" max="1" oninput="syncPreset()"></div>
-                            <div class="form-group"><label>Repetition Penalty</label><input type="number" id="p_rep_pen" class="form-control" step="0.01" min="0" oninput="syncPreset()"></div>
-                            <div class="form-group"><label>Presence Penalty</label><input type="number" id="p_pres_pen" class="form-control" step="0.01" oninput="syncPreset()"></div>
-                            <div class="form-group"><label>Frequency Penalty</label><input type="number" id="p_freq_pen" class="form-control" step="0.01" oninput="syncPreset()"></div>
-                            <div class="form-group"><label>Smoothing Factor</label><input type="number" id="p_smooth" class="form-control" step="0.01" min="0" oninput="syncPreset()"></div>
-                            <div class="form-group"><label>Mirostat Mode</label><input type="number" id="p_mirostat" class="form-control" min="0" max="2" step="1" oninput="syncPreset()"></div>
+                            <div class="form-group"><label>Temperature</label><input type="number" id="p_temp" class="form-control" step="0.01" min="0" max="2" data-input-action="sync-preset"></div>
+                            <div class="form-group"><label>Top P</label><input type="number" id="p_top_p" class="form-control" step="0.01" min="0" max="1" data-input-action="sync-preset"></div>
+                            <div class="form-group"><label>Top K</label><input type="number" id="p_top_k" class="form-control" step="1" min="0" data-input-action="sync-preset"></div>
+                            <div class="form-group"><label>Min P</label><input type="number" id="p_min_p" class="form-control" step="0.01" min="0" max="1" data-input-action="sync-preset"></div>
+                            <div class="form-group"><label>Top A</label><input type="number" id="p_top_a" class="form-control" step="0.01" min="0" data-input-action="sync-preset"></div>
+                            <div class="form-group"><label>Typical P</label><input type="number" id="p_typical_p" class="form-control" step="0.01" min="0" max="1" data-input-action="sync-preset"></div>
+                            <div class="form-group"><label>TFS</label><input type="number" id="p_tfs" class="form-control" step="0.01" min="0" max="1" data-input-action="sync-preset"></div>
+                            <div class="form-group"><label>Repetition Penalty</label><input type="number" id="p_rep_pen" class="form-control" step="0.01" min="0" data-input-action="sync-preset"></div>
+                            <div class="form-group"><label>Presence Penalty</label><input type="number" id="p_pres_pen" class="form-control" step="0.01" data-input-action="sync-preset"></div>
+                            <div class="form-group"><label>Frequency Penalty</label><input type="number" id="p_freq_pen" class="form-control" step="0.01" data-input-action="sync-preset"></div>
+                            <div class="form-group"><label>Smoothing Factor</label><input type="number" id="p_smooth" class="form-control" step="0.01" min="0" data-input-action="sync-preset"></div>
+                            <div class="form-group"><label>Mirostat Mode</label><input type="number" id="p_mirostat" class="form-control" min="0" max="2" step="1" data-input-action="sync-preset"></div>
                         </div>
                         </div>
                     </div>
@@ -140,10 +140,10 @@
                     <div class="glass-panel-box">
                         <div class="panel-header"><h3>提示词</h3><button class="panel-toggle" type="button" data-action="toggle-section" data-target="secPrompts">折叠/展开</button></div>
                         <div class="collapsible-body" id="secPrompts">
-                        <div class="form-group"><label>Main Prompt <span class="char-count" id="cnt_main">0 字</span></label><textarea id="p_main_prompt" class="form-control" rows="6" placeholder="主提示词..." oninput="syncPreset();updateCharCounts()"></textarea></div>
-                        <div class="form-group"><label>Jailbreak Prompt <span class="char-count" id="cnt_jb">0 字</span></label><textarea id="p_jailbreak" class="form-control" rows="4" placeholder="Jailbreak..." oninput="syncPreset();updateCharCounts()"></textarea></div>
-                        <div class="form-group"><label>System Prompt <span class="char-count" id="cnt_sys">0 字</span></label><textarea id="p_system" class="form-control" rows="3" placeholder="System..." oninput="syncPreset();updateCharCounts()"></textarea></div>
-                        <div class="form-group"><label>Stop Sequences <span class="hint">(逗号或换行分隔)</span></label><textarea id="p_stop" class="form-control" rows="2" placeholder="例: &lt;|end|&gt;, ###" oninput="syncPreset()"></textarea></div>
+                        <div class="form-group"><label>Main Prompt <span class="char-count" id="cnt_main">0 字</span></label><textarea id="p_main_prompt" class="form-control" rows="6" placeholder="主提示词..." data-input-action="sync-preset-counts"></textarea></div>
+                        <div class="form-group"><label>Jailbreak Prompt <span class="char-count" id="cnt_jb">0 字</span></label><textarea id="p_jailbreak" class="form-control" rows="4" placeholder="Jailbreak..." data-input-action="sync-preset-counts"></textarea></div>
+                        <div class="form-group"><label>System Prompt <span class="char-count" id="cnt_sys">0 字</span></label><textarea id="p_system" class="form-control" rows="3" placeholder="System..." data-input-action="sync-preset-counts"></textarea></div>
+                        <div class="form-group"><label>Stop Sequences <span class="hint">(逗号或换行分隔)</span></label><textarea id="p_stop" class="form-control" rows="2" placeholder="例: &lt;|end|&gt;, ###" data-input-action="sync-preset"></textarea></div>
                         <div class="glass-panel-box" style="margin-top:14px">
                             <div class="panel-header">
                                 <h3>提示词条目 <span class="regex-badge" id="promptItemsBadge">0</span></h3>
@@ -161,7 +161,7 @@
                             <div class="panel-header"><h3>提示词顺序配置（prompt_order）</h3><button class="panel-toggle" type="button" data-action="toggle-section" data-target="secPromptOrder">折叠/展开</button></div>
                             <div class="collapsible-body" id="secPromptOrder">
                                 <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px">保留原始 prompt_order 结构。修改后必须是合法 JSON；不修改时不会主动重写。</p>
-                                <textarea id="p_prompt_order" class="form-control" rows="8" spellcheck="false" placeholder="导入预设后显示 prompt_order JSON" onchange="applyPromptOrderJson()"></textarea>
+                                <textarea id="p_prompt_order" class="form-control" rows="8" spellcheck="false" placeholder="导入预设后显示 prompt_order JSON" data-change-action="apply-prompt-order"></textarea>
                                 <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:6px">
                                     <button class="btn btn-sm" type="button" onclick="refreshPromptOrderJson()">重新载入</button>
                                 </div>
@@ -173,8 +173,8 @@
                     <div class="glass-panel-box">
                         <div class="panel-header"><h3>开关</h3></div>
                         <div style="display:flex;flex-wrap:wrap;gap:14px">
-                            <label class="switch-row"><input type="checkbox" id="p_stream" onchange="syncPreset()"><span>Streaming</span></label>
-                            <label class="switch-row"><input type="checkbox" id="p_nsfw" onchange="syncPreset()"><span>NSFW</span></label>
+                            <label class="switch-row"><input type="checkbox" id="p_stream" data-change-action="sync-preset"><span>Streaming</span></label>
+                            <label class="switch-row"><input type="checkbox" id="p_nsfw" data-change-action="sync-preset"><span>NSFW</span></label>
                         </div>
                     </div>
 
@@ -219,7 +219,7 @@
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label>Instruct 模式</label>
-                                    <select id="p_instruct_mode" class="form-control" onchange="syncPreset()">
+                                    <select id="p_instruct_mode" class="form-control" data-change-action="sync-preset">
                                         <option value="">（保持原值/未设置）</option>
                                         <option value="0">关闭</option>
                                         <option value="1">开启</option>
@@ -227,7 +227,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label>系统提示插入</label>
-                                    <select id="p_system_same" class="form-control" onchange="syncPreset()">
+                                    <select id="p_system_same" class="form-control" data-change-action="sync-preset">
                                         <option value="">（保持原值/未设置）</option>
                                         <option value="0">独立 System</option>
                                         <option value="1">与 Main 相同</option>
@@ -235,9 +235,9 @@
                                 </div>
                             </div>
                             <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
-                                <label class="switch-row"><input type="checkbox" id="p_export_disabled_regex" checked onchange="syncPreset()"><span>导出时包含已禁用的正则</span></label>
-                                <label class="switch-row"><input type="checkbox" id="p_export_disabled_scripts" checked onchange="syncPreset()"><span>导出时包含已禁用的脚本</span></label>
-                                <label class="switch-row"><input type="checkbox" id="p_export_meta" checked onchange="syncPreset()"><span>导出时附带编辑器版本信息</span></label>
+                                <label class="switch-row"><input type="checkbox" id="p_export_disabled_regex" checked data-change-action="sync-preset"><span>导出时包含已禁用的正则</span></label>
+                                <label class="switch-row"><input type="checkbox" id="p_export_disabled_scripts" checked data-change-action="sync-preset"><span>导出时包含已禁用的脚本</span></label>
+                                <label class="switch-row"><input type="checkbox" id="p_export_meta" checked data-change-action="sync-preset"><span>导出时附带编辑器版本信息</span></label>
                             </div>
                         </div>
                     </div>
@@ -246,7 +246,7 @@
                         <div class="panel-header"><h3>原始 JSON</h3><button class="panel-toggle" type="button" data-action="toggle-section" data-target="secRaw">折叠/展开</button></div>
                         <div class="collapsible-body collapsed" id="secRaw">
                         <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:8px">高级用户可直接编辑完整 JSON。失焦或点「应用」后会解析并覆盖当前预设。</p>
-                        <textarea id="p_raw_json" class="form-control raw-json" rows="10" onblur="applyRawJson()"></textarea>
+                        <textarea id="p_raw_json" class="form-control raw-json" rows="10" data-focusout-action="apply-raw-json"></textarea>
                         <div style="margin-top:8px;display:flex;gap:8px">
                             <button class="btn btn-sm" type="button" onclick="refreshRawJson()">刷新显示</button>
                             <button class="btn btn-sm btn-primary" type="button" onclick="applyRawJson()">应用修改</button>
