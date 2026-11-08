@@ -409,3 +409,8 @@ Regex and Scripts now each have a live search field and an enabled/disabled stat
 ### Extension card compact mode and bulk controls
 
 Regex and script cards can be individually collapsed to keep long workspaces navigable. Both workspaces also support selecting visible cards, selecting all currently filtered results, and batch enable/disable/delete. Batch deletion requires confirmation; each batch mutation creates one preset undo-history entry. Search and status filters do not modify the underlying arrays, and batch actions are scoped to selected cards that remain visible under the current filter.
+
+
+### Preset history keyboard shortcuts
+
+When focus is outside editable fields, Ctrl/⌘ + Z triggers preset undo, Ctrl/⌘ + Shift + Z or Ctrl/⌘ + Y triggers redo. Native text-editing undo inside inputs, textareas, selects, and contenteditable elements is left untouched.
