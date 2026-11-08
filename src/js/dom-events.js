@@ -213,6 +213,12 @@ document.addEventListener('click', (event) => {
         case 'export-preset':
             window.exportPreset();
             break;
+        case 'close-preset-export-preview':
+            window.closePresetExportPreview();
+            break;
+        case 'confirm-preset-export':
+            window.confirmPresetExport();
+            break;
     }
 });
 
