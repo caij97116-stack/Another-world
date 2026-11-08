@@ -304,4 +304,4 @@ Coverage includes:
 
 Run locally with `npm test` (Node.js 22 or later). GitHub Actions runs the same command on pushes and pull requests to `main`.
 
-Latest CI result: 10 tests passed, 0 failed. This is parser and bundle-staging unit coverage only. It does not replace browser interaction testing, a full export-then-import round trip through the UI, real-world PNG corpus testing, storage-quota testing, or Tavern runtime compatibility testing.
+Latest CI result: 13 tests passed, 0 failed. The suite now also calls the real resource-bundle export function, reads the generated JSON Blob, stages that exact JSON through the real importer, restores both linked resources, and compares nested payloads including unknown extension fields. Separate tests verify restoring the pre-import worldbook snapshot and the preset storage values. UI rendering, browser download interaction, real-world PNG corpus coverage, storage-quota behavior, and Tavern runtime compatibility are still outside this automated suite.
