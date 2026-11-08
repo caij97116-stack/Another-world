@@ -10,6 +10,7 @@
     let currentCardFile = null;
     let cardDirty = false;
     let stagedResourceBundle = null;
+    let bundleImportSequence = 0;
 
     function isObject(value){
         return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -288,9 +289,14 @@
 
     function stageCharacterResourceBundle(file){
         if(!file)return;
+        const requestId=++bundleImportSequence;
+        stagedResourceBundle=null;
+        const previousHost=document.getElementById('characterCardBundleImportPreview');
+        if(previousHost){previousHost.hidden=true;previousHost.innerHTML=''}
         if(file.size>MAX_FILE_BYTES)throw new Error('资源包超过 100 MB，已停止读取。');
         const textPromise=file.text();
         textPromise.then(raw=>{
+            if(requestId!==bundleImportSequence)return;
             let bundle;
             try{bundle=JSON.parse(raw)}catch(error){throw new Error('资源包 JSON 无法解析：'+error.message)}
             if(!isObject(bundle)||bundle.format!=='another-world-character-resource-bundle'||bundle.format_version!==1)throw new Error('不支持的资源包格式或版本。');
@@ -322,7 +328,7 @@
                 host.innerHTML='<div class="character-bundle-preview-head"><strong>'+escapeCardHtml(cardInfo.name)+'</strong><span>'+validated.length+' 项独立资源已通过结构检查</span></div>'+validated.map(item=>'<div class="character-bundle-preview-item"><strong>'+escapeCardHtml(item.type==='worldbook'?'独立世界书':'独立预设')+'</strong><span>'+escapeCardHtml(item.name)+' · '+escapeCardHtml(item.summary)+'</span></div>').join('')+'<div class="character-bundle-import-actions"><button class="btn btn-sm btn-primary" type="button" data-action="bundle-import-card">导入角色卡</button>'+validated.map(item=>'<button class="btn btn-sm" type="button" data-action="bundle-restore-resource" data-kind="'+item.type+'">恢复'+(item.type==='worldbook'?'世界书':'预设')+'</button>').join('')+'<button class="btn btn-sm btn-ghost" type="button" data-action="bundle-clear-stage">清除待导入包</button></div>';
             }
             showToast('资源包检查完成；尚未修改任何现有资源','success');
-        }).catch(error=>showToast(error.message||'资源包读取失败','error'));
+        }).catch(error=>{if(requestId===bundleImportSequence)showToast(error.message||'资源包读取失败','error')});
     }
 
     function triggerCharacterBundleImport(){
@@ -338,6 +344,7 @@
     }
 
     function clearStagedCharacterResourceBundle(){
+        bundleImportSequence++;
         stagedResourceBundle=null;
         const host=document.getElementById('characterCardBundleImportPreview');
         if(host){host.hidden=true;host.innerHTML=''}
