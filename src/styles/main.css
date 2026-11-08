@@ -593,3 +593,11 @@ body.dark-theme .character-card-hero{background:linear-gradient(120deg,rgba(14,1
 @keyframes extension-panel-enter{from{opacity:.65;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.regex-card,.script-card,.extension-tab,.extension-panel{animation:none!important;transition:none!important}.regex-card:hover,.script-card:hover,.extension-tab:active{transform:none}}
 @media(max-width:520px){.extension-filterbar{align-items:stretch}.extension-search{flex-basis:100%}.extension-filter-select{flex:1}.extension-filter-summary{margin-left:0}}
+
+.extension-bulkbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:9px 10px;border:1px solid var(--glass-border-subtle);border-radius:12px;background:rgba(125,160,190,.045)}
+.extension-select-all,.extension-card-select{display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);font-size:.68rem;white-space:nowrap}
+.extension-card-select{margin-right:auto;padding-right:8px}
+.extension-card-select input,.extension-select-all input{accent-color:var(--sky-accent)}
+.extension-selection-summary{font-size:.68rem;color:var(--text-muted);white-space:nowrap}
+.extension-bulk-actions{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
+@media(max-width:520px){.extension-bulkbar{align-items:flex-start}.extension-bulk-actions{width:100%;margin-left:0}.extension-bulk-actions .btn{flex:1}}
