@@ -280,7 +280,7 @@
             let offset=8,inserted=false;
             const isV3=currentCard.spec==='chara_card_v3';
             const key=isV3?'ccv3':'chara';
-            const metadata=new TextEncoder().encode(key+'\\0'+encodeBase64Utf8(JSON.stringify(currentCard)));
+            const metadata=new TextEncoder().encode(key+'\0'+encodeBase64Utf8(JSON.stringify(currentCard)));
             while(offset+12<=source.length){
                 const length=new DataView(source.buffer,source.byteOffset+offset,4).getUint32(0);
                 const type=String.fromCharCode(source[offset+4],source[offset+5],source[offset+6],source[offset+7]);
