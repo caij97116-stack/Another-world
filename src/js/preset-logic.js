@@ -511,7 +511,19 @@ function normalizeRegexScript(raw, index){
             updateExtensionSelectionSummary(kind);
         }
 
+        function setExtensionCardsCollapsed(kind,collapsed){
+            const isRegex=kind==='regex';
+            const container=document.getElementById(isRegex?'regexListContainer':'scriptListContainer');
+            if(!container)return;
+            container.querySelectorAll(isRegex?'.regex-card':'.script-card').forEach(card=>{
+                card.classList.toggle('is-collapsed',Boolean(collapsed));
+                const button=card.querySelector('[data-action="toggle-extension-card"]');
+                if(button){button.textContent=collapsed?'展开':'收起';button.setAttribute('aria-expanded',String(!collapsed))}
+            });
+        }
+
 window.applyExtensionFilters=applyExtensionFilters;
+window.setExtensionCardsCollapsed=setExtensionCardsCollapsed;
 window.bulkExtensionAction=bulkExtensionAction;
 window.setExtensionSelectVisible=setExtensionSelectVisible;
 window.updateExtensionSelectionSummary=updateExtensionSelectionSummary;
