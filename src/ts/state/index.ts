@@ -18,3 +18,8 @@ export type {
   HistoryStateContract,
   HistoryLimits
 } from "./history";
+export {
+  isPresetArrayPath,
+  findPresetArrayAtPath
+} from "./preset-paths";
+export type { PresetArrayLocation } from "./preset-paths";
