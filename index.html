@@ -1069,7 +1069,12 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             presetArrayPaths={};
             presetData=result.data;
             presetEnvelope=result.envelope;
-            if(presetData._editorVersion)presetVersion=parseInt(presetData._editorVersion,10)||presetVersion;
+            // 新导入的文件没有版本元数据时，不沿用上一个预设的版本号。
+            presetVersion=1;
+            if(presetData._editorVersion!==undefined&&presetData._editorVersion!==null&&presetData._editorVersion!==''){
+                const importedVersion=parseInt(presetData._editorVersion,10);
+                if(Number.isFinite(importedVersion)&&importedVersion>0)presetVersion=importedVersion;
+            }
             return result;
         }
         function buildPresetExportObject(payload){
@@ -1077,11 +1082,16 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             return Object.assign({},presetEnvelope.wrapper,{[presetEnvelope.key]:payload});
         }
 
+        function readPresetStorageItem(key){
+            try{return localStorage.getItem(key)}
+            catch(e){console.warn('无法读取预设缓存：'+key,e);return null}
+        }
+
         function loadPresetFromStorage(){
-            const raw=localStorage.getItem(PRESET_STORAGE_KEY);
-            const ver=localStorage.getItem(PRESET_VERSION_KEY);
-            const envelopeRaw=localStorage.getItem(PRESET_ENVELOPE_STORAGE_KEY);
-            const arrayPathsRaw=localStorage.getItem(PRESET_ARRAY_PATHS_KEY);
+            const raw=readPresetStorageItem(PRESET_STORAGE_KEY);
+            const ver=readPresetStorageItem(PRESET_VERSION_KEY);
+            const envelopeRaw=readPresetStorageItem(PRESET_ENVELOPE_STORAGE_KEY);
+            const arrayPathsRaw=readPresetStorageItem(PRESET_ARRAY_PATHS_KEY);
 
             // 辅助元数据分别恢复；某一项损坏不应阻断主体预设数据。
             presetVersion=1;
