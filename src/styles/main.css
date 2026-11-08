@@ -392,3 +392,7 @@ body.dark-theme .character-card-hero{background:linear-gradient(120deg,rgba(14,1
 .character-link-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
 .character-link-actions .btn:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:600px){.character-link-row{align-items:flex-start;flex-direction:column}.character-link-actions{width:100%;justify-content:flex-start}.character-link-actions .btn{flex:1}}
+
+.character-link-panel-header{align-items:center;flex-wrap:wrap}
+.character-link-panel-header>div{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+@media(max-width:600px){.character-link-panel-header>button{width:100%;justify-content:center}}
