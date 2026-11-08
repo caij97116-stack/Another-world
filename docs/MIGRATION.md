@@ -434,3 +434,8 @@ The prompt-items editor now supports live search across name, identifier, role, 
 ### Prompt batch deletion
 
 The prompt-items bulk toolbar now supports deleting selected visible prompts. Deletion requires confirmation, records one undo-history entry, and removes matching prompt_order references only when no remaining prompt uses the same identifier. Ambiguous duplicate identifiers are preserved rather than guessed.
+
+
+### Duplicate prompt items
+
+Prompt cards can be duplicated with all unknown fields retained. A fresh unique identifier is assigned. Where the original identifier has a single unambiguous reference in a prompt-order group, the duplicate reference is inserted immediately after it; ambiguous groups are left unchanged and reported. Duplication is one undoable preset edit.
