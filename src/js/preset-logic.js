@@ -45,6 +45,8 @@ function normalizeRegexScript(raw, index){
                         <div class="regex-card-title">${escapeHtml(r.scriptName || '未命名正则')} ${disabled ? '<span class="regex-badge off">已禁用</span>' : '<span class="regex-badge">启用</span>'}</div>
                         <div class="regex-card-actions">
                             <button class="btn btn-sm" type="button" data-action="toggle-regex-disabled" data-index="${i}">${disabled ? '启用' : '禁用'}</button>
+                            <button class="btn btn-sm" type="button" data-action="move-regex-script" data-index="${i}" data-direction="-1" ${i===0?'disabled':''} aria-label="上移正则">↑</button>
+                            <button class="btn btn-sm" type="button" data-action="move-regex-script" data-index="${i}" data-direction="1" ${i===list.length-1?'disabled':''} aria-label="下移正则">↓</button>
                             <button class="btn btn-sm btn-danger" type="button" data-action="delete-regex-script" data-index="${i}">删除</button>
                         </div>
                     </div>
@@ -114,6 +116,16 @@ function normalizeRegexScript(raw, index){
             getActivePresetArray('regex_scripts')[idx].disabled = !getActivePresetArray('regex_scripts')[idx].disabled;
             renderRegexList();
             schedulePresetSave();
+        }
+        function moveRegexScript(idx,direction){
+            const list=getActivePresetArray('regex_scripts');
+            const next=idx+Number(direction);
+            if(!presetData||!Array.isArray(list)||idx<0||idx>=list.length||next<0||next>=list.length||!Number.isInteger(next))return;
+            recordPresetEditHistory(false);
+            [list[idx],list[next]]=[list[next],list[idx]];
+            renderRegexList();
+            schedulePresetSave();
+            showToast('已调整正则顺序','success');
         }
         function deleteRegexScript(idx){
             if(!presetData || !getActivePresetArray('regex_scripts')) return;
@@ -204,6 +216,8 @@ function normalizeRegexScript(raw, index){
                         <div class="script-card-title">${escapeHtml(s.name || '未命名脚本')} ${disabled ? '<span class="regex-badge off">已禁用</span>' : '<span class="regex-badge">启用</span>'}</div>
                         <div class="regex-card-actions">
                             <button class="btn btn-sm" type="button" data-action="toggle-script-disabled" data-index="${i}">${disabled ? '启用' : '禁用'}</button>
+                            <button class="btn btn-sm" type="button" data-action="move-script" data-index="${i}" data-direction="-1" ${i===0?'disabled':''} aria-label="上移脚本">↑</button>
+                            <button class="btn btn-sm" type="button" data-action="move-script" data-index="${i}" data-direction="1" ${i===list.length-1?'disabled':''} aria-label="下移脚本">↓</button>
                             <button class="btn btn-sm btn-danger" type="button" data-action="delete-script" data-index="${i}">删除</button>
                         </div>
                     </div>
@@ -338,6 +352,16 @@ function normalizeRegexScript(raw, index){
             getActivePresetArray('scripts')[idx].disabled = !getActivePresetArray('scripts')[idx].disabled;
             renderScriptList();
             schedulePresetSave();
+        }
+        function moveScript(idx,direction){
+            const list=getActivePresetArray('scripts');
+            const next=idx+Number(direction);
+            if(!presetData||!Array.isArray(list)||idx<0||idx>=list.length||next<0||next>=list.length||!Number.isInteger(next))return;
+            recordPresetEditHistory(false);
+            [list[idx],list[next]]=[list[next],list[idx]];
+            renderScriptList();
+            schedulePresetSave();
+            showToast('已调整脚本顺序','success');
         }
         function deleteScript(idx){
             if(!presetData || !getActivePresetArray('scripts')) return;
