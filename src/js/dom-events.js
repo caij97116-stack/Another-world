@@ -407,3 +407,20 @@ document.addEventListener('keydown',event=>{
 });
 
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.querySelector('.script-code.is-fullscreen')){event.preventDefault();window.exitScriptEditorFocus()}});
+
+document.addEventListener('keydown',event=>{
+    const tab=event.target instanceof Element?event.target.closest('.extension-tab[role="tab"]'):null;
+    if(!tab)return;
+    const tabs=[...tab.parentElement.querySelectorAll('.extension-tab[role="tab"]')];
+    if(!tabs.length)return;
+    let index=tabs.indexOf(tab);
+    if(event.key==='ArrowRight')index=(index+1)%tabs.length;
+    else if(event.key==='ArrowLeft')index=(index-1+tabs.length)%tabs.length;
+    else if(event.key==='Home')index=0;
+    else if(event.key==='End')index=tabs.length-1;
+    else return;
+    event.preventDefault();
+    const next=tabs[index];
+    window.switchExtensionTab(next.dataset.tab);
+    next.focus();
+});
