@@ -25,8 +25,8 @@ function normalizeRegexScript(raw, index){
         function updateExtensionSelectionSummary(kind){
             const isRegex=kind==='regex';
             const container=document.getElementById(isRegex?'regexListContainer':'scriptListContainer');
-            const summary=document.getElementById(isRegex?'regexSelectionSummary':'scriptSelectionSummary');
-            const selectAll=document.getElementById(isRegex?'regexSelectVisible':'scriptSelectVisible');
+            const summary=document.getElementById(isRegex?'regexSelectionSummary':'scriptsSelectionSummary');
+            const selectAll=document.getElementById(isRegex?'regexSelectVisible':'scriptsSelectVisible');
             if(!container)return;
             const cards=[...container.querySelectorAll(isRegex?'.regex-card:not([hidden])':'.script-card:not([hidden])')];
             const selected=cards.filter(card=>card.querySelector('[data-extension-select]')?.checked).length;
