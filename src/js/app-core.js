@@ -13,7 +13,17 @@ function switchPage(page){
                 closeSidebar();
                 exitFullscreenEdit();
                 renderPresetUI();
+                if(page==='extensions')refreshExtensionWorkspace();
             }
+        }
+
+        function refreshExtensionWorkspace(){
+            const name=document.getElementById('toolPresetName');
+            const status=document.getElementById('toolBindingStatus');
+            if(name)name.textContent=presetData?(presetData.name||presetData.preset_name||'已载入预设'):'尚未载入预设';
+            if(status){status.textContent=presetData?'已绑定当前预设':'未绑定';status.classList.toggle('off',!presetData)}
+            if(typeof renderRegexList==='function')renderRegexList();
+            if(typeof renderScriptList==='function')renderScriptList();
         }
 
         function updateToolbar(){
@@ -35,6 +45,14 @@ function switchPage(page){
                     const btn=document.getElementById('btnDelete');
                     if(btn)btn.style.display='inline-flex';
                 }
+            }else if(currentPage==='extensions'){
+                titleEl.textContent='正则与脚本工作台';
+                iconEl.textContent='⌘';
+                badgeEl.textContent=presetData?'已绑定':'未绑定';
+                actionsEl.innerHTML=`
+                    <button class="btn btn-ghost" data-action="toggle-theme" title="切换主题" id="btnTheme">${document.body.classList.contains('dark-theme')?'☀️':'🌙'}</button>
+                    <button class="btn" data-action="trigger-preset-import">导入预设</button>
+                    <button class="btn btn-primary" data-action="export-preset" ${presetData?'':'disabled'}>导出预设</button>`;
             }else{
                 titleEl.textContent='预设编辑器';
                 iconEl.textContent='⚙️';
