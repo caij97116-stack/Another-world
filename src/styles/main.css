@@ -420,3 +420,11 @@ body.dark-theme .character-card-hero{background:linear-gradient(120deg,rgba(14,1
 .wb-advanced-body .tool-help{margin:7px 0 0;line-height:1.55}
 .wb-advanced-body code{padding:1px 4px;border-radius:4px;background:rgba(125,160,190,.12);font-size:.92em}
 @media(max-width:600px){.wb-advanced-settings>summary{align-items:flex-start;flex-direction:column;gap:4px}.wb-advanced-settings>summary span{text-align:left}.wb-advanced-body .form-grid{grid-template-columns:1fr}}
+
+
+/* Expanded worldbook advanced controls */
+.wb-advanced-body select[multiple]{min-height:142px;padding:9px}
+.wb-advanced-body select[multiple] option{padding:6px 8px;border-radius:5px}
+.wb-advanced-body input[type=number]{font-variant-numeric:tabular-nums}
+.wb-advanced-body .form-grid{align-items:end}
+.wb-advanced-body .switch-row{min-height:30px}
