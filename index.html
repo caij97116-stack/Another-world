@@ -1227,24 +1227,47 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
             ]);
         }
 
+        function definePresetViewField(view, canonical, aliases, fallback, readTransform){
+            const keys=[canonical,...aliases];
+            const present=keys.filter(k=>Object.prototype.hasOwnProperty.call(view,k));
+            const storageKey=present.find(k=>view[k]!==undefined && view[k]!==null && view[k]!=='') || present[0] || null;
+            const initialValue=storageKey ? view[storageKey] : fallback;
+            if(storageKey===canonical && !readTransform) return;
+            if(storageKey) delete view[canonical];
+            let current=initialValue;
+            Object.defineProperty(view,canonical,{
+                configurable:true,enumerable:false,
+                get(){
+                    const value=storageKey && storageKey!==canonical ? view[storageKey] : current;
+                    return readTransform ? readTransform(value) : value;
+                },
+                set(value){
+                    if(storageKey && storageKey!==canonical) view[storageKey]=value;
+                    else if(storageKey===canonical) current=value;
+                    else{
+                        current=value;
+                        Object.defineProperty(view,canonical,{value,writable:true,configurable:true,enumerable:true});
+                    }
+                }
+            });
+        }
+
         function normalizeRegexScript(raw, index){
-            const r = raw || {};
-            return {
-                ...r,
-                id: r.id || ('regex_' + Date.now() + '_' + index),
-                scriptName: r.scriptName || r.name || ('正则 ' + (index + 1)),
-                findRegex: r.findRegex || r.find || r.pattern || '',
-                replaceString: r.replaceString || r.replace || r.replacement || '',
-                trimStrings: Array.isArray(r.trimStrings) ? r.trimStrings : [],
-                placement: Array.isArray(r.placement) ? r.placement : (r.placement != null ? [r.placement] : [1, 2]),
-                disabled: !!r.disabled,
-                markdownOnly: !!r.markdownOnly,
-                promptOnly: !!r.promptOnly,
-                runOnEdit: r.runOnEdit !== undefined ? !!r.runOnEdit : true,
-                substituteRegex: r.substituteRegex !== undefined ? Number(r.substituteRegex) : 0,
-                minDepth: r.minDepth != null ? r.minDepth : null,
-                maxDepth: r.maxDepth != null ? r.maxDepth : null
-            };
+            const view={...(raw||{})};
+            definePresetViewField(view,'id',[],'regex_'+Date.now()+'_'+index);
+            definePresetViewField(view,'scriptName',['name'],'正则 '+(index+1));
+            definePresetViewField(view,'findRegex',['find','pattern'],'');
+            definePresetViewField(view,'replaceString',['replace','replacement'],'');
+            definePresetViewField(view,'trimStrings',[],[],value=>Array.isArray(value)?value:[]);
+            definePresetViewField(view,'placement',[],[1,2],value=>Array.isArray(value)?value:(value!=null?[value]:[1,2]));
+            definePresetViewField(view,'disabled',[],false,value=>!!value);
+            definePresetViewField(view,'markdownOnly',[],false,value=>!!value);
+            definePresetViewField(view,'promptOnly',[],false,value=>!!value);
+            definePresetViewField(view,'runOnEdit',[],true,value=>value===undefined?true:!!value);
+            definePresetViewField(view,'substituteRegex',[],0,value=>value===undefined?0:Number(value));
+            definePresetViewField(view,'minDepth',[],null);
+            definePresetViewField(view,'maxDepth',[],null);
+            return view;
         }
 
         function detectAndNormalizeRegex(){
@@ -1372,18 +1395,14 @@ body.dark-theme .field-overview-row{background:rgba(30,58,95,0.35)}
         }
 
         function normalizeScript(raw, index){
-            const r = raw || {};
-            const code = r.code || r.content || r.script || r.js || r.value || '';
-            return {
-                ...r,
-                id: r.id || ('script_' + Date.now() + '_' + index),
-                name: r.name || r.scriptName || r.title || ('脚本 ' + (index + 1)),
-                code: typeof code === 'string' ? code : String(code || ''),
-                disabled: !!r.disabled,
-                type: r.type || r.kind || 'js',
-                trigger: r.trigger || r.event || '',
-                // 原始对象已通过 ...r 保留；不再写入无效的 _extra:null。
-            };
+            const view={...(raw||{})};
+            definePresetViewField(view,'id',[],'script_'+Date.now()+'_'+index);
+            definePresetViewField(view,'name',['scriptName','title'],'脚本 '+(index+1));
+            definePresetViewField(view,'code',['content','script','js','value'],'',value=>typeof value==='string'?value:String(value||''));
+            definePresetViewField(view,'disabled',[],false,value=>!!value);
+            definePresetViewField(view,'type',['kind'],'js');
+            definePresetViewField(view,'trigger',['event'],'');
+            return view;
         }
 
         function detectAndNormalizeScripts(){
