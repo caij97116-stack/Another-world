@@ -437,7 +437,7 @@ function normalizeRegexScript(raw, index){
             const container=document.getElementById(isRegex?'regexListContainer':'scriptListContainer');
             const list=getActivePresetArray(key);
             if(!presetData||!Array.isArray(list)||!container)return;
-            const indexes=[...container.querySelectorAll('[data-extension-select]:checked')].map(input=>Number(input.dataset.index)).filter(index=>Number.isInteger(index)&&index>=0&&index<list.length);
+            const indexes=[...container.querySelectorAll((isRegex?'.regex-card:not([hidden])':'.script-card:not([hidden])')+' [data-extension-select]:checked')].map(input=>Number(input.dataset.index)).filter(index=>Number.isInteger(index)&&index>=0&&index<list.length);
             if(!indexes.length){showToast('请先选择要处理的项目');return}
             if(action==='delete'){
                 const names=indexes.map(index=>isRegex?(list[index].scriptName||'未命名正则'):(list[index].name||'未命名脚本'));
@@ -448,7 +448,7 @@ function normalizeRegexScript(raw, index){
             else{const disabled=action==='disable';indexes.forEach(index=>{if(list[index]&&typeof list[index]==='object')list[index].disabled=disabled})}
             if(isRegex)renderRegexList();else renderScriptList();
             schedulePresetSave();
-            showToast(action==='delete'?'已批量删除 '+indexes.length+' 项:(action==='enable'?'已批量启用 ':'已批量禁用 ')+indexes.length+' 项');
+            showToast(action==='delete'?'已批量删除 '+indexes.length+' 项':(action==='enable'?'已批量启用 ':'已批量禁用 ')+indexes.length+' 项');
         }
         function setExtensionSelectVisible(kind,checked){
             const isRegex=kind==='regex';
