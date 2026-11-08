@@ -201,6 +201,15 @@ document.addEventListener('click', (event) => {
         case 'trigger-preset-import':
             window.triggerPresetImport();
             break;
+        case 'apply-preset-import':
+            window.applyStagedPresetImport();
+            break;
+        case 'close-preset-import-preview':
+            window.closePresetImportPreview();
+            break;
+        case 'undo-preset-import':
+            window.undoLastPresetImport();
+            break;
         case 'export-preset':
             window.exportPreset();
             break;
