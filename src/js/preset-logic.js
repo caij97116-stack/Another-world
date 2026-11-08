@@ -22,6 +22,17 @@ function normalizeRegexScript(raw, index){
             setActivePresetArray('regex_scripts',list.map((item, i) => normalizeRegexScript(item, i)));
         }
 
+        function updateExtensionSelectionSummary(kind){
+            const isRegex=kind==='regex';
+            const container=document.getElementById(isRegex?'regexListContainer':'scriptListContainer');
+            const summary=document.getElementById(isRegex?'regexSelectionSummary':'scriptSelectionSummary');
+            const selectAll=document.getElementById(isRegex?'regexSelectVisible':'scriptSelectVisible');
+            if(!container)return;
+            const cards=[...container.querySelectorAll(isRegex?'.regex-card:not([hidden])':'.script-card:not([hidden])')];
+            const selected=cards.filter(card=>card.querySelector('[data-extension-select]')?.checked).length;
+            if(summary)summary.textContent='已选 '+selected+' 项';
+            if(selectAll){selectAll.checked=cards.length>0&&selected===cards.length;selectAll.indeterminate=selected>0&&selected<cards.length}
+        }
         function applyExtensionFilters(kind){
             const isRegex=kind==='regex';
             const container=document.getElementById(isRegex?'regexListContainer':'scriptListContainer');
@@ -43,6 +54,7 @@ function normalizeRegexScript(raw, index){
             if(summary)summary.textContent=cards.length?'显示 '+visible+' / '+cards.length+' 项':'';
             let empty=container.querySelector('.extension-filter-empty');
             if(cards.length&&visible===0){if(!empty){empty=document.createElement('div');empty.className='regex-empty extension-filter-empty';empty.textContent='没有符合条件的项目，试试调整搜索词或筛选条件。';container.appendChild(empty)}empty.hidden=false}else if(empty)empty.hidden=true;
+            updateExtensionSelectionSummary(kind);
         }
         function renderRegexList(){
             const container = document.getElementById('regexListContainer');
@@ -65,6 +77,7 @@ function normalizeRegexScript(raw, index){
                 return `
                 <div class="regex-card" data-idx="${i}" data-disabled="${disabled?'true':'false'}" data-search="${escapeHtml(searchText)}">
                     <div class="regex-card-header">
+                        <label class="extension-card-select"><input type="checkbox" data-extension-select="regex" data-index="${i}" aria-label="选择正则 ${i+1}"><span>选择</span></label>
                         <div class="regex-card-title">${escapeHtml(r.scriptName || '未命名正则')} ${disabled ? '<span class="regex-badge off">已禁用</span>' : '<span class="regex-badge">启用</span>'}</div>
                         <div class="regex-card-actions">
                             <button class="btn btn-sm" type="button" data-action="toggle-regex-disabled" data-index="${i}">${disabled ? '启用' : '禁用'}</button>
@@ -238,6 +251,7 @@ function normalizeRegexScript(raw, index){
                 return `
                 <div class="script-card" data-idx="${i}" data-disabled="${disabled?'true':'false'}" data-search="${escapeHtml(searchText)}">
                     <div class="script-card-header">
+                        <label class="extension-card-select"><input type="checkbox" data-extension-select="scripts" data-index="${i}" aria-label="选择脚本 ${i+1}"><span>选择</span></label>
                         <div class="script-card-title">${escapeHtml(s.name || '未命名脚本')} ${disabled ? '<span class="regex-badge off">已禁用</span>' : '<span class="regex-badge">启用</span>'}</div>
                         <div class="regex-card-actions">
                             <button class="btn btn-sm" type="button" data-action="toggle-script-disabled" data-index="${i}">${disabled ? '启用' : '禁用'}</button>
@@ -417,4 +431,34 @@ function normalizeRegexScript(raw, index){
             if(sec) sec.classList.remove('collapsed');
         }
 
+        function bulkExtensionAction(kind,action){
+            const isRegex=kind==='regex';
+            const key=isRegex?'regex_scripts':'scripts';
+            const container=document.getElementById(isRegex?'regexListContainer':'scriptListContainer');
+            const list=getActivePresetArray(key);
+            if(!presetData||!Array.isArray(list)||!container)return;
+            const indexes=[...container.querySelectorAll('[data-extension-select]:checked')].map(input=>Number(input.dataset.index)).filter(index=>Number.isInteger(index)&&index>=0&&index<list.length);
+            if(!indexes.length){showToast('请先选择要处理的项目');return}
+            if(action==='delete'){
+                const names=indexes.map(index=>isRegex?(list[index].scriptName||'未命名正则'):(list[index].name||'未命名脚本'));
+                if(!confirm('确定删除选中的 '+indexes.length+' 项？\\n'+names.slice(0,5).join('、')+(names.length>5?' 等':'')))return;
+            }
+            recordPresetEditHistory(false);
+            if(action==='delete')indexes.sort((a,b)=>b-a).forEach(index=>list.splice(index,1));
+            else{const disabled=action==='disable';indexes.forEach(index=>{if(list[index]&&typeof list[index]==='object')list[index].disabled=disabled})}
+            if(isRegex)renderRegexList();else renderScriptList();
+            schedulePresetSave();
+            showToast(action==='delete'?'已批量删除 '+indexes.length+' 项:(action==='enable'?'已批量启用 ':'已批量禁用 ')+indexes.length+' 项');
+        }
+        function setExtensionSelectVisible(kind,checked){
+            const isRegex=kind==='regex';
+            const container=document.getElementById(isRegex?'regexListContainer':'scriptListContainer');
+            if(!container)return;
+            container.querySelectorAll(isRegex?'.regex-card:not([hidden]) [data-extension-select]':'.script-card:not([hidden]) [data-extension-select]').forEach(input=>{input.checked=checked});
+            updateExtensionSelectionSummary(kind);
+        }
+
 window.applyExtensionFilters=applyExtensionFilters;
+window.bulkExtensionAction=bulkExtensionAction;
+window.setExtensionSelectVisible=setExtensionSelectVisible;
+window.updateExtensionSelectionSummary=updateExtensionSelectionSummary;
