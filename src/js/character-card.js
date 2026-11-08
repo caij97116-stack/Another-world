@@ -340,7 +340,7 @@
         const input=event.target;
         const file=input.files&&input.files[0];
         input.value='';
-        if(file)stageCharacterResourceBundle(file);
+        if(file){try{stageCharacterResourceBundle(file)}catch(error){showToast(error.message||'资源包读取失败','error')}}
     }
 
     function clearStagedCharacterResourceBundle(){
