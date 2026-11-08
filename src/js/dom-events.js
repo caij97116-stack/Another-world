@@ -77,6 +77,34 @@ document.addEventListener('click', (event) => {
         case 'close-import-modal':
             window.closeImportModal();
             break;
+        case 'select-entry-card':
+            if (event.target instanceof Element && event.target.closest('.entry-check, .card-btn')) return;
+            window.handleEntryCardClick(target.dataset.uid, target);
+            break;
+        case 'move-entry':
+            window.moveEntry(target.dataset.uid, Number(target.dataset.direction));
+            break;
+        case 'copy-entry':
+            window.copyEntryByUid(target.dataset.uid);
+            break;
+        case 'move-prompt-item':
+            window.movePromptItem(Number(target.dataset.index), Number(target.dataset.direction));
+            break;
+        case 'delete-prompt-item':
+            window.deletePromptItem(Number(target.dataset.index));
+            break;
+        case 'toggle-regex-disabled':
+            window.toggleRegexDisabled(Number(target.dataset.index));
+            break;
+        case 'delete-regex-script':
+            window.deleteRegexScript(Number(target.dataset.index));
+            break;
+        case 'toggle-script-disabled':
+            window.toggleScriptDisabled(Number(target.dataset.index));
+            break;
+        case 'delete-script':
+            window.deleteScript(Number(target.dataset.index));
+            break;
     }
 });
 
@@ -123,6 +151,25 @@ document.addEventListener('change', (event) => {
             break;
         case 'apply-prompt-order':
             window.applyPromptOrderJson();
+            break;
+        case 'toggle-entry-selection':
+            window.toggleSelect(target.dataset.uid, target.checked);
+            break;
+        case 'update-prompt-item-json':
+            window.updatePromptItemJson(Number(target.dataset.index), target.value);
+            break;
+        case 'update-regex-placement':
+            window.updateRegexPlacement(Number(target.dataset.index), target.value);
+            break;
+        case 'update-regex-field': {
+            let value = target.value;
+            if (target.dataset.valueType === 'boolean') value = target.checked;
+            if (target.dataset.valueType === 'nullable-number') value = value === '' ? null : Number(value);
+            window.updateRegexField(Number(target.dataset.index), target.dataset.field, value);
+            break;
+        }
+        case 'update-script-field':
+            window.updateScriptField(Number(target.dataset.index), target.dataset.field, target.value);
             break;
     }
 });
