@@ -261,7 +261,7 @@ The character-card workspace can now link the currently loaded card to the curre
 - Association records are local to the browser profile and are not included in character-card JSON/PNG exports, preset exports, or worldbook exports.
 - The card association key is derived from the card's name, creator, character version, creation date, and imported filename. Cards sharing all of those identity fields may share an association key; users should avoid relying on the association layer as a globally unique identifier.
 
-This first linking phase supports the currently loaded worldbook and preset only. It does not yet provide a multi-file resource library, file picker for previously imported resources, bundle export, or automatic synchronization. Source-level checks and JavaScript syntax parsing are required before treating the phase as complete; no browser interaction or multi-card collision test is claimed.
+This linking phase supports the currently loaded worldbook and preset only. It does not yet provide a multi-file resource library, file picker for previously imported resources, or automatic synchronization. Source-level checks and JavaScript syntax parsing are required before treating the phase as complete; no browser interaction or multi-card collision test is claimed.
 
 ## Validated resource bundle export
 
