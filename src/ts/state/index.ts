@@ -11,3 +11,8 @@ export type {
   PresetStateContract,
   PresetStorageKeys
 } from "./preset";
+export type {
+  WorldBookSnapshot,
+  HistoryStateContract,
+  HistoryLimits
+} from "./history";
