@@ -17,5 +17,8 @@ document.addEventListener('click', (event) => {
         case 'switch-page':
             window.switchPage(target.dataset.page);
             break;
+        case 'toggle-section':
+            window.toggleSection(target.dataset.target);
+            break;
     }
 });
