@@ -3,7 +3,10 @@ export type {
   WorldBookEntry,
   WorldBookData,
   WorldBookStateContract,
-  WorldBookStorageKeys
+  WorldBookStorageKeys,
+  WorldBookSnapshot,
+  HistoryStateContract,
+  HistoryLimits
 } from "./worldbook";
 export type {
   PresetRecord,
@@ -13,16 +16,6 @@ export type {
   PresetStateContract,
   PresetStorageKeys
 } from "./preset";
-export type {
-  WorldBookSnapshot,
-  HistoryStateContract,
-  HistoryLimits
-} from "./history";
-export {
-  isPresetArrayPath,
-  findPresetArrayAtPath
-} from "./preset-paths";
-export type { PresetArrayLocation } from "./preset-paths";
 export {
   isPresetPayloadObject,
   unwrapPresetObject,
@@ -30,6 +23,8 @@ export {
 } from "./preset-import";
 export type { ParsedPresetImport } from "./preset-import";
 export {
+  isPresetArrayPath,
+  findPresetArrayAtPath,
   getPresetArrayAtPath,
   ensurePresetArrayAlias,
   getActivePresetArray,
@@ -41,5 +36,6 @@ export {
 } from "./preset-items";
 export type {
   PresetBooleanParser,
+  PresetArrayLocation,
   PresetArrayLocation as PresetItemArrayLocation
 } from "./preset-items";
