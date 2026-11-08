@@ -607,3 +607,6 @@ body.dark-theme .character-card-hero{background:linear-gradient(120deg,rgba(14,1
 .regex-card.is-collapsed,.script-card.is-collapsed{padding-bottom:8px}
 .regex-card.is-collapsed>:not(.regex-card-header),.script-card.is-collapsed>:not(.script-card-header){display:none!important}
 .regex-card.is-collapsed .regex-card-header,.script-card.is-collapsed .script-card-header{margin-bottom:0}
+
+.preset-status #undoPresetEditButton,.preset-status #redoPresetEditButton{transition:background .18s ease,border-color .18s ease,transform .18s ease}
+.preset-status #undoPresetEditButton:not(:disabled):active,.preset-status #redoPresetEditButton:not(:disabled):active{transform:translateY(1px)}
