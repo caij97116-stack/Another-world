@@ -254,6 +254,17 @@
                             </div>
                             <div class="collapsible-body" id="secPromptItems">
                                 <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px">以独立字段编辑名称、角色、标识符和长正文；高级 JSON 可展开查看。未识别字段会保留在原条目中，不会因普通编辑而丢失。</p>
+                                <div class="prompt-bulk-toolbar">
+                                    <label class="prompt-bulk-select-all"><input type="checkbox" id="promptSelectAll"> 全选当前提示词</label>
+                                    <span id="promptBulkSelectionCount">已选 0 项</span>
+                                    <div class="prompt-bulk-actions">
+                                        <button class="btn btn-sm" type="button" data-action="bulk-prompt-action" data-bulk-action="enable">批量启用</button>
+                                        <button class="btn btn-sm" type="button" data-action="bulk-prompt-action" data-bulk-action="disable">批量禁用</button>
+                                        <button class="btn btn-sm" type="button" data-action="bulk-prompt-action" data-bulk-action="move-up">整体上移</button>
+                                        <button class="btn btn-sm" type="button" data-action="bulk-prompt-action" data-bulk-action="move-down">整体下移</button>
+                                        <button class="btn btn-sm" type="button" data-action="bulk-prompt-action" data-bulk-action="clear">取消选择</button>
+                                    </div>
+                                </div>
                                 <div class="regex-list" id="promptItemsContainer"></div>
                             </div>
                         </div>
