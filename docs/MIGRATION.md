@@ -124,3 +124,11 @@ A compatibility bridge, `src/ts/utils/legacy-bridge.ts`, now provides `installLe
 - Regex and script normalization accept the legacy boolean parser as a dependency, keeping coercion rules supplied by the existing application rather than silently reimplementing them.
 - Script normalization preserves unrecognized source keys; array selection continues to prefer populated candidate arrays and records the selected original path.
 - Exported the grouped helpers from `src/ts/state/index.ts`. The active classic-script functions remain unchanged and authoritative; this module is not wired into the live entrypoint.
+
+
+### State module consolidation
+
+- Consolidated the small undo/redo contract file into `worldbook.ts`, because history state is part of the world-book editor state domain.
+- Consolidated nested preset array-path validation and lookup into `preset-items.ts`, alongside the existing regex/script array alias handling. The previous separate `preset-paths.ts` file duplicated the same path-resolution responsibility.
+- Kept the public helper names exported through `state/index.ts` so future imports can use one consistent state entry point.
+- Removed the two redundant files. This is a source-organization change only; the live classic-script entrypoint and runtime behavior remain unchanged.
