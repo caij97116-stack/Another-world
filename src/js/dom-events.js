@@ -159,6 +159,18 @@ document.addEventListener('click', (event) => {
         case 'redo':
             window.redo();
             break;
+        case 'open-worldbook-diagnostics':
+            window.openWorldbookDiagnostics();
+            break;
+        case 'run-worldbook-diagnostics':
+            window.runWorldbookDiagnostics();
+            break;
+        case 'close-worldbook-diagnostics':
+            window.closeWorldbookDiagnostics();
+            break;
+        case 'jump-diagnostic-entry':
+            window.jumpToDiagnosticEntry(target.dataset.uid);
+            break;
         case 'trigger-worldbook-import':
             window.triggerImport();
             break;
