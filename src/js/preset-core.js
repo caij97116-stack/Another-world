@@ -405,6 +405,7 @@ function isPresetPayloadObject(value){
         }
 
         function renderPresetUI(){
+            if(typeof updatePresetImportBackupButton==='function')updatePresetImportBackupButton();
             const empty=document.getElementById('presetEmpty');
             const editor=document.getElementById('presetEditor');
             if(!presetData){
