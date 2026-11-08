@@ -78,6 +78,9 @@
             const end=start+length;
             if(length>bytes.length || end+4>bytes.length) throw new Error('PNG 文件结构不完整，无法安全读取。');
             const chunk=bytes.subarray(start,end);
+            const expectedCrc=new DataView(buffer,bytes.byteOffset+end,4).getUint32(0);
+            const actualCrc=crc32(bytes.subarray(offset+4,end));
+            if(actualCrc!==expectedCrc) throw new Error('PNG 数据块 '+type+' 的 CRC 校验失败，文件可能已损坏。');
             if(type==='tEXt'){
                 const split=findNull(chunk,0);
                 if(split>0){
