@@ -11,6 +11,7 @@
     let cardDirty = false;
     let stagedResourceBundle = null;
     let bundleImportSequence = 0;
+    let pendingImageImportMode = 'new';
 
     function isObject(value){
         return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -752,12 +753,12 @@
         return {...getCardData(root),container:'PNG',chunk:'新建角色卡'};
     }
 
-    async function importCharacterCardImage(file){
+    async function importCharacterCardImage(file,forceNew=false){
         if(!file)return;
         const converted=await decodeImageFile(file);
         const baseName=String(file.name||'新角色').replace(/\\.[^.]+$/,'').replace(/[\\/:*?"<>|]/g,'_').slice(0,100)||'新角色';
         const pngFile=new File([converted.blob],baseName+'.png',{type:'image/png',lastModified:Date.now()});
-        const creating=!currentCard;
+        const creating=!!forceNew||!currentCard;
         const parsed=creating?createBlankCharacterCard(baseName):getCardData(currentCard);
         parsed.container='PNG';
         parsed.chunk=creating?'新建角色卡':'已转换封面';
@@ -980,6 +981,7 @@
     window.triggerCharacterCardImport=triggerCharacterCardImport;
     window.onCharacterCardFileChosen=onCharacterCardFileChosen;
     window.importCharacterCardImage=importCharacterCardImage;
-    window.onCharacterCardImageChosen=async event=>{const input=event.target;const file=input.files&&input.files[0];input.value='';try{await importCharacterCardImage(file)}catch(error){showToast(error.message||'图片导入失败','error')}};
+    window.triggerCharacterCardImageImport=mode=>{pendingImageImportMode=mode==='replace'?'replace':'new';const input=document.getElementById('characterCardImageInput');if(input)input.click()};
+    window.onCharacterCardImageChosen=async event=>{const input=event.target;const file=input.files&&input.files[0];input.value='';const forceNew=pendingImageImportMode!=='replace';pendingImageImportMode='new';try{await importCharacterCardImage(file,forceNew)}catch(error){showToast(error.message||'图片导入失败','error')}};
     window.exportCharacterCardJson=exportCharacterCardJson;
 })();
