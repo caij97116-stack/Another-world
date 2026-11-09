@@ -164,7 +164,7 @@ function makeUniqueEntryUid(preferred){
         }
 
         // ========== 全屏 ==========
-        function updateFullscreenBtn(){const btn=document.getElementById('btnFullscreen');if(!btn)return;btn.style.display=(window.innerWidth<=860&&activeUid)?'inline-flex':'none'}
+        function updateFullscreenBtn(){const btn=document.getElementById('btnFullscreen');if(!btn)return;btn.style.display=(isCompactTouchLayout()&&activeUid)?'inline-flex':'none'}
         function enterFullscreenEdit(){if(!activeUid)return;isFullscreen=true;document.getElementById('wbContainer').classList.add('fullscreen-mode');document.getElementById('fsTitle').textContent=worldBookData.entries[activeUid]?.comment||'编辑条目';closeSidebar()}
         function exitFullscreenEdit(){isFullscreen=false;document.getElementById('wbContainer').classList.remove('fullscreen-mode')}
 
@@ -398,7 +398,7 @@ function makeUniqueEntryUid(preferred){
             activeUid=uid;
             renderEntryList();
             loadActiveEntry();
-            if(window.innerWidth<=860)enterFullscreenEdit();
+            if(isCompactTouchLayout())enterFullscreenEdit();
             const form=document.getElementById('editorForm');
             form?.scrollIntoView({behavior:'smooth',block:'start'});
         }
