@@ -803,7 +803,7 @@ textarea.auto-grow-textarea{
 
     /* Treat touch devices using desktop-site mode as mobile too. */
     .mobile-toggle {
-        display: flex !important;
+        display: flex;
     }
     .sidebar {
         position: fixed !important;
