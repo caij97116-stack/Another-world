@@ -72,7 +72,11 @@ document.addEventListener('click', (event) => {
             window.triggerCharacterCardImport();
             break;
         case 'trigger-character-card-image-import':
-            document.getElementById('characterCardImageInput')?.click();
+        case 'create-character-card-from-image':
+            window.triggerCharacterCardImageImport('new');
+            break;
+        case 'replace-character-card-image':
+            window.triggerCharacterCardImageImport('replace');
             break;
         case 'export-character-card-json':
             window.exportCharacterCardJson();
