@@ -60,6 +60,7 @@ test('preset prompt rerenders preserve the active prompt card viewport anchor', 
   assert.match(presetCore, /const focusedCard=document\.activeElement instanceof Element/);
   assert.match(presetCore, /const anchorTop=visibleCard\?visibleCard\.getBoundingClientRect\(\)\.top:null/);
   assert.match(presetCore, /const restorePromptScrollAnchor=\(\)=>/);
+  assert.match(presetCore, /if\(!nextCard\|\|!nextCard\.getClientRects\(\)\.length\)return/);
   assert.match(presetCore, /if\(workspaceScrolls\)workspace\.scrollTop\+=delta;\s*else window\.scrollBy\(0,delta\)/);
   assert.match(presetCore, /requestAnimationFrame\(restorePromptScrollAnchor\)/);
 });
