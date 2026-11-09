@@ -95,3 +95,11 @@ test('preset sections start as a compact expandable outline', () => {
   assert.match(html, /data-target="secBasicInfo"/);
   assert.match(html, /data-target="secSwitches"/);
 });
+
+
+test('character card main sections use expandable groups', () => {
+  assert.match(html, /<details class="character-card-section character-card-fields-section">/);
+  assert.match(html, /<details class="character-card-section character-card-greetings-section">/);
+  assert.match(html, /全部开场白/);
+  assert.match(html, /角色基础信息/);
+});
