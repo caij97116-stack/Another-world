@@ -1120,10 +1120,13 @@
     window.exportCharacterCardJson=exportCharacterCardJson;
     window.scheduleCharacterCardDraftSave=scheduleCharacterCardDraftSave;
     window.saveCharacterCardDraftNow=saveCharacterCardDraft;
-    window.addEventListener('pagehide',()=>{if(currentCard)saveCharacterCardDraft()});
-    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&currentCard)saveCharacterCardDraft()});
-
-    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restoreCharacterCardDraft,{once:true});
-    else restoreCharacterCardDraft();
+    if(typeof window.addEventListener==='function'){
+        window.addEventListener('pagehide',()=>{if(currentCard)saveCharacterCardDraft()});
+    }
+    if(typeof document.addEventListener==='function'){
+        document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&currentCard)saveCharacterCardDraft()});
+        if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restoreCharacterCardDraft,{once:true});
+        else restoreCharacterCardDraft();
+    }
 
 })();
