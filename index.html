@@ -459,18 +459,19 @@
                     </div>
                 </div>
                 <div class="character-card-stats" id="characterCardStats"></div>
-                <div class="character-card-section character-card-greetings-section">
-                    <div class="panel-header">
-                        <div><h3>开场白 <span class="char-count" id="characterCardGreetingCount">0 条备用</span></h3><p class="tool-help">主开场白、备用开场白和群组专用开场白会分别提取，逐条编辑后同步到角色卡。</p></div>
+                <details class="character-card-section character-card-greetings-section">
+                    <summary class="character-card-section-summary">全部开场白 <span id="characterCardGreetingCount">主开场白与备用开场白</span></summary>
+                    <div class="panel-header character-greetings-toolbar">
+                        <p class="tool-help">主开场白、备用开场白和群组专用开场白分别提取，逐条编辑后同步到角色卡。</p>
                         <button class="btn btn-sm btn-primary" type="button" data-action="add-character-card-greeting">＋ 新增备用开场白</button>
                     </div>
                     <div id="characterCardGreetings" class="character-card-greetings"></div>
-                </div>
+                </details>
                 <p class="character-card-edit-status" id="characterCardEditStatus">修改会同步到导出数据</p>
-                <div class="character-card-section">
-                    <div class="panel-header"><h3>角色内容</h3></div>
+                <details class="character-card-section character-card-fields-section">
+                    <summary class="character-card-section-summary">角色基础信息 <span>名称、描述、性格、场景、示例等</span></summary>
                     <div id="characterCardFields"></div>
-                </div>
+                </details>
                 <details class="character-card-section character-card-raw">
                     <summary>高级 JSON 编辑 <span>完整数据 / 未知字段</span></summary>
                     <p class="tool-help">这里可以直接编辑整张角色卡，包括 alternate_greetings、character_book、extensions 和 V3 资源字段。应用前会先检查 JSON 语法和角色名称；未知字段不会被自动删除。</p>
