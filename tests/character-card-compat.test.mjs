@@ -455,3 +455,39 @@ test('linked resource associations retain a snapshot after the active worldbook 
   const bundle = JSON.parse(await downloads.at(-1).text());
   assert.deepEqual(JSON.parse(JSON.stringify(bundle.resources.worldbook)), original);
 });
+
+
+test('regex and scripts can be linked and exported independently', async () => {
+  context.presetData = {
+    name: 'Separate Extensions Preset',
+    prompts: [{ identifier: 'main', content: 'prompt' }],
+    regex_scripts: [{ id: 'rx', scriptName: 'Regex only', findRegex: 'a' }],
+    scripts: [{ name: 'Script only', content: 'inert sample' }]
+  };
+  const card = { spec: 'chara_card_v3', spec_version: '3.0', data: { name: 'Separate Links Card' } };
+  const linksHost = { innerHTML: '' };
+  const contentsHost = { innerHTML: '' };
+  const exportButton = { disabled: true };
+  elements.set('characterCardLinks', linksHost);
+  elements.set('characterCardLinkedResourceContents', contentsHost);
+  elements.set('characterCardBundleExport', exportButton);
+  api.setExportState(card, 'separate-links-card');
+  api.linkCurrentCardResource('regex');
+  api.linkCurrentCardResource('scripts');
+  const store = JSON.parse(context.localStorage.getItem('tavern_character_card_resource_links_v1'));
+  assert.deepEqual(JSON.parse(JSON.stringify(store['separate-links-card'].regex.snapshot)), context.presetData.regex_scripts);
+  assert.deepEqual(JSON.parse(JSON.stringify(store['separate-links-card'].scripts.snapshot)), context.presetData.scripts);
+  assert.match(linksHost.innerHTML, /正则规则/);
+  assert.match(linksHost.innerHTML, /脚本/);
+  context.presetData.regex_scripts = [{ id: 'rx2', scriptName: 'Changed regex' }];
+  context.presetData.scripts = [{ name: 'Changed script' }];
+  api.renderCharacterCardLinks();
+  assert.match(contentsHost.innerHTML, /Regex only/);
+  assert.match(contentsHost.innerHTML, /Script only/);
+  const before = downloads.length;
+  api.exportCharacterResourceBundle();
+  assert.equal(downloads.length, before + 1);
+  const bundle = JSON.parse(await downloads.at(-1).text());
+  assert.deepEqual(JSON.parse(JSON.stringify(bundle.resources.regex)), [{ id: 'rx', scriptName: 'Regex only', findRegex: 'a' }]);
+  assert.deepEqual(JSON.parse(JSON.stringify(bundle.resources.scripts)), [{ name: 'Script only', content: 'inert sample' }]);
+});
