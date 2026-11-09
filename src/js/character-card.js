@@ -788,7 +788,7 @@
         panel.hidden=false;
         const data=card.data;
         const fields=[
-            ['name','角色名称'],['description','角色描述'],['personality','性格'],['scenario','场景'],['first_mes','开场白'],
+            ['name','角色名称'],['description','角色描述'],['personality','性格'],['scenario','场景'],
             ['mes_example','对话示例'],['creator_notes','作者备注'],['system_prompt','系统提示词'],
             ['post_history_instructions','历史后指令']
         ];
@@ -804,6 +804,7 @@
             ['备用开场白',greetings],['世界书条目',book&&Array.isArray(book.entries)?book.entries.length:0],
             ['扩展字段',isObject(data.extensions)?Object.keys(data.extensions).length:0],['V3 资源',Array.isArray(data.assets)?data.assets.length:0],['未归类字段',extra.length]
         ].map(([label,count])=>'<div class="character-stat"><strong>'+count+'</strong><span>'+label+'</span></div>').join('');
+        renderCharacterCardGreetings(data);
         document.getElementById('characterCardFields').innerHTML=fields.map(([key,label])=>{
             const value=typeof data[key]==='string'?data[key]:'';
             return '<label class="character-edit-field"><span>'+label+'</span><textarea rows="'+(key==='description'||key==='mes_example'?5:3)+'" data-card-field="'+key+'" spellcheck="false">'+escapeCardHtml(value)+'</textarea></label>';
@@ -955,6 +956,61 @@
         const pngButton=document.getElementById('characterCardExportPng');
         if(status)status.textContent=cardDirty?'有未保存的修改':'修改会同步到导出数据';
         if(pngButton)pngButton.disabled=!currentCard||!currentPngBuffer;
+    }
+
+    function renderCharacterCardGreetings(data){
+        const host=document.getElementById('characterCardGreetings');
+        if(!host)return;
+        const alternates=Array.isArray(data.alternate_greetings)?data.alternate_greetings:[];
+        const group=Array.isArray(data.group_only_greetings)?data.group_only_greetings:[];
+        const count=document.getElementById('characterCardGreetingCount');
+        if(count)count.textContent=alternates.length+' 条备用 · '+group.length+' 条群组专用';
+        const field=(kind,index,label,value,removable)=>{
+            const remove=removable?'<button class="btn btn-sm btn-danger" type="button" data-action="remove-character-card-greeting" data-kind="'+kind+'" data-index="'+index+'">删除</button>':'';
+            return '<label class="character-edit-field character-greeting-field"><span>'+label+' '+remove+'</span><textarea rows="5" data-card-greeting="'+kind+'" data-index="'+index+'" spellcheck="false">'+escapeCardHtml(value)+'</textarea></label>';
+        };
+        const asText=value=>typeof value==='string'?value:JSON.stringify(value??'');
+        let output=field('first',0,'主开场白（first_mes）',typeof data.first_mes==='string'?data.first_mes:'',false);
+        output+='<div class="character-greeting-group"><strong>备用开场白（alternate_greetings）</strong>';
+        output+=alternates.length?alternates.map((value,index)=>field('alternate',index,'备用开场白 '+(index+1),asText(value),true)).join(''):'<p class="tool-help">暂无备用开场白。</p>';
+        output+='</div>';
+        output+='<div class="character-greeting-group"><strong>群组专用开场白（group_only_greetings）</strong>';
+        output+=group.length?group.map((value,index)=>field('group',index,'群组开场白 '+(index+1),asText(value),true)).join(''):'<p class="tool-help">暂无群组专用开场白。</p>';
+        output+='</div>';
+        host.innerHTML=output;
+    }
+
+    function updateCharacterCardGreeting(kind,index,value){
+        if(!currentCard)return;
+        const data=isObject(currentCard.data)?currentCard.data:currentCard;
+        if(kind==='first')data.first_mes=String(value);
+        else{
+            const key=kind==='group'?'group_only_greetings':'alternate_greetings';
+            if(!Array.isArray(data[key])||!Number.isInteger(index)||index<0||index>=data[key].length)return;
+            data[key][index]=String(value);
+        }
+        cardDirty=true;
+        updateCardSaveStatus();
+        scheduleCharacterCardDraftSave();
+    }
+
+    function addCharacterCardGreeting(){
+        if(!currentCard)return;
+        const data=isObject(currentCard.data)?currentCard.data:currentCard;
+        if(!Array.isArray(data.alternate_greetings))data.alternate_greetings=[];
+        data.alternate_greetings.push('');
+        renderCharacterCardGreetings(data);
+        cardDirty=true;updateCardSaveStatus();scheduleCharacterCardDraftSave();
+    }
+
+    function removeCharacterCardGreeting(kind,index){
+        if(!currentCard)return;
+        const data=isObject(currentCard.data)?currentCard.data:currentCard;
+        const key=kind==='group'?'group_only_greetings':'alternate_greetings';
+        if(!Array.isArray(data[key])||!Number.isInteger(index)||index<0||index>=data[key].length)return;
+        data[key].splice(index,1);
+        renderCharacterCardGreetings(data);
+        cardDirty=true;updateCardSaveStatus();scheduleCharacterCardDraftSave();
     }
 
     function updateCharacterCardField(field,value){
@@ -1125,6 +1181,9 @@
     window.restoreStagedBundleResource=restoreStagedBundleResource;
     window.restoreLastBundleBackup=restoreLastBundleBackup;
     window.updateCharacterCardField=updateCharacterCardField;
+    window.updateCharacterCardGreeting=updateCharacterCardGreeting;
+    window.addCharacterCardGreeting=addCharacterCardGreeting;
+    window.removeCharacterCardGreeting=removeCharacterCardGreeting;
     window.applyEmbeddedCharacterCardResource=applyEmbeddedCardResourceJson;
     window.applyCharacterCardRawJson=applyCharacterCardRawJson;
     window.exportCharacterCardPng=exportCharacterCardPng;
