@@ -802,6 +802,11 @@ textarea.auto-grow-textarea{
     }
 
     /* Treat touch devices using desktop-site mode as mobile too. */
+    .toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 160;
+    }
     .mobile-toggle {
         display: flex;
     }
