@@ -60,3 +60,8 @@ test('opening a collapsed advanced section recalculates long textareas', async (
   assert.match(eventsSource, /document\.addEventListener\('toggle',[\s\S]*?textarea\.auto-grow-textarea/);
   assert.match(eventsSource, /window\.autoResizeLongPrompt\(field\)/);
 });
+
+test('worldbook and prompt editors start with a comfortable writing area', () => {
+  assert.match(cssSource, /#field_content,\\s*\\.prompt-item-card \\.prompt-content-editor\\{\\s*min-height:360px/);
+  assert.match(cssSource, /@media\\(max-width:600px\\)\\{[\\s\\S]*?#field_content,\\s*\\.prompt-item-card \\.prompt-content-editor\\{\\s*min-height:280px/);
+});
