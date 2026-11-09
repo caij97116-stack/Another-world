@@ -593,7 +593,7 @@ function isPresetPayloadObject(value){
             return id;
         }
         function togglePromptEditor(index){
-            const card=document.querySelector('.prompt-item-card:nth-child('+(Number(index)+1)+')');
+            const card=document.getElementById('prompt-item-'+Number(index));
             if(!card)return;
             const expanded=card.classList.toggle('is-open');
             const control=card.querySelector('[data-action="toggle-prompt-editor"]');
