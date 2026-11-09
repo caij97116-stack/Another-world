@@ -339,8 +339,9 @@
             if(!link)return;
             const active=getActiveResourceInfo(kind);
             let source=link.snapshot;
-            if(!isObject(source)&&active&&active.fingerprint===link.fingerprint)source=kind==='worldbook'?worldBookData:presetData;
-            if(!isObject(source)){stale.push(kind==='worldbook'?'独立世界书':kind==='preset'?'独立预设':'正则 / 脚本');return}
+            const hasSnapshot=source!==undefined&&source!==null&&(isObject(source)||Array.isArray(source));
+            if(!hasSnapshot&&active&&active.fingerprint===link.fingerprint)source=kind==='worldbook'?worldBookData:kind==='regex'?(Array.isArray(presetData.regex_scripts)?presetData.regex_scripts:Array.isArray(presetData.regexScripts)?presetData.regexScripts:[]):kind==='scripts'?(Array.isArray(presetData.scripts)?presetData.scripts:[]):presetData;
+            if(source===undefined||source===null||(!isObject(source)&&!Array.isArray(source))){stale.push(kind==='worldbook'?'独立世界书':kind==='preset'?'独立预设':kind==='regex'?'正则规则':kind==='scripts'?'脚本':'正则 / 脚本');return}
             if(kind==='extensions'){
                 resources.extensions={regex_scripts:Array.isArray(source.regex_scripts)?source.regex_scripts:Array.isArray(source.regexScripts)?source.regexScripts:[],scripts:Array.isArray(source.scripts)?source.scripts:[]};
             }else resources[kind]=JSON.parse(JSON.stringify(source));
