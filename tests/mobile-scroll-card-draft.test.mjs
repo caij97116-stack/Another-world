@@ -13,7 +13,7 @@ test('mobile and touch browsers use document scrolling instead of trapped fixed-
   assert.match(css, /\.main-area\s*\{[^}]*height:\s*auto\s*!important;[^}]*overflow:\s*visible\s*!important/s);
   assert.match(css, /\.page\s*\{[^}]*position:\s*relative\s*!important;[^}]*overflow:\s*visible\s*!important/s);
   assert.match(css, /\.editor-workspace,\s*\.preset-workspace,\s*\.tool-workspace\s*\{[^}]*overflow-y:\s*visible\s*!important/s);
-  assert.match(css, /\.mobile-toggle\s*\{\s*display:\s*flex\s*!important;/s);
+  assert.match(css, /\.mobile-toggle\s*\{\s*display:\s*flex;/s);
   assert.match(css, /\.sidebar\s*\{[^}]*position:\s*fixed\s*!important;[^}]*transform:\s*translateX\(-105%\)/s);
   assert.match(css, /\.sidebar-overlay\s*\{[^}]*position:\s*fixed;/s);
 });
