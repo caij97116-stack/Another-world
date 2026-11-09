@@ -1,3 +1,7 @@
+function isCompactTouchLayout(){
+    return window.innerWidth<=860 || !!(window.matchMedia&&window.matchMedia('(hover: none) and (pointer: coarse)').matches);
+}
+
 function switchPage(page){
             if(page===currentPage)return;
             currentPage=page;
@@ -7,7 +11,7 @@ function switchPage(page){
             updateToolbar();
             const toggleBtn=document.getElementById('btnSidebarToggle');
             if(page==='worldbook'){
-                if(window.innerWidth<=860)toggleBtn.style.display='flex';
+                if(isCompactTouchLayout())toggleBtn.style.display='flex';
             }else{
                 toggleBtn.style.display='none';
                 closeSidebar();
@@ -125,11 +129,11 @@ function switchPage(page){
             updateFullscreenBtn();
             window.addEventListener('resize',()=>{
                 const toggleBtn=document.getElementById('btnSidebarToggle');
-                if(currentPage==='worldbook'&&window.innerWidth<=860)toggleBtn.style.display='flex';
+                if(currentPage==='worldbook'&&isCompactTouchLayout())toggleBtn.style.display='flex';
                 else{toggleBtn.style.display='none';closeSidebar()}
                 updateFullscreenBtn();
             });
-            if(window.innerWidth<=860)document.getElementById('btnSidebarToggle').style.display='flex';
+            if(isCompactTouchLayout())document.getElementById('btnSidebarToggle').style.display='flex';
         }
 
         // ========== 世界书历史 ==========
