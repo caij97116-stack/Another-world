@@ -741,7 +741,7 @@
     }
 
     function createBlankCharacterCard(name){
-        const safeName=String(name||'新角色').replace(/\\.[^.]+$/,'').trim()||'新角色';
+        const safeName=String(name||'新角色').replace(/\.[^.]+$/,'').trim()||'新角色';
         const root={
             spec:'chara_card_v2',spec_version:'2.0',
             data:{
@@ -756,7 +756,7 @@
     async function importCharacterCardImage(file,forceNew=false){
         if(!file)return;
         const converted=await decodeImageFile(file);
-        const baseName=String(file.name||'新角色').replace(/\\.[^.]+$/,'').replace(/[\\/:*?"<>|]/g,'_').slice(0,100)||'新角色';
+        const baseName=String(file.name||'新角色').replace(/\.[^.]+$/,'').replace(/[\\/:*?"<>|]/g,'_').slice(0,100)||'新角色';
         const pngFile=new File([converted.blob],baseName+'.png',{type:'image/png',lastModified:Date.now()});
         const creating=!!forceNew||!currentCard;
         const parsed=creating?createBlankCharacterCard(baseName):getCardData(currentCard);
