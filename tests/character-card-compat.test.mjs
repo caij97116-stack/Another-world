@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const source = await readFile(new URL('../src/js/character-card.js', import.meta.url), 'utf8');
 const exposed = source.replace(/\}\)\(\);\s*$/, `
-    window.__test = { getCardData, parsePng, importCharacterCard, stageCharacterResourceBundle, restoreStagedBundleResource, restoreLastBundleBackup, exportCharacterResourceBundle, exportCharacterCardPng, updateCharacterCardField, applyCharacterCardRawJson, getCurrentCard: () => currentCard, setExportState: (card, key, png) => { currentCard = card; currentCardLinkKey = key; currentPngBuffer = png || null; currentCardFile = { name: 'synthetic.json', type: 'application/json' }; }, getStagedBundle: () => stagedResourceBundle };
+    window.__test = { getCardData, parsePng, importCharacterCard, stageCharacterResourceBundle, restoreStagedBundleResource, restoreLastBundleBackup, exportCharacterResourceBundle, exportCharacterCardPng, updateCharacterCardField, applyCharacterCardRawJson, applyEmbeddedCardResourceJson, renderResourcePreview, linkCurrentCardResource, renderCharacterCardLinks, getCurrentCard: () => currentCard, setExportState: (card, key, png) => { currentCard = card; currentCardLinkKey = key; currentPngBuffer = png || null; currentCardFile = { name: 'synthetic.json', type: 'application/json' }; }, getStagedBundle: () => stagedResourceBundle };
 })();
 `);
 assert.notEqual(exposed, source, 'test seam must match the character-card IIFE');
@@ -413,4 +413,45 @@ test('failed JSON import leaves the currently loaded card untouched', async () =
   await assert.rejects(() => api.importCharacterCard(invalidFile), /JSON 语法错误/);
   assert.equal(api.getCurrentCard(), current);
   assert.equal(api.getCurrentCard().data.name, 'Already Loaded');
+});
+
+
+test('embedded resource preview exposes separate editable worldbook and extension editors', () => {
+  const host = { innerHTML: '' };
+  elements.set('characterCardResources', host);
+  api.renderResourcePreview({
+    name: 'Embedded Editor Card',
+    character_book: { name: 'Card Lore', entries: [{ name: 'Entry', keys: ['key'], content: 'lore' }], future_field: { keep: true } },
+    extensions: { regex_scripts: [{ id: 'r1', findRegex: 'x' }], scripts: [{ name: 'sample', content: 'inert' }], vendor: { keep: true } }
+  });
+  assert.match(host.innerHTML, /characterCardBookJsonEditor/);
+  assert.match(host.innerHTML, /characterCardExtensionsJsonEditor/);
+  assert.match(host.innerHTML, /内嵌世界书/);
+  assert.match(host.innerHTML, /正则相关/);
+  assert.match(host.innerHTML, /脚本相关/);
+});
+
+test('linked resource associations retain a snapshot after the active worldbook changes', async () => {
+  const original = { name: 'Snapshot Worldbook', entries: { lore: { uid: 'lore', content: 'original linked content' } } };
+  context.worldBookData = JSON.parse(JSON.stringify(original));
+  const card = { spec: 'chara_card_v3', spec_version: '3.0', data: { name: 'Snapshot Character' } };
+  const linkHost = { innerHTML: '' };
+  const contentHost = { innerHTML: '' };
+  const exportButton = { disabled: true };
+  elements.set('characterCardLinks', linkHost);
+  elements.set('characterCardLinkedResourceContents', contentHost);
+  elements.set('characterCardBundleExport', exportButton);
+  api.setExportState(card, 'snapshot-card');
+  api.linkCurrentCardResource('worldbook');
+  const stored = JSON.parse(context.localStorage.getItem('tavern_character_card_resource_links_v1'));
+  assert.deepEqual(JSON.parse(JSON.stringify(stored['snapshot-card'].worldbook.snapshot)), original);
+  context.worldBookData = { name: 'Different Active Worldbook', entries: { other: { uid: 'other', content: 'new active content' } } };
+  api.renderCharacterCardLinks();
+  assert.match(contentHost.innerHTML, /original linked content/);
+  assert.doesNotMatch(contentHost.innerHTML, /new active content/);
+  const before = downloads.length;
+  api.exportCharacterResourceBundle();
+  assert.equal(downloads.length, before + 1);
+  const bundle = JSON.parse(await downloads.at(-1).text());
+  assert.deepEqual(JSON.parse(JSON.stringify(bundle.resources.worldbook)), original);
 });
