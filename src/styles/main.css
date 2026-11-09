@@ -631,3 +631,12 @@ body.script-editor-focus .script-code-toolbar button{position:fixed;top:1vh;righ
 body.script-editor-focus .script-card:hover{transform:none}
 
 .character-card-linked-resource-contents{display:flex;flex-direction:column;gap:9px;margin-top:12px;min-width:0}.character-card-linked-resource-contents .character-resource-group{animation:characterResourceReveal .22s ease both}.character-card-linked-resource-contents pre{max-height:360px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}@keyframes characterResourceReveal{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}@media(prefers-reduced-motion:reduce){.character-card-linked-resource-contents .character-resource-group{animation:none}}@media(max-width:600px){.character-card-linked-resource-contents .character-resource-group>summary,.character-card-linked-resource-contents .character-resource-item>summary{align-items:flex-start;flex-direction:column;gap:4px}.character-card-linked-resource-contents .character-resource-group>summary span,.character-card-linked-resource-contents .character-resource-item>summary span{text-align:left}}
+
+
+/* Dedicated editors for resources embedded in character cards */
+.character-card-embedded-editor{margin-top:12px;padding-top:10px;border-top:1px solid var(--glass-border)}
+.character-card-embedded-editor>summary{cursor:pointer;padding:7px 0;color:var(--text-main);font-size:.72rem;font-weight:750}
+.character-card-embedded-editor .tool-help{line-height:1.55}
+.character-card-embedded-editor textarea{display:block;width:100%;box-sizing:border-box;min-height:180px;margin:8px 0;padding:11px;border:1px solid var(--glass-border);border-radius:10px;background:var(--glass-panel);color:var(--text-main);font:.68rem/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical;tab-size:2}
+.character-card-embedded-editor textarea:focus{outline:2px solid rgba(14,165,233,.22);border-color:var(--sky-accent)}
+.character-card-embedded-editor>.btn{margin:2px 0 4px}
