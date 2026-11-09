@@ -18,6 +18,7 @@
     const CARD_DRAFT_STORAGE_KEY = 'another_world_character_card_draft';
     let cardDraftDbPromise = null;
     let cardDraftSaveTimer = null;
+    let cardDraftSaveQueue = Promise.resolve();
 
 
     function isObject(value){
@@ -669,10 +670,25 @@
     function scheduleCharacterCardDraftSave(){
         if(!currentCard)return;
         clearTimeout(cardDraftSaveTimer);
-        cardDraftSaveTimer=setTimeout(saveCharacterCardDraft,350);
+        cardDraftSaveTimer=setTimeout(()=>{
+            cardDraftSaveTimer=null;
+            saveCharacterCardDraft();
+        },350);
     }
 
-    async function saveCharacterCardDraft(){
+    function flushCharacterCardDraftSave(){
+        clearTimeout(cardDraftSaveTimer);
+        cardDraftSaveTimer=null;
+        return saveCharacterCardDraft();
+    }
+
+    function saveCharacterCardDraft(){
+        const task=cardDraftSaveQueue.catch(()=>false).then(writeCharacterCardDraft);
+        cardDraftSaveQueue=task.then(()=>undefined,()=>undefined);
+        return task;
+    }
+
+    async function writeCharacterCardDraft(){
         if(!currentCard)return;
         const rawEditor=document.getElementById('characterCardRawJson');
         const payload={
@@ -736,8 +752,9 @@
     }
 
     async function restoreCharacterCardDraft(){
+        if(currentCard)return;
         const draft=await readCharacterCardDraft();
-        if(!draft||!draft.root)return;
+        if(currentCard||!draft||!draft.root)return;
         try{
             const root=JSON.parse(draft.root);
             const parsed=getCardData(root);
@@ -1119,12 +1136,12 @@
     window.onCharacterCardImageChosen=async event=>{const input=event.target;const file=input.files&&input.files[0];input.value='';const forceNew=pendingImageImportMode!=='replace';pendingImageImportMode='new';try{await importCharacterCardImage(file,forceNew)}catch(error){showToast(error.message||'图片导入失败','error')}};
     window.exportCharacterCardJson=exportCharacterCardJson;
     window.scheduleCharacterCardDraftSave=scheduleCharacterCardDraftSave;
-    window.saveCharacterCardDraftNow=saveCharacterCardDraft;
+    window.saveCharacterCardDraftNow=flushCharacterCardDraftSave;
     if(typeof window.addEventListener==='function'){
-        window.addEventListener('pagehide',()=>{if(currentCard)saveCharacterCardDraft()});
+        window.addEventListener('pagehide',()=>{if(currentCard)flushCharacterCardDraftSave()});
     }
     if(typeof document.addEventListener==='function'){
-        document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&currentCard)saveCharacterCardDraft()});
+        document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&currentCard)flushCharacterCardDraftSave()});
         if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restoreCharacterCardDraft,{once:true});
         else restoreCharacterCardDraft();
     }
