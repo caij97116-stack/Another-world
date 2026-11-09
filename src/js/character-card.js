@@ -356,7 +356,7 @@
             if(!isObject(bundle)||bundle.format!=='another-world-character-resource-bundle'||bundle.format_version!==1)throw new Error('不支持的资源包格式或版本。');
             if(!isObject(bundle.manifest)||!isObject(bundle.manifest.character)||!Array.isArray(bundle.manifest.resources)||!isObject(bundle.character_card)||!isObject(bundle.resources))throw new Error('资源包缺少必要的清单、角色卡或资源数据。');
             const cardInfo=getCardData(bundle.character_card);
-            const allowed=new Set(['worldbook','preset']);
+            const allowed=new Set(['worldbook','preset','extensions']);
             const seen=new Set();
             const validated=[];
             bundle.manifest.resources.forEach(item=>{
@@ -367,19 +367,20 @@
                 if(item.type==='worldbook'){
                     if(!isObject(payload.entries)||Array.isArray(payload.entries))throw new Error('世界书数据结构无效。');
                     Object.entries(payload.entries).forEach(([uid,entry])=>{if(!uid||!isObject(entry))throw new Error('世界书条目结构无效。')});
-                }else if(!isPresetPayloadObject(payload)){
+                }else if(item.type==='preset'&&!isPresetPayloadObject(payload)){
                     throw new Error('预设数据结构无法识别。');
                 }
-                const fingerprint=resourceFingerprint(payload);
+                else if(item.type==='extensions'&&(!Array.isArray(payload.regex_scripts)||!Array.isArray(payload.scripts)))throw new Error('正则 / 脚本资源结构无效。');
+                const fingerprint=item.type==='extensions'?resourceFingerprint({regex:payload.regex_scripts,scripts:payload.scripts}):resourceFingerprint(payload);
                 if(item.fingerprint&&item.fingerprint!==fingerprint)throw new Error('资源 '+(item.name||item.type)+' 的内容指纹不匹配，资源包可能已损坏。');
                 validated.push({type:item.type,name:String(item.name||item.type),summary:String(item.summary||''),fingerprint});
             });
-            if(!validated.length)throw new Error('资源包没有可恢复的独立世界书或预设。');
+            if(!validated.length)throw new Error('资源包没有可恢复的独立资源。');
             stagedResourceBundle=bundle;
             const host=document.getElementById('characterCardBundleImportPreview');
             if(host){
                 host.hidden=false;
-                host.innerHTML='<div class="character-bundle-preview-head"><strong>'+escapeCardHtml(cardInfo.name)+'</strong><span>'+validated.length+' 项独立资源已通过结构检查</span></div>'+validated.map(item=>'<div class="character-bundle-preview-item"><strong>'+escapeCardHtml(item.type==='worldbook'?'独立世界书':'独立预设')+'</strong><span>'+escapeCardHtml(item.name)+' · '+escapeCardHtml(item.summary)+'</span></div>').join('')+'<div class="character-bundle-import-actions"><button class="btn btn-sm btn-primary" type="button" data-action="bundle-import-card">导入角色卡</button>'+validated.map(item=>'<button class="btn btn-sm" type="button" data-action="bundle-restore-resource" data-kind="'+item.type+'">恢复'+(item.type==='worldbook'?'世界书':'预设')+'</button>').join('')+'<button class="btn btn-sm btn-ghost" type="button" data-action="bundle-clear-stage">清除待导入包</button></div>';
+                host.innerHTML='<div class="character-bundle-preview-head"><strong>'+escapeCardHtml(cardInfo.name)+'</strong><span>'+validated.length+' 项独立资源已通过结构检查</span></div>'+validated.map(item=>'<div class="character-bundle-preview-item"><strong>'+escapeCardHtml(item.type==='worldbook'?'独立世界书':item.type==='preset'?'独立预设':'正则 / 脚本')+'</strong><span>'+escapeCardHtml(item.name)+' · '+escapeCardHtml(item.summary)+'</span></div>').join('')+'<div class="character-bundle-import-actions"><button class="btn btn-sm btn-primary" type="button" data-action="bundle-import-card">导入角色卡</button>'+validated.map(item=>'<button class="btn btn-sm" type="button" data-action="bundle-restore-resource" data-kind="'+item.type+'">恢复'+(item.type==='worldbook'?'世界书':item.type==='preset'?'预设':'正则 / 脚本')+'</button>').join('')+'<button class="btn btn-sm btn-ghost" type="button" data-action="bundle-clear-stage">清除待导入包</button></div>';
             }
             showToast('资源包检查完成；尚未修改任何现有资源','success');
         }).catch(error=>{if(requestId===bundleImportSequence)showToast(error.message||'资源包读取失败','error')});
@@ -413,8 +414,8 @@
     }
 
     function restoreLastBundleBackup(kind){
-        if(!['worldbook','preset'].includes(kind))return;
-        const key=kind==='worldbook'?'another_world_pre_bundle_worldbook_backup':'another_world_pre_bundle_preset_backup';
+        if(!['worldbook','preset','extensions'].includes(kind))return;
+        const key=kind==='worldbook'?'another_world_pre_bundle_worldbook_backup':kind==='preset'?'another_world_pre_bundle_preset_backup':'another_world_pre_bundle_extensions_backup';
         const raw=localStorage.getItem(key);
         if(!raw){showToast('没有找到该工作区的恢复前备份','error');return}
         const backup=JSON.parse(raw);
