@@ -990,6 +990,10 @@
             data[key][index]=String(value);
         }
         cardDirty=true;
+        const rawEditor=document.getElementById('characterCardRawJson');
+        if(rawEditor)rawEditor.value=JSON.stringify(currentCard,null,2);
+        const rawStatus=document.getElementById('characterCardRawStatus');
+        if(rawStatus)rawStatus.textContent='开场白修改已同步到 JSON 编辑器';
         updateCardSaveStatus();
         scheduleCharacterCardDraftSave();
     }
@@ -1000,6 +1004,10 @@
         if(!Array.isArray(data.alternate_greetings))data.alternate_greetings=[];
         data.alternate_greetings.push('');
         renderCharacterCardGreetings(data);
+        const rawEditor=document.getElementById('characterCardRawJson');
+        if(rawEditor)rawEditor.value=JSON.stringify(currentCard,null,2);
+        const rawStatus=document.getElementById('characterCardRawStatus');
+        if(rawStatus)rawStatus.textContent='开场白列表已同步到 JSON 编辑器';
         cardDirty=true;updateCardSaveStatus();scheduleCharacterCardDraftSave();
     }
 
@@ -1010,6 +1018,10 @@
         if(!Array.isArray(data[key])||!Number.isInteger(index)||index<0||index>=data[key].length)return;
         data[key].splice(index,1);
         renderCharacterCardGreetings(data);
+        const rawEditor=document.getElementById('characterCardRawJson');
+        if(rawEditor)rawEditor.value=JSON.stringify(currentCard,null,2);
+        const rawStatus=document.getElementById('characterCardRawStatus');
+        if(rawStatus)rawStatus.textContent='开场白列表已同步到 JSON 编辑器';
         cardDirty=true;updateCardSaveStatus();scheduleCharacterCardDraftSave();
     }
 
