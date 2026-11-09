@@ -303,7 +303,7 @@ function isPresetPayloadObject(value){
             const restorePromptScrollAnchor=()=>{
                 if(!anchorId||anchorTop===null)return;
                 const nextCard=document.getElementById(anchorId);
-                if(!nextCard)return;
+                if(!nextCard||!nextCard.getClientRects().length)return;
                 const delta=nextCard.getBoundingClientRect().top-anchorTop;
                 if(Math.abs(delta)<1)return;
                 if(workspaceScrolls)workspace.scrollTop+=delta;
