@@ -71,6 +71,9 @@ document.addEventListener('click', (event) => {
         case 'trigger-character-card-import':
             window.triggerCharacterCardImport();
             break;
+        case 'trigger-character-card-image-import':
+            document.getElementById('characterCardImageInput')?.click();
+            break;
         case 'export-character-card-json':
             window.exportCharacterCardJson();
             break;
@@ -387,6 +390,9 @@ document.addEventListener('change', (event) => {
             break;
         case 'character-card-import':
             window.onCharacterCardFileChosen(event);
+            break;
+        case 'character-card-image-import':
+            window.onCharacterCardImageChosen(event);
             break;
         case 'character-bundle-import':
             window.onCharacterBundleFileChosen(event);
