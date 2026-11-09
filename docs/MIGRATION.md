@@ -469,3 +469,8 @@ The primary character-card import picker now accepts JSON cards and browser-deco
 ### Editable embedded character-card resources
 
 The embedded-resource panel now provides dedicated JSON editors for `data.character_book` and `data.extensions`, in addition to expandable read-only entry/field inspection. The character-book editor validates the object shape and optional `entries` array before applying; extension editing preserves the card's open-ended plugin fields, including any regex/script-related arrays present in the source. Applying either editor updates the in-memory card, refreshes the preview and raw JSON, and marks the card as modified. These are card-internal resources and remain separate from independent worldbook/preset data.
+
+
+### Persistent snapshots for character-card resource links
+
+Creating a local resource association now saves a deep JSON snapshot alongside its name, timestamp, and fingerprint. The card workspace can continue displaying and exporting the linked worldbook, preset, regex, and script data even after the active editor switches to another resource or the active content changes. The UI distinguishes a saved snapshot from the currently loaded resource version; relinking refreshes the snapshot. Snapshot data remains local and does not write back into the original worldbook or preset. Older associations without snapshots remain readable only while their matching source is loaded and prompt the user to relink for a persistent copy.
