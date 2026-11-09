@@ -924,6 +924,7 @@
     window.restoreStagedBundleResource=restoreStagedBundleResource;
     window.restoreLastBundleBackup=restoreLastBundleBackup;
     window.updateCharacterCardField=updateCharacterCardField;
+    window.applyEmbeddedCharacterCardResource=applyEmbeddedCardResourceJson;
     window.applyCharacterCardRawJson=applyCharacterCardRawJson;
     window.exportCharacterCardPng=exportCharacterCardPng;
     window.importCharacterCard=importCharacterCard;
