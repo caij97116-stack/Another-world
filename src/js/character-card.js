@@ -215,7 +215,7 @@
             const active=getActiveResourceInfo(kind);
             const matches=!!(link&&active&&link.fingerprint===active.fingerprint);
             let status='尚未关联';
-            if(link)status=matches?'已关联 · 与当前载入资源一致':active?'关联记录存在 · 当前资源内容已变化':'关联记录存在 · 当前未载入对应资源';
+            if(link)status=link.snapshot?(matches?'已保存资源快照 · 当前资源一致':'已保存资源快照 · 当前资源已变化或未载入'):matches?'旧版关联 · 当前资源一致，可重新关联以保存快照':active?'旧版关联 · 当前资源已变化':'旧版关联 · 当前未载入对应资源';
             const detail=link?escapeCardHtml(link.name)+' · '+escapeCardHtml(link.label||'')+' · '+escapeCardHtml(new Date(link.linkedAt).toLocaleString()):'';
             const activeText=active?'当前：'+active.name+'（'+active.label+'）':'当前未载入可关联的'+labels[kind];
             return '<div class="character-link-row"><div class="character-link-info"><strong>'+labels[kind]+'</strong><span class="character-link-status '+(matches?'is-match':link?'is-stale':'')+'">'+status+'</span>'+(link?'<small>已关联：'+detail+'</small>':'')+'<small>'+escapeCardHtml(activeText)+'</small></div><div class="character-link-actions"><button class="btn btn-sm btn-primary" type="button" data-action="link-card-resource" data-kind="'+kind+'" '+(active?'':'disabled')+'>'+(link?'重新关联当前':'关联当前')+'</button>'+(link?'<button class="btn btn-sm btn-ghost" type="button" data-action="unlink-card-resource" data-kind="'+kind+'">解除</button>':'')+'</div></div>';
@@ -229,29 +229,37 @@
         const host=document.getElementById('characterCardLinkedResourceContents');
         if(!host)return;
         const sections=[];
-        const isCurrent=kind=>{const active=getActiveResourceInfo(kind);return !!(links[kind]&&active&&links[kind].fingerprint===active.fingerprint)};
+        const getSnapshot=kind=>{
+            const link=links[kind];
+            if(link&&isObject(link.snapshot))return link.snapshot;
+            const active=getActiveResourceInfo(kind);
+            return link&&active&&link.fingerprint===active.fingerprint?(kind==='worldbook'?worldBookData:kind==='extensions'?{regex_scripts:Array.isArray(presetData.regex_scripts)?presetData.regex_scripts:Array.isArray(presetData.regexScripts)?presetData.regexScripts:[],scripts:Array.isArray(presetData.scripts)?presetData.scripts:[]}:presetData):null;
+        };
         const safe=value=>escapeCardHtml(JSON.stringify(previewResourceValue(value),null,2));
         if(links.worldbook){
-            if(!isCurrent('worldbook'))sections.push('<div class="character-resource-empty">世界书关联已记录，但当前未载入相同内容版本。重新载入并关联后即可查看。</div>');
+            const snapshot=getSnapshot('worldbook');
+            if(!snapshot)sections.push('<div class="character-resource-empty">这是旧版关联记录，当前没有可用快照。请重新载入对应世界书并点击「重新关联当前」以保存完整内容。</div>');
             else{
-                const entries=Object.entries(worldBookData.entries||{});
+                const entries=Object.entries(snapshot.entries||{});
                 const rows=entries.map(([uid,item],i)=>'<details class="character-resource-item"><summary><strong>'+escapeCardHtml(item&& (item.comment||item.name||item.title)||('世界书条目 '+(i+1)))+'</strong><span>'+escapeCardHtml(uid)+'</span></summary><pre>'+safe(item)+'</pre></details>').join('');
                 sections.push('<details class="character-resource-group" open><summary>独立世界书内容 <span>'+entries.length+' 条</span></summary><div class="character-resource-body">'+(rows||'<p class="tool-help">当前世界书没有条目。</p>')+'</div></details>');
             }
         }
         if(links.preset){
-            if(!isCurrent('preset'))sections.push('<div class="character-resource-empty">预设关联已记录，但当前未载入相同内容版本。</div>');
+            const snapshot=getSnapshot('preset');
+            if(!snapshot)sections.push('<div class="character-resource-empty">这是旧版预设关联，当前没有可用快照。请重新关联当前预设以保存完整内容。</div>');
             else{
-                const items=Array.isArray(presetData.prompts)?presetData.prompts:[];
+                const items=Array.isArray(snapshot.prompts)?snapshot.prompts:[];
                 const rows=items.map((item,i)=>'<details class="character-resource-item"><summary><strong>'+escapeCardHtml(item&&(item.name||item.identifier)||('提示词 '+(i+1)))+'</strong><span>'+((item&&item.enabled===false)?'已禁用':'启用')+'</span></summary><pre>'+safe(item)+'</pre></details>').join('');
                 sections.push('<details class="character-resource-group"><summary>独立预设内容 <span>'+items.length+' 条提示词</span></summary><div class="character-resource-body">'+(rows||'<p class="tool-help">当前预设没有提示词。</p>')+'</div></details>');
             }
         }
         if(links.extensions){
-            if(!isCurrent('extensions'))sections.push('<div class="character-resource-empty">正则 / 脚本关联已记录，但当前预设中的扩展内容已变化或未载入。</div>');
+            const snapshot=getSnapshot('extensions');
+            if(!snapshot)sections.push('<div class="character-resource-empty">这是旧版正则 / 脚本关联，当前没有可用快照。请重新关联当前预设以保存完整内容。</div>');
             else{
-                const regex=Array.isArray(presetData.regex_scripts)?presetData.regex_scripts:Array.isArray(presetData.regexScripts)?presetData.regexScripts:[];
-                const scripts=Array.isArray(presetData.scripts)?presetData.scripts:[];
+                const regex=Array.isArray(snapshot.regex_scripts)?snapshot.regex_scripts:[];
+                const scripts=Array.isArray(snapshot.scripts)?snapshot.scripts:[];
                 const regexRows=regex.map((item,i)=>'<details class="character-resource-item"><summary><strong>'+escapeCardHtml(item&&(item.scriptName||item.name||item.title)||('正则 '+(i+1)))+'</strong></summary><pre>'+safe(item)+'</pre></details>').join('');
                 const scriptRows=scripts.map((item,i)=>'<details class="character-resource-item"><summary><strong>'+escapeCardHtml(item&&(item.name||item.scriptName||item.title)||('脚本 '+(i+1)))+'</strong></summary><pre>'+safe(item)+'</pre></details>').join('');
                 sections.push('<details class="character-resource-group"><summary>正则规则 <span>'+regex.length+' 条</span></summary><div class="character-resource-body">'+(regexRows||'<p class="tool-help">没有正则规则。</p>')+'</div></details>');
@@ -267,8 +275,16 @@
         if(!active){showToast('请先载入有效的'+(kind==='worldbook'?'世界书':kind==='preset'?'预设':'包含正则或脚本的预设'),'error');return}
         const store=loadCardLinkStore();
         if(!isObject(store[currentCardLinkKey]))store[currentCardLinkKey]={};
-        store[currentCardLinkKey][kind]={name:active.name,label:active.label,fingerprint:active.fingerprint,linkedAt:new Date().toISOString()};
-        if(saveCardLinkStore(store)){renderCharacterCardLinks();showToast('已建立关联；资源内容没有被复制或修改','success')}
+        const source=kind==='worldbook'?worldBookData:presetData;
+        let snapshot;
+        try{
+            snapshot=kind==='extensions'
+                ?{regex_scripts:Array.isArray(source.regex_scripts)?source.regex_scripts:Array.isArray(source.regexScripts)?source.regexScripts:[],scripts:Array.isArray(source.scripts)?source.scripts:[]}
+                :JSON.parse(JSON.stringify(source));
+            snapshot=JSON.parse(JSON.stringify(snapshot));
+        }catch(error){showToast('无法生成资源快照：'+error.message,'error');return}
+        store[currentCardLinkKey][kind]={name:active.name,label:active.label,fingerprint:active.fingerprint,linkedAt:new Date().toISOString(),snapshot};
+        if(saveCardLinkStore(store)){renderCharacterCardLinks();showToast('已关联并保存完整资源快照；后续切换工作区也可查看','success')}
     }
 
     function unlinkCurrentCardResource(kind){
@@ -294,8 +310,9 @@
             const link=links[kind];
             if(!link)return;
             const active=getActiveResourceInfo(kind);
-            if(!active||active.fingerprint!==link.fingerprint){stale.push(kind==='worldbook'?'独立世界书':'独立预设');return}
-            const source=kind==='worldbook'?worldBookData:presetData;
+            let source=link.snapshot;
+            if(!isObject(source)&&active&&active.fingerprint===link.fingerprint)source=kind==='worldbook'?worldBookData:presetData;
+            if(!isObject(source)){stale.push(kind==='worldbook'?'独立世界书':kind==='preset'?'独立预设':'正则 / 脚本');return}
             if(kind==='extensions'){
                 resources.extensions={
                     regex_scripts:Array.isArray(source.regex_scripts)?source.regex_scripts:Array.isArray(source.regexScripts)?source.regexScripts:[],
