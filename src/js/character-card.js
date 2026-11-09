@@ -698,21 +698,34 @@
     async function importCharacterCard(file){
         if(!file)return;
         if(file.size>MAX_FILE_BYTES) throw new Error('文件超过 100 MB，已停止读取。');
-        const extension=file.name.toLowerCase().split('.').pop();
-        let card;
-        if(extension==='json'||file.type==='application/json'){
+        const extension=String(file.name||'').toLowerCase().split('.').pop();
+        const isJson=extension==='json'||file.type==='application/json';
+        const isPng=extension==='png'||file.type==='image/png';
+        const isImage=String(file.type||'').startsWith('image/')||['png','jpg','jpeg','webp','gif','bmp','avif','heic','heif','tif','tiff'].includes(extension);
+        if(isJson){
             const text=await file.text();
             let root;
             try{root=JSON.parse(text);}catch(error){throw new Error('JSON 语法错误：'+error.message);}
-            card={...getCardData(root),container:'JSON',chunk:''};
-        }else if(extension==='png'||file.type==='image/png'){
-            card=await parsePng(await file.arrayBuffer());
-        }else{
-            throw new Error('目前仅支持 PNG 角色卡和 JSON 角色卡。');
+            const card={...getCardData(root),container:'JSON',chunk:''};
+            currentCardLinkKey='';
+            renderCard(card,file);
+            showToast('已在本地载入角色卡：'+card.name,'success');
+            return;
         }
-        currentCardLinkKey='';
-        renderCard(card,file);
-        showToast('已在本地载入角色卡：'+card.name,'success');
+        if(!isImage)throw new Error('请选择 PNG / JSON 角色卡，或可由浏览器解码的图片文件。');
+        if(isPng){
+            try{
+                const card=await parsePng(await file.arrayBuffer());
+                currentCardLinkKey='';
+                renderCard(card,file);
+                showToast('已在本地载入角色卡：'+card.name,'success');
+                return;
+            }catch(error){
+                if(!String(error&&error.message||'').includes('没有找到 chara / ccv3'))throw error;
+                // A valid ordinary PNG without embedded card metadata is a cover image, not a broken card.
+            }
+        }
+        await importCharacterCardImage(file);
     }
 
     function updateCardSaveStatus(){
