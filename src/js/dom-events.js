@@ -83,6 +83,12 @@ document.addEventListener('click', (event) => {
         case 'apply-character-card-json':
             window.applyCharacterCardRawJson();
             break;
+        case 'apply-character-card-book-json':
+            try{window.applyEmbeddedCharacterCardResource('worldbook')}catch(error){showToast(error.message||'内嵌世界书应用失败','error')}
+            break;
+        case 'apply-character-card-extensions-json':
+            try{window.applyEmbeddedCharacterCardResource('extensions')}catch(error){showToast(error.message||'扩展数据应用失败','error')}
+            break;
         case 'link-card-resource':
             window.linkCurrentCardResource(target.dataset.kind);
             break;
