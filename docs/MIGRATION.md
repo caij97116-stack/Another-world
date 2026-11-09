@@ -474,3 +474,8 @@ The embedded-resource panel now provides dedicated JSON editors for `data.charac
 ### Persistent snapshots for character-card resource links
 
 Creating a local resource association now saves a deep JSON snapshot alongside its name, timestamp, and fingerprint. The card workspace can continue displaying and exporting the linked worldbook, preset, regex, and script data even after the active editor switches to another resource or the active content changes. The UI distinguishes a saved snapshot from the currently loaded resource version; relinking refreshes the snapshot. Snapshot data remains local and does not write back into the original worldbook or preset. Older associations without snapshots remain readable only while their matching source is loaded and prompt the user to relink for a persistent copy.
+
+
+### Separate regex and script resource associations
+
+The character-card resource panel can now associate regex rules and scripts independently instead of requiring them to be linked as one combined extension group. Each association stores its own snapshot, fingerprint, and timestamp, and can be exported/restored independently. Existing combined `extensions` associations and resource bundles remain supported for backward compatibility; restoring one new array only replaces that array in the active preset and preserves all other preset fields.
