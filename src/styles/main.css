@@ -813,7 +813,7 @@ textarea.auto-grow-textarea{
     .sidebar {
         position: fixed !important;
         top: var(--toolbar-height);
-        bottom: var(--bottom-nav-height);
+        bottom: 0;
         left: 0;
         right: auto;
         width: min(82vw, 300px);
@@ -829,7 +829,7 @@ textarea.auto-grow-textarea{
     }
     .sidebar-overlay {
         position: fixed;
-        inset: var(--toolbar-height) 0 var(--bottom-nav-height);
+        inset: var(--toolbar-height) 0 0;
         z-index: 140;
     }
     .sidebar-overlay.show {
