@@ -19,6 +19,8 @@ test('mobile and touch browsers use document scrolling instead of trapped fixed-
   assert.match(css, /\.mobile-toggle\s*\{\s*display:\s*flex;/s);
   assert.match(css, /\.sidebar\s*\{[^}]*position:\s*fixed\s*!important;[^}]*transform:\s*translateX\(-105%\)/s);
   assert.match(css, /\.sidebar-overlay\s*\{[^}]*position:\s*fixed;/s);
+  assert.match(css, /\.sidebar\s*\{[^}]*position:\s*fixed !important;[^}]*bottom:\s*0;/s);
+  assert.match(css, /\.sidebar-overlay\s*\{[^}]*inset:\s*var\(--toolbar-height\) 0 0;/s);
 });
 
 test('character card drafts are stored in IndexedDB with a localStorage fallback', () => {
