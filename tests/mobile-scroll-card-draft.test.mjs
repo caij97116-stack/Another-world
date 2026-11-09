@@ -84,3 +84,12 @@ test('character card greeting variants are extracted into editable lists', () =>
   assert.match(events, /\[data-card-greeting\]/);
   assert.match(html, /id="characterCardGreetings"/);
 });
+
+
+test('preset sections start as a compact expandable outline', () => {
+  for (const id of ['secOverview','secBasicInfo','secSampling','secPrompts','secPromptItems','secPromptOrder','secSwitches','secInsertExport']) {
+    assert.match(html, new RegExp('class="collapsible-body collapsed" id="'+id+'"'));
+  }
+  assert.match(html, /data-target="secBasicInfo"/);
+  assert.match(html, /data-target="secSwitches"/);
+});
