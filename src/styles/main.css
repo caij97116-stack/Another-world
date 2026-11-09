@@ -663,3 +663,43 @@ textarea.auto-grow-textarea{
     #field_content{min-height:220px}
     .prompt-item-card .prompt-content-editor{min-height:220px}
 }
+
+/* Scroll containment fix: allow flex children to shrink so their own scroll areas can work. */
+.main-area,
+.page,
+.page.active,
+.wb-container{
+    min-width:0;
+    min-height:0;
+}
+.page.active{flex:1 1 0}
+.wb-container{flex:1 1 0;overflow:hidden}
+.sidebar{
+    min-height:0;
+    overflow:hidden;
+    flex:0 0 var(--sidebar-width);
+}
+.entry-list{
+    flex:1 1 0;
+    min-height:0;
+    overflow-x:hidden;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-y:contain;
+    touch-action:pan-y;
+}
+.editor-workspace,
+.preset-workspace{
+    min-width:0;
+    min-height:0;
+    flex:1 1 0;
+    overflow-x:hidden;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-y:contain;
+    touch-action:pan-y;
+}
+@media(max-width:860px){
+    .wb-container{min-height:0}
+    .editor-workspace,.preset-workspace{min-height:0}
+}
