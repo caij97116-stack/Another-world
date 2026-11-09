@@ -479,3 +479,8 @@ Creating a local resource association now saves a deep JSON snapshot alongside i
 ### Separate regex and script resource associations
 
 The character-card resource panel can now associate regex rules and scripts independently instead of requiring them to be linked as one combined extension group. Each association stores its own snapshot, fingerprint, and timestamp, and can be exported/restored independently. Existing combined `extensions` associations and resource bundles remain supported for backward compatibility; restoring one new array only replaces that array in the active preset and preserves all other preset fields.
+
+
+### Explicit new-card versus cover-replacement flow
+
+The image picker now has two explicit modes. The top-level and empty-state actions always create a fresh blank V2 character card from the selected image, even when another card is already open. The action inside an open card's file toolbar only replaces that card's cover and preserves its existing character data and resource associations. This prevents an image selected for a new character from silently replacing the previous card's cover.
