@@ -286,6 +286,30 @@ function isPresetPayloadObject(value){
             const container=document.getElementById('promptItemsContainer');
             const badge=document.getElementById('promptItemsBadge');
             if(!container) return;
+
+            // Keep the prompt currently being edited at the same viewport position
+            // when JSON validation, filtering, or list updates rebuild the cards.
+            const focusedCard=document.activeElement instanceof Element
+                ?document.activeElement.closest('.prompt-item-card'):null;
+            const visibleCard=focusedCard||Array.from(container.querySelectorAll('.prompt-item-card')).find(card=>{
+                const rect=card.getBoundingClientRect();
+                return rect.bottom>0&&rect.top<window.innerHeight;
+            });
+            const anchorId=visibleCard?visibleCard.id:'';
+            const anchorTop=visibleCard?visibleCard.getBoundingClientRect().top:null;
+            const workspace=container.closest('.preset-workspace');
+            const workspaceOverflow=workspace?window.getComputedStyle(workspace).overflowY:'';
+            const workspaceScrolls=!!workspace&&/(auto|scroll)/.test(workspaceOverflow);
+            const restorePromptScrollAnchor=()=>{
+                if(!anchorId||anchorTop===null)return;
+                const nextCard=document.getElementById(anchorId);
+                if(!nextCard)return;
+                const delta=nextCard.getBoundingClientRect().top-anchorTop;
+                if(Math.abs(delta)<1)return;
+                if(workspaceScrolls)workspace.scrollTop+=delta;
+                else window.scrollBy(0,delta);
+            };
+
             const list=getPresetPromptItems();
             if(badge) badge.textContent=String(list.length);
             if(!list.length){
@@ -361,6 +385,10 @@ function isPresetPayloadObject(value){
             container.querySelectorAll('.prompt-item-select').forEach(input=>input.addEventListener('change',updatePromptBulkSelectionUI));
             updatePromptBulkSelectionUI();
             renderPromptOrderPreview();
+            if(anchorId){
+                if(typeof requestAnimationFrame==='function')requestAnimationFrame(restorePromptScrollAnchor);
+                else restorePromptScrollAnchor();
+            }
         }
         function renderPromptMarkdownInline(value){
             const code=[];
