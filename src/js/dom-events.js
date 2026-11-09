@@ -443,3 +443,19 @@ document.addEventListener('keydown',event=>{
     window.switchExtensionTab(next.dataset.tab);
     next.focus();
 });
+
+// Recalculate long editors when a collapsed details section becomes visible.
+// This keeps advanced JSON fields fully readable after opening their disclosure.
+document.addEventListener('toggle', event => {
+    const details = event.target;
+    if (!(details instanceof HTMLDetailsElement) || !details.open) return;
+    const resizeVisibleEditors = () => {
+        details.querySelectorAll('textarea.auto-grow-textarea').forEach(field => {
+            if (typeof window.autoResizeLongPrompt === 'function') {
+                window.autoResizeLongPrompt(field);
+            }
+        });
+    };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(resizeVisibleEditors);
+    else resizeVisibleEditors();
+}, true);
