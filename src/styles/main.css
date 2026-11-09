@@ -640,3 +640,26 @@ body.script-editor-focus .script-card:hover{transform:none}
 .character-card-embedded-editor textarea{display:block;width:100%;box-sizing:border-box;min-height:180px;margin:8px 0;padding:11px;border:1px solid var(--glass-border);border-radius:10px;background:var(--glass-panel);color:var(--text-main);font:.68rem/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical;tab-size:2}
 .character-card-embedded-editor textarea:focus{outline:2px solid rgba(14,165,233,.22);border-color:var(--sky-accent)}
 .character-card-embedded-editor>.btn{margin:2px 0 4px}
+
+
+/* Full-content editors: grow with their text instead of trapping content in a short scroll box. */
+textarea.auto-grow-textarea{
+    max-height:none!important;
+    overflow-y:hidden!important;
+    resize:none;
+}
+#field_content{
+    min-height:260px;
+    width:100%;
+    line-height:1.8;
+    font-size:.88rem;
+}
+.prompt-item-card:not(.is-open)>.prompt-item-fields{display:none}
+.prompt-item-card.is-open>.prompt-item-fields{display:flex}
+.prompt-item-card.is-open{border-color:var(--sky-light);box-shadow:var(--shadow-sm)}
+.prompt-item-card .prompt-content-editor{min-height:260px;max-height:none;overflow-y:hidden;resize:none}
+.prompt-item-card .raw-json.auto-grow-textarea{min-height:180px;max-height:none;overflow-y:hidden;resize:none}
+@media(max-width:600px){
+    #field_content{min-height:220px}
+    .prompt-item-card .prompt-content-editor{min-height:220px}
+}
