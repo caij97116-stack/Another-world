@@ -703,3 +703,21 @@ textarea.auto-grow-textarea{
     .wb-container{min-height:0}
     .editor-workspace,.preset-workspace{min-height:0}
 }
+
+/* Give long-form editors a more comfortable starting canvas before auto-growth. */
+#field_content,
+.prompt-item-card .prompt-content-editor{
+    min-height:360px;
+}
+.prompt-item-card .raw-json.auto-grow-textarea{
+    min-height:240px;
+}
+@media(max-width:600px){
+    #field_content,
+    .prompt-item-card .prompt-content-editor{
+        min-height:280px;
+    }
+    .prompt-item-card .raw-json.auto-grow-textarea{
+        min-height:200px;
+    }
+}
