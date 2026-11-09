@@ -427,13 +427,13 @@
                     <h3>角色卡工作区</h3>
                     <p class="tool-help">独立导入与检查 SillyTavern PNG / JSON 角色卡。文件只在当前浏览器本地读取，不会上传；原始字段会保留，暂不自动合并进世界书或预设。</p>
                 </div>
-                <div class="character-card-intro-actions"><button class="btn btn-primary" type="button" data-action="trigger-character-card-import">导入 PNG / JSON 角色卡</button><button class="btn btn-sm" type="button" data-action="trigger-character-card-image-import">从图片创建角色卡</button></div>
+                <div class="character-card-intro-actions"><button class="btn btn-primary" type="button" data-action="trigger-character-card-import">导入 PNG / JSON 角色卡</button><button class="btn btn-sm" type="button" data-action="create-character-card-from-image">从图片创建新角色卡</button></div>
             </section>
             <section class="glass-panel-box character-card-empty" id="characterCardEmpty">
                 <div class="character-card-empty-art">🪪</div>
                 <h3>等待载入角色卡</h3>
                 <p>支持 PNG（内嵌 chara / ccv3 数据）、JSON（V1 / V2 / V3），也可以单独导入 JPG、WebP、GIF、BMP 等图片创建新角色。</p>
-                <div class="character-card-empty-actions"><button class="btn btn-primary" type="button" data-action="trigger-character-card-import">导入现有 PNG / JSON 角色卡</button><button class="btn" type="button" data-action="trigger-character-card-image-import">只导入图片，创建新角色</button></div>
+                <div class="character-card-empty-actions"><button class="btn btn-primary" type="button" data-action="trigger-character-card-import">导入现有 PNG / JSON 角色卡</button><button class="btn" type="button" data-action="create-character-card-from-image">只导入图片，创建新角色</button></div>
                 <p class="tool-help">提示：截图或被图片平台重新压缩过的 PNG，可能已经丢失角色卡元数据。</p>
             </section>
             <section class="glass-panel-box character-card-preview" id="characterCardPreview" hidden>
@@ -449,7 +449,7 @@
                 <div class="character-card-fileline">
                     <span>已载入：<strong id="characterCardFileName"></strong></span>
                     <div class="character-card-export-actions">
-                        <button class="btn btn-sm" type="button" data-action="trigger-character-card-image-import">导入 / 更换封面</button>
+                        <button class="btn btn-sm" type="button" data-action="replace-character-card-image">导入 / 更换当前角色封面</button>
                         <button class="btn btn-sm" type="button" data-action="export-character-card-json" id="characterCardExportJson" disabled>导出 JSON</button>
                         <button class="btn btn-sm btn-primary" type="button" data-action="export-character-card-png" id="characterCardExportPng" disabled>写回并导出 PNG</button>
                     </div>
