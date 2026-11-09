@@ -48,3 +48,15 @@ test('prompt content and advanced JSON editors use the full-content auto-grow be
   assert.match(presetSource, /raw-json auto-grow-textarea/);
   assert.match(cssSource, /textarea\.auto-grow-textarea\{[\s\S]*?max-height:none!important/);
 });
+
+test('worldbook and preset scroll panes remain vertically scrollable inside the app shell', () => {
+  assert.match(cssSource, /\.wb-container\{flex:1 1 0;overflow:hidden\}/);
+  assert.match(cssSource, /\.editor-workspace,\s*\.preset-workspace\{[\s\S]*?min-height:0;[\s\S]*?overflow-y:auto;[\s\S]*?-webkit-overflow-scrolling:touch/);
+  assert.match(cssSource, /\.entry-list\{[\s\S]*?min-height:0;[\s\S]*?overflow-y:auto;[\s\S]*?-webkit-overflow-scrolling:touch/);
+});
+
+test('opening a collapsed advanced section recalculates long textareas', async () => {
+  const eventsSource = await readFile(new URL('../src/js/dom-events.js', import.meta.url), 'utf8');
+  assert.match(eventsSource, /document\.addEventListener\('toggle',[\s\S]*?textarea\.auto-grow-textarea/);
+  assert.match(eventsSource, /window\.autoResizeLongPrompt\(field\)/);
+});
