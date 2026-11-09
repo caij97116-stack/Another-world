@@ -68,6 +68,12 @@ document.addEventListener('click', (event) => {
         case 'switch-extension-tab':
             window.switchExtensionTab(target.dataset.tab);
             break;
+        case 'add-character-card-greeting':
+            window.addCharacterCardGreeting();
+            break;
+        case 'remove-character-card-greeting':
+            window.removeCharacterCardGreeting(target.dataset.kind,Number(target.dataset.index));
+            break;
         case 'trigger-character-card-import':
             window.triggerCharacterCardImport();
             break;
@@ -280,7 +286,7 @@ document.addEventListener('click', (event) => {
 // Delegated form events for migrated editor controls.
 document.addEventListener('input', (event) => {
     const target = event.target instanceof Element
-        ? event.target.closest('[data-input-action], [data-card-field], textarea.auto-grow-textarea, #field_content, #characterCardRawJson, #regexSearchInput, #scriptSearchInput, #promptSearchInput')
+        ? event.target.closest('[data-input-action], [data-card-field], [data-card-greeting], textarea.auto-grow-textarea, #field_content, #characterCardRawJson, #regexSearchInput, #scriptSearchInput, #promptSearchInput')
         : null;
     if (!target) return;
 
@@ -290,6 +296,10 @@ document.addEventListener('input', (event) => {
     if(target.id==='regexSearchInput'){window.applyExtensionFilters('regex');return}
     if(target.id==='scriptSearchInput'){window.applyExtensionFilters('scripts');return}
     if(target.id==='promptSearchInput'){window.applyPromptFilters();return}
+    if(target.matches('[data-card-greeting]')){
+        window.updateCharacterCardGreeting(target.dataset.cardGreeting,Number(target.dataset.index),target.value);
+        return;
+    }
     if(target.matches('[data-card-field]')){
         window.updateCharacterCardField(target.dataset.cardField,target.value);
         return;
