@@ -172,6 +172,17 @@ function makeUniqueEntryUid(preferred){
         function renderEntryList(){
             const container=document.getElementById('entryListContainer');
             const searchVal=(document.getElementById('searchInput').value||'').toLowerCase().trim();
+            const previousScrollTop=container.scrollTop;
+            const previousActiveCard=container.querySelector('.entry-card.active');
+            const previousActiveTop=previousActiveCard?previousActiveCard.getBoundingClientRect().top:null;
+            const restoreListScrollAnchor=()=>{
+                const nextActiveCard=container.querySelector('.entry-card.active');
+                if(previousActiveTop!==null&&nextActiveCard){
+                    container.scrollTop+=nextActiveCard.getBoundingClientRect().top-previousActiveTop;
+                }else{
+                    container.scrollTop=previousScrollTop;
+                }
+            };
             container.innerHTML='';
             const entries=Object.entries(worldBookData.entries||{}).map(([k,v])=>{
                 // 强制 uid 与键一致
@@ -179,7 +190,7 @@ function makeUniqueEntryUid(preferred){
                 return v;
             });
             entries.sort((a,b)=>(Number(a.order)||100)-(Number(b.order)||100));
-            if(entries.length===0){container.innerHTML=`<div style="text-align:center;color:var(--text-muted);padding:18px 10px;font-size:.78rem">暂无条目<br>点击上方按钮新建</div>`;updateEntryCount();return}
+            if(entries.length===0){container.innerHTML=`<div style="text-align:center;color:var(--text-muted);padding:18px 10px;font-size:.78rem">暂无条目<br>点击上方按钮新建</div>`;container.scrollTop=0;updateEntryCount();return}
             let visibleCount=0;
             entries.forEach(entry=>{
                 const uid=String(entry.uid);
@@ -197,6 +208,7 @@ function makeUniqueEntryUid(preferred){
                 container.appendChild(card);
             });
             if(visibleCount===0&&searchVal)container.innerHTML=`<div style="text-align:center;color:var(--text-muted);padding:18px 10px;font-size:.78rem">没有匹配的条目</div>`;
+            restoreListScrollAnchor();
             updateEntryCount();updateSelectModeUI();
         }
         function handleEntryCardClick(uid,card){
