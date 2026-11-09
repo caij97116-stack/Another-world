@@ -280,10 +280,13 @@ document.addEventListener('click', (event) => {
 // Delegated form events for migrated editor controls.
 document.addEventListener('input', (event) => {
     const target = event.target instanceof Element
-        ? event.target.closest('[data-input-action], [data-card-field], #regexSearchInput, #scriptSearchInput, #promptSearchInput')
+        ? event.target.closest('[data-input-action], [data-card-field], textarea.auto-grow-textarea, #field_content, #regexSearchInput, #scriptSearchInput, #promptSearchInput')
         : null;
     if (!target) return;
 
+    if(target.matches('textarea.auto-grow-textarea, #field_content')&&typeof window.autoResizeLongPrompt==='function'){
+        window.autoResizeLongPrompt(target);
+    }
     if(target.id==='regexSearchInput'){window.applyExtensionFilters('regex');return}
     if(target.id==='scriptSearchInput'){window.applyExtensionFilters('scripts');return}
     if(target.id==='promptSearchInput'){window.applyPromptFilters();return}
