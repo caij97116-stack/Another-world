@@ -12,6 +12,13 @@
     let stagedResourceBundle = null;
     let bundleImportSequence = 0;
     let pendingImageImportMode = 'new';
+    const CARD_DRAFT_DB_NAME = 'another-world-character-card-drafts';
+    const CARD_DRAFT_STORE_NAME = 'drafts';
+    const CARD_DRAFT_KEY = 'active';
+    const CARD_DRAFT_STORAGE_KEY = 'another_world_character_card_draft';
+    let cardDraftDbPromise = null;
+    let cardDraftSaveTimer = null;
+
 
     function isObject(value){
         return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -637,7 +644,123 @@
         renderCard(card,currentCardFile);
         cardDirty=true;
         updateCardSaveStatus();
+        scheduleCharacterCardDraftSave();
         showToast(config.label+'已校验并应用；原有未知字段均保留','success');
+    }
+
+
+    function openCardDraftDb(){
+        if(!('indexedDB' in window))return Promise.resolve(null);
+        if(cardDraftDbPromise)return cardDraftDbPromise;
+        cardDraftDbPromise=new Promise(resolve=>{
+            let request;
+            try{request=indexedDB.open(CARD_DRAFT_DB_NAME,1)}catch(error){resolve(null);return}
+            request.onupgradeneeded=()=>{
+                const db=request.result;
+                if(!db.objectStoreNames.contains(CARD_DRAFT_STORE_NAME))db.createObjectStore(CARD_DRAFT_STORE_NAME,{keyPath:'id'});
+            };
+            request.onsuccess=()=>resolve(request.result);
+            request.onerror=()=>resolve(null);
+            request.onblocked=()=>resolve(null);
+        });
+        return cardDraftDbPromise;
+    }
+
+    function scheduleCharacterCardDraftSave(){
+        if(!currentCard)return;
+        clearTimeout(cardDraftSaveTimer);
+        cardDraftSaveTimer=setTimeout(saveCharacterCardDraft,350);
+    }
+
+    async function saveCharacterCardDraft(){
+        if(!currentCard)return;
+        const rawEditor=document.getElementById('characterCardRawJson');
+        const payload={
+            id:CARD_DRAFT_KEY,
+            root:JSON.stringify(currentCard),
+            rawJsonText:rawEditor?rawEditor.value:'',
+            fileName:currentCardFile&&currentCardFile.name?currentCardFile.name:((currentCard.data?.name||currentCard.name||'character-card')+'.json'),
+            fileType:currentCardFile&&currentCardFile.type?currentCardFile.type:'',
+            fileBlob:currentCardFile&&String(currentCardFile.type||'').startsWith('image/')?currentCardFile.slice(0,currentCardFile.size,currentCardFile.type):null,
+            container:currentCard.container||'JSON',
+            chunk:currentCard.chunk||'',
+            dirty:!!cardDirty,
+            savedAt:new Date().toISOString()
+        };
+        try{
+            const db=await openCardDraftDb();
+            if(db){
+                await new Promise((resolve,reject)=>{
+                    const tx=db.transaction(CARD_DRAFT_STORE_NAME,'readwrite');
+                    tx.objectStore(CARD_DRAFT_STORE_NAME).put(payload);
+                    tx.oncomplete=resolve;
+                    tx.onerror=()=>reject(tx.error||new Error('IndexedDB 写入失败'));
+                    tx.onabort=()=>reject(tx.error||new Error('IndexedDB 写入已中止'));
+                });
+                const status=document.getElementById('characterCardEditStatus');
+                if(status)status.textContent='已自动保存在本地浏览器 · '+new Date(payload.savedAt).toLocaleTimeString();
+                return true;
+            }
+        }catch(error){console.warn('角色卡 IndexedDB 自动保存失败：',error)}
+        try{
+            const fallback={...payload,fileBlob:null};
+            localStorage.setItem(CARD_DRAFT_STORAGE_KEY,JSON.stringify(fallback));
+            const status=document.getElementById('characterCardEditStatus');
+            if(status)status.textContent='角色卡数据已保存在本地浏览器（未缓存原图）';
+            return true;
+        }catch(error){
+            const status=document.getElementById('characterCardEditStatus');
+            if(status)status.textContent='本地保存失败：浏览器存储空间可能不足，请立即导出 JSON 备份';
+            console.warn('角色卡本地备份失败：',error);
+            return false;
+        }
+    }
+
+    async function readCharacterCardDraft(){
+        const db=await openCardDraftDb();
+        if(db){
+            try{
+                const record=await new Promise((resolve,reject)=>{
+                    const tx=db.transaction(CARD_DRAFT_STORE_NAME,'readonly');
+                    const request=tx.objectStore(CARD_DRAFT_STORE_NAME).get(CARD_DRAFT_KEY);
+                    request.onsuccess=()=>resolve(request.result||null);
+                    request.onerror=()=>reject(request.error);
+                });
+                if(record)return record;
+            }catch(error){console.warn('读取角色卡 IndexedDB 草稿失败：',error)}
+        }
+        try{
+            const raw=localStorage.getItem(CARD_DRAFT_STORAGE_KEY);
+            return raw?JSON.parse(raw):null;
+        }catch(error){console.warn('读取角色卡本地草稿失败：',error);return null}
+    }
+
+    async function restoreCharacterCardDraft(){
+        const draft=await readCharacterCardDraft();
+        if(!draft||!draft.root)return;
+        try{
+            const root=JSON.parse(draft.root);
+            const parsed=getCardData(root);
+            const file=draft.fileBlob instanceof Blob
+                ?new File([draft.fileBlob],draft.fileName||'character-card.png',{type:draft.fileType||draft.fileBlob.type||'image/png',lastModified:Date.now()})
+                :new File([JSON.stringify(root,null,2)],draft.fileName||((parsed.name||'character-card')+'.json'),{type:'application/json',lastModified:Date.now()});
+            parsed.container=draft.container||'JSON';
+            parsed.chunk=draft.chunk||'本地自动恢复';
+            currentCardLinkKey=getCardLinkKey(parsed,file);
+            renderCard(parsed,file);
+            cardDirty=!!draft.dirty;
+            const rawEditor=document.getElementById('characterCardRawJson');
+            if(rawEditor&&typeof draft.rawJsonText==='string'&&draft.rawJsonText)rawEditor.value=draft.rawJsonText;
+            const rawStatus=document.getElementById('characterCardRawStatus');
+            if(rawStatus&&draft.rawJsonText&&draft.rawJsonText!==JSON.stringify(root,null,2))rawStatus.textContent='已恢复尚未应用的 JSON 草稿；检查后点击应用';
+            updateCardSaveStatus();
+            const status=document.getElementById('characterCardEditStatus');
+            if(status)status.textContent='已从本地自动恢复：'+parsed.name+' · '+new Date(draft.savedAt||Date.now()).toLocaleString();
+            showToast('已恢复上次角色卡：'+parsed.name,'success');
+        }catch(error){
+            console.warn('恢复角色卡草稿失败：',error);
+            showToast('上次角色卡草稿无法恢复，请检查本地存储','error');
+        }
     }
 
     function renderCard(card,file){
@@ -699,6 +822,7 @@
         if(!currentCardLinkKey)currentCardLinkKey=getCardLinkKey(card,currentCardFile);
         renderCharacterCardLinks();
         updateCardSaveStatus();
+        scheduleCharacterCardDraftSave();
     }
 
     async function decodeImageFile(file){
@@ -835,6 +959,7 @@
         const rawStatus=document.getElementById('characterCardRawStatus');
         if(rawStatus)rawStatus.textContent='结构化字段已同步到 JSON 编辑器';
         updateCardSaveStatus();
+        scheduleCharacterCardDraftSave();
     }
 
     function applyCharacterCardRawJson(){
@@ -850,6 +975,7 @@
             renderCard(card,currentCardFile);
             cardDirty=true;
             updateCardSaveStatus();
+            scheduleCharacterCardDraftSave();
             if(status)status.textContent='JSON 已通过校验并应用';
             showToast('完整角色卡 JSON 已应用','success');
         }catch(error){
@@ -937,6 +1063,7 @@
             setTimeout(()=>URL.revokeObjectURL(url),1500);
             cardDirty=false;
             updateCardSaveStatus();
+            scheduleCharacterCardDraftSave();
             showToast('已写回角色数据并导出 PNG','success');
         }catch(error){
             showToast(error.message||'PNG 导出失败','error');
@@ -991,4 +1118,8 @@
     window.triggerCharacterCardImageImport=mode=>{pendingImageImportMode=mode==='replace'?'replace':'new';const input=document.getElementById('characterCardImageInput');if(input)input.click()};
     window.onCharacterCardImageChosen=async event=>{const input=event.target;const file=input.files&&input.files[0];input.value='';const forceNew=pendingImageImportMode!=='replace';pendingImageImportMode='new';try{await importCharacterCardImage(file,forceNew)}catch(error){showToast(error.message||'图片导入失败','error')}};
     window.exportCharacterCardJson=exportCharacterCardJson;
+    window.scheduleCharacterCardDraftSave=scheduleCharacterCardDraftSave;
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restoreCharacterCardDraft,{once:true});
+    else restoreCharacterCardDraft();
+
 })();
