@@ -7,6 +7,7 @@ const card = await readFile(new URL('../src/js/character-card.js', import.meta.u
 const events = await readFile(new URL('../src/js/dom-events.js', import.meta.url), 'utf8');
 const worldbook = await readFile(new URL('../src/js/worldbook.js', import.meta.url), 'utf8');
 const appCore = await readFile(new URL('../src/js/app-core.js', import.meta.url), 'utf8');
+const presetCore = await readFile(new URL('../src/js/preset-core.js', import.meta.url), 'utf8');
 
 test('mobile and touch browsers use document scrolling instead of trapped fixed-height panes', () => {
   assert.match(css, /@media\s*\(max-width:\s*860px\),\s*\(hover:\s*none\)\s*and\s*\(pointer:\s*coarse\)/);
@@ -52,4 +53,13 @@ test('worldbook list rerenders preserve the active entry scroll anchor', () => {
   assert.match(worldbook, /container\.scrollTop\+=nextActiveCard\.getBoundingClientRect\(\)\.top-previousActiveTop/);
   assert.match(worldbook, /restoreListScrollAnchor\(\)/);
   assert.match(appCore, /function isCompactTouchLayout\(\)[\s\S]*?window\.matchMedia&&window\.matchMedia\('\(hover: none\) and \(pointer: coarse\)'\)/);
+});
+
+
+test('preset prompt rerenders preserve the active prompt card viewport anchor', () => {
+  assert.match(presetCore, /const focusedCard=document\.activeElement instanceof Element/);
+  assert.match(presetCore, /const anchorTop=visibleCard\?visibleCard\.getBoundingClientRect\(\)\.top:null/);
+  assert.match(presetCore, /function restorePromptScrollAnchor\(\)/);
+  assert.match(presetCore, /if\(workspaceScrolls\)workspace\.scrollTop\+=delta;\s*else window\.scrollBy\(0,delta\)/);
+  assert.match(presetCore, /requestAnimationFrame\(restorePromptScrollAnchor\)/);
 });
