@@ -6,6 +6,7 @@ const css = await readFile(new URL('../src/styles/main.css', import.meta.url), '
 const card = await readFile(new URL('../src/js/character-card.js', import.meta.url), 'utf8');
 const events = await readFile(new URL('../src/js/dom-events.js', import.meta.url), 'utf8');
 const worldbook = await readFile(new URL('../src/js/worldbook.js', import.meta.url), 'utf8');
+const appCore = await readFile(new URL('../src/js/app-core.js', import.meta.url), 'utf8');
 
 test('mobile and touch browsers use document scrolling instead of trapped fixed-height panes', () => {
   assert.match(css, /@media\s*\(max-width:\s*860px\),\s*\(hover:\s*none\)\s*and\s*\(pointer:\s*coarse\)/);
@@ -13,6 +14,7 @@ test('mobile and touch browsers use document scrolling instead of trapped fixed-
   assert.match(css, /\.main-area\s*\{[^}]*height:\s*auto\s*!important;[^}]*overflow:\s*visible\s*!important/s);
   assert.match(css, /\.page\s*\{[^}]*position:\s*relative\s*!important;[^}]*overflow:\s*visible\s*!important/s);
   assert.match(css, /\.editor-workspace,\s*\.preset-workspace,\s*\.tool-workspace\s*\{[^}]*overflow-y:\s*visible\s*!important/s);
+  assert.match(css, /\.toolbar\s*\{[^}]*position:\s*sticky;[^}]*top:\s*0;/s);
   assert.match(css, /\.mobile-toggle\s*\{\s*display:\s*flex;/s);
   assert.match(css, /\.sidebar\s*\{[^}]*position:\s*fixed\s*!important;[^}]*transform:\s*translateX\(-105%\)/s);
   assert.match(css, /\.sidebar-overlay\s*\{[^}]*position:\s*fixed;/s);
@@ -49,4 +51,5 @@ test('worldbook list rerenders preserve the active entry scroll anchor', () => {
   assert.match(worldbook, /const previousActiveTop=previousActiveCard\?previousActiveCard\.getBoundingClientRect\(\)\.top:null/);
   assert.match(worldbook, /container\.scrollTop\+=nextActiveCard\.getBoundingClientRect\(\)\.top-previousActiveTop/);
   assert.match(worldbook, /restoreListScrollAnchor\(\)/);
+  assert.match(appCore, /function isCompactTouchLayout\(\)[\s\S]*?window\.matchMedia&&window\.matchMedia\('\(hover: none\) and \(pointer: coarse\)'\)/);
 });
