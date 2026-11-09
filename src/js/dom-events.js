@@ -280,7 +280,7 @@ document.addEventListener('click', (event) => {
 // Delegated form events for migrated editor controls.
 document.addEventListener('input', (event) => {
     const target = event.target instanceof Element
-        ? event.target.closest('[data-input-action], [data-card-field], textarea.auto-grow-textarea, #field_content, #regexSearchInput, #scriptSearchInput, #promptSearchInput')
+        ? event.target.closest('[data-input-action], [data-card-field], textarea.auto-grow-textarea, #field_content, #characterCardRawJson, #regexSearchInput, #scriptSearchInput, #promptSearchInput')
         : null;
     if (!target) return;
 
@@ -292,6 +292,12 @@ document.addEventListener('input', (event) => {
     if(target.id==='promptSearchInput'){window.applyPromptFilters();return}
     if(target.matches('[data-card-field]')){
         window.updateCharacterCardField(target.dataset.cardField,target.value);
+        return;
+    }
+    if(target.id==='characterCardRawJson'){
+        if(typeof window.scheduleCharacterCardDraftSave==='function')window.scheduleCharacterCardDraftSave();
+        const status=document.getElementById('characterCardRawStatus');
+        if(status)status.textContent='JSON 草稿已暂存；应用前不会覆盖当前角色卡数据';
         return;
     }
 
