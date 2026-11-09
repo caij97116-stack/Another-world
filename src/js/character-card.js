@@ -498,8 +498,9 @@
         else if(!isObject(payload))throw new Error('资源包中不存在该资源。');
         const label=kind==='worldbook'?'独立世界书':kind==='preset'?'独立预设':kind==='regex'?'正则规则':kind==='scripts'?'脚本':'正则 / 脚本';
         if(kind==='extensions'||kind==='regex'||kind==='scripts'){
-            if(!isObject(payload)||(!Array.isArray(payload.regex_scripts)&&!Array.isArray(payload.scripts)))throw new Error('资源包中的正则 / 脚本结构无效。');
-            if(!confirm('将用资源包中的正则 / 脚本替换当前预设对应部分，其他预设字段保持不变。是否继续？'))return;
+            if(kind==='extensions'&&(!isObject(payload)||(!Array.isArray(payload.regex_scripts)&&!Array.isArray(payload.scripts))))throw new Error('资源包中的正则 / 脚本结构无效。');
+            if((kind==='regex'||kind==='scripts')&&!Array.isArray(payload))throw new Error('资源包中的'+label+'数组结构无效。');
+            if(!confirm('将用资源包中的'+label+'替换当前预设对应部分，其他预设字段保持不变。是否继续？'))return;
             const backup={saved_at:new Date().toISOString(),items:{}};
             ['tavern_preset_editor_data','tavern_preset_editor_version','tavern_preset_editor_envelope','tavern_preset_editor_array_paths'].forEach(key=>backup.items[key]=localStorage.getItem(key));
             localStorage.setItem('another_world_pre_bundle_extensions_backup',JSON.stringify(backup));
