@@ -706,16 +706,23 @@
         if(file.size>MAX_FILE_BYTES)throw new Error('图片超过 100 MB，已停止读取。');
         let bitmap=null,objectUrl=null;
         try{
-            if(typeof createImageBitmap==='function'){
-                bitmap=await createImageBitmap(file,{imageOrientation:'from-image'});
-            }else{
-                objectUrl=URL.createObjectURL(file);
-                bitmap=await new Promise((resolve,reject)=>{
+            const decodeWithImageElement=async()=>{
+                if(!objectUrl)objectUrl=URL.createObjectURL(file);
+                return await new Promise((resolve,reject)=>{
                     const image=new Image();
                     image.onload=()=>resolve(image);
                     image.onerror=()=>reject(new Error('浏览器无法解码该图片格式。'));
                     image.src=objectUrl;
                 });
+            };
+            if(typeof createImageBitmap==='function'){
+                try{bitmap=await createImageBitmap(file,{imageOrientation:'from-image'})}
+                catch(firstError){
+                    try{bitmap=await createImageBitmap(file)}
+                    catch(secondError){bitmap=await decodeWithImageElement()}
+                }
+            }else{
+                bitmap=await decodeWithImageElement();
             }
             const width=bitmap.width||bitmap.naturalWidth;
             const height=bitmap.height||bitmap.naturalHeight;
