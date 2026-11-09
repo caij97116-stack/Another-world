@@ -30,5 +30,5 @@ function renderFieldOverview(){
             const secO = document.getElementById('secOverview');
             if(secR){ if(rc > 0) secR.classList.remove('collapsed'); }
             if(secS){ if(sc > 0) secS.classList.remove('collapsed'); }
-            if(secO) secO.classList.remove('collapsed');
+            // Top-level preset sections stay collapsed until the user opens the section they need.
         }
