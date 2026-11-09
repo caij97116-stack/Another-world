@@ -5,6 +5,8 @@ function isCompactTouchLayout(){
 function switchPage(page){
             if(page===currentPage)return;
             currentPage=page;
+            // Mobile uses natural document scrolling; reset the old page's scroll offset when switching workspaces.
+            if(isCompactTouchLayout())window.scrollTo(0,0);
             document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
             document.getElementById('page-'+page).classList.add('active');
             document.querySelectorAll('.nav-item').forEach(item=>item.classList.toggle('active',item.dataset.page===page));
