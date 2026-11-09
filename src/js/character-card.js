@@ -193,6 +193,12 @@
             const prompts=Array.isArray(presetData.prompts)?presetData.prompts.length:0;
             return {kind,name,count:prompts,label:prompts+' 个提示词条目',fingerprint:resourceFingerprint(presetData)};
         }
+        if(kind==='regex'||kind==='scripts'){
+            if(typeof presetData==='undefined'||!isObject(presetData))return null;
+            const items=kind==='regex'?(Array.isArray(presetData.regex_scripts)?presetData.regex_scripts:Array.isArray(presetData.regexScripts)?presetData.regexScripts:[]):(Array.isArray(presetData.scripts)?presetData.scripts:[]);
+            if(!items.length)return null;
+            return {kind,name:(presetData.name||presetData.preset_name||'当前预设')+(kind==='regex'?' · 正则规则':' · 脚本'),count:items.length,label:items.length+(kind==='regex'?' 条正则':' 个脚本'),fingerprint:resourceFingerprint(items)};
+        }
         if(kind==='extensions'){
             if(typeof presetData==='undefined'||!isObject(presetData))return null;
             const regex=Array.isArray(presetData.regex_scripts)?presetData.regex_scripts:Array.isArray(presetData.regexScripts)?presetData.regexScripts:[];
@@ -209,8 +215,8 @@
         if(!currentCard||!currentCardLinkKey){host.innerHTML='<p class="tool-help">请先载入角色卡。</p>';return}
         const store=loadCardLinkStore();
         const links=store[currentCardLinkKey]||{};
-        const labels={worldbook:'独立世界书',preset:'独立预设',extensions:'正则 / 脚本'};
-        host.innerHTML=['worldbook','preset','extensions'].map(kind=>{
+        const labels={worldbook:'独立世界书',preset:'独立预设',regex:'正则规则',scripts:'脚本',extensions:'正则 / 脚本（旧版）'};
+        host.innerHTML=['worldbook','preset','regex','scripts'].map(kind=>{
             const link=links[kind];
             const active=getActiveResourceInfo(kind);
             const matches=!!(link&&active&&link.fingerprint===active.fingerprint);
@@ -221,7 +227,7 @@
             return '<div class="character-link-row"><div class="character-link-info"><strong>'+labels[kind]+'</strong><span class="character-link-status '+(matches?'is-match':link?'is-stale':'')+'">'+status+'</span>'+(link?'<small>已关联：'+detail+'</small>':'')+'<small>'+escapeCardHtml(activeText)+'</small></div><div class="character-link-actions"><button class="btn btn-sm btn-primary" type="button" data-action="link-card-resource" data-kind="'+kind+'" '+(active?'':'disabled')+'>'+(link?'重新关联当前':'关联当前')+'</button>'+(link?'<button class="btn btn-sm btn-ghost" type="button" data-action="unlink-card-resource" data-kind="'+kind+'">解除</button>':'')+'</div></div>';
         }).join('');
         const exportButton=document.getElementById('characterCardBundleExport');
-        if(exportButton)exportButton.disabled=!(links.worldbook||links.preset||links.extensions);
+        if(exportButton)exportButton.disabled=!(links.worldbook||links.preset||links.regex||links.scripts||links.extensions);
         renderLinkedResourceContents(links);
     }
 
@@ -231,9 +237,14 @@
         const sections=[];
         const getSnapshot=kind=>{
             const link=links[kind];
-            if(link&&isObject(link.snapshot))return link.snapshot;
+            if(link&&Object.prototype.hasOwnProperty.call(link,'snapshot'))return link.snapshot;
             const active=getActiveResourceInfo(kind);
-            return link&&active&&link.fingerprint===active.fingerprint?(kind==='worldbook'?worldBookData:kind==='extensions'?{regex_scripts:Array.isArray(presetData.regex_scripts)?presetData.regex_scripts:Array.isArray(presetData.regexScripts)?presetData.regexScripts:[],scripts:Array.isArray(presetData.scripts)?presetData.scripts:[]}:presetData):null;
+            if(!link||!active||link.fingerprint!==active.fingerprint)return null;
+            if(kind==='worldbook')return worldBookData;
+            if(kind==='extensions')return {regex_scripts:Array.isArray(presetData.regex_scripts)?presetData.regex_scripts:Array.isArray(presetData.regexScripts)?presetData.regexScripts:[],scripts:Array.isArray(presetData.scripts)?presetData.scripts:[]};
+            if(kind==='regex')return Array.isArray(presetData.regex_scripts)?presetData.regex_scripts:Array.isArray(presetData.regexScripts)?presetData.regexScripts:[];
+            if(kind==='scripts')return Array.isArray(presetData.scripts)?presetData.scripts:[];
+            return presetData;
         };
         const safe=value=>escapeCardHtml(JSON.stringify(previewResourceValue(value),null,2));
         if(links.worldbook){
@@ -252,6 +263,22 @@
                 const items=Array.isArray(snapshot.prompts)?snapshot.prompts:[];
                 const rows=items.map((item,i)=>'<details class="character-resource-item"><summary><strong>'+escapeCardHtml(item&&(item.name||item.identifier)||('提示词 '+(i+1)))+'</strong><span>'+((item&&item.enabled===false)?'已禁用':'启用')+'</span></summary><pre>'+safe(item)+'</pre></details>').join('');
                 sections.push('<details class="character-resource-group"><summary>独立预设内容 <span>'+items.length+' 条提示词</span></summary><div class="character-resource-body">'+(rows||'<p class="tool-help">当前预设没有提示词。</p>')+'</div></details>');
+            }
+        }
+        if(links.regex){
+            const snapshot=getSnapshot('regex');
+            if(!Array.isArray(snapshot))sections.push('<div class="character-resource-empty">正则快照缺失或格式异常，请重新关联当前正则规则。</div>');
+            else{
+                const rows=snapshot.map((item,i)=>'<details class="character-resource-item"><summary><strong>'+escapeCardHtml(item&&(item.scriptName||item.name||item.title)||('正则 '+(i+1)))+'</strong></summary><pre>'+safe(item)+'</pre></details>').join('');
+                sections.push('<details class="character-resource-group"><summary>已关联正则规则 <span>'+snapshot.length+' 条</span></summary><div class="character-resource-body">'+(rows||'<p class="tool-help">没有正则规则。</p>')+'</div></details>');
+            }
+        }
+        if(links.scripts){
+            const snapshot=getSnapshot('scripts');
+            if(!Array.isArray(snapshot))sections.push('<div class="character-resource-empty">脚本快照缺失或格式异常，请重新关联当前脚本。</div>');
+            else{
+                const rows=snapshot.map((item,i)=>'<details class="character-resource-item"><summary><strong>'+escapeCardHtml(item&&(item.name||item.scriptName||item.title)||('脚本 '+(i+1)))+'</strong></summary><pre>'+safe(item)+'</pre></details>').join('');
+                sections.push('<details class="character-resource-group"><summary>已关联脚本 <span>'+snapshot.length+' 个</span></summary><div class="character-resource-body">'+(rows||'<p class="tool-help">没有脚本。</p>')+'</div></details>');
             }
         }
         if(links.extensions){
@@ -278,9 +305,10 @@
         const source=kind==='worldbook'?worldBookData:presetData;
         let snapshot;
         try{
-            snapshot=kind==='extensions'
-                ?{regex_scripts:Array.isArray(source.regex_scripts)?source.regex_scripts:Array.isArray(source.regexScripts)?source.regexScripts:[],scripts:Array.isArray(source.scripts)?source.scripts:[]}
-                :JSON.parse(JSON.stringify(source));
+            if(kind==='extensions')snapshot={regex_scripts:Array.isArray(source.regex_scripts)?source.regex_scripts:Array.isArray(source.regexScripts)?source.regexScripts:[],scripts:Array.isArray(source.scripts)?source.scripts:[]};
+            else if(kind==='regex')snapshot=Array.isArray(source.regex_scripts)?source.regex_scripts:Array.isArray(source.regexScripts)?source.regexScripts:[];
+            else if(kind==='scripts')snapshot=Array.isArray(source.scripts)?source.scripts:[];
+            else snapshot=JSON.parse(JSON.stringify(source));
             snapshot=JSON.parse(JSON.stringify(snapshot));
         }catch(error){showToast('无法生成资源快照：'+error.message,'error');return}
         store[currentCardLinkKey][kind]={name:active.name,label:active.label,fingerprint:active.fingerprint,linkedAt:new Date().toISOString(),snapshot};
@@ -306,7 +334,7 @@
         const resources={};
         const manifestResources=[];
         const stale=[];
-        ['worldbook','preset','extensions'].forEach(kind=>{
+        ['worldbook','preset','regex','scripts','extensions'].forEach(kind=>{
             const link=links[kind];
             if(!link)return;
             const active=getActiveResourceInfo(kind);
@@ -314,10 +342,7 @@
             if(!isObject(source)&&active&&active.fingerprint===link.fingerprint)source=kind==='worldbook'?worldBookData:presetData;
             if(!isObject(source)){stale.push(kind==='worldbook'?'独立世界书':kind==='preset'?'独立预设':'正则 / 脚本');return}
             if(kind==='extensions'){
-                resources.extensions={
-                    regex_scripts:Array.isArray(source.regex_scripts)?source.regex_scripts:Array.isArray(source.regexScripts)?source.regexScripts:[],
-                    scripts:Array.isArray(source.scripts)?source.scripts:[]
-                };
+                resources.extensions={regex_scripts:Array.isArray(source.regex_scripts)?source.regex_scripts:Array.isArray(source.regexScripts)?source.regexScripts:[],scripts:Array.isArray(source.scripts)?source.scripts:[]};
             }else resources[kind]=JSON.parse(JSON.stringify(source));
             manifestResources.push({
                 type:kind,
@@ -373,14 +398,15 @@
             if(!isObject(bundle)||bundle.format!=='another-world-character-resource-bundle'||bundle.format_version!==1)throw new Error('不支持的资源包格式或版本。');
             if(!isObject(bundle.manifest)||!isObject(bundle.manifest.character)||!Array.isArray(bundle.manifest.resources)||!isObject(bundle.character_card)||!isObject(bundle.resources))throw new Error('资源包缺少必要的清单、角色卡或资源数据。');
             const cardInfo=getCardData(bundle.character_card);
-            const allowed=new Set(['worldbook','preset','extensions']);
+            const allowed=new Set(['worldbook','preset','regex','scripts','extensions']);
             const seen=new Set();
             const validated=[];
             bundle.manifest.resources.forEach(item=>{
                 if(!isObject(item)||!allowed.has(item.type)||seen.has(item.type))throw new Error('资源清单包含未知或重复的资源类型。');
                 seen.add(item.type);
                 const payload=bundle.resources[item.type];
-                if(!isObject(payload))throw new Error('资源包缺少 '+item.type+' 数据。');
+                if(item.type==='regex'||item.type==='scripts'){if(!Array.isArray(payload))throw new Error('资源包中的 '+item.type+' 必须是数组。');}
+                else if(!isObject(payload))throw new Error('资源包缺少 '+item.type+' 数据。');
                 if(item.type==='worldbook'){
                     if(!isObject(payload.entries)||Array.isArray(payload.entries))throw new Error('世界书数据结构无效。');
                     Object.entries(payload.entries).forEach(([uid,entry])=>{if(!uid||!isObject(entry))throw new Error('世界书条目结构无效。')});
@@ -397,7 +423,7 @@
             const host=document.getElementById('characterCardBundleImportPreview');
             if(host){
                 host.hidden=false;
-                host.innerHTML='<div class="character-bundle-preview-head"><strong>'+escapeCardHtml(cardInfo.name)+'</strong><span>'+validated.length+' 项独立资源已通过结构检查</span></div>'+validated.map(item=>'<div class="character-bundle-preview-item"><strong>'+escapeCardHtml(item.type==='worldbook'?'独立世界书':item.type==='preset'?'独立预设':'正则 / 脚本')+'</strong><span>'+escapeCardHtml(item.name)+' · '+escapeCardHtml(item.summary)+'</span></div>').join('')+'<div class="character-bundle-import-actions"><button class="btn btn-sm btn-primary" type="button" data-action="bundle-import-card">导入角色卡</button>'+validated.map(item=>'<button class="btn btn-sm" type="button" data-action="bundle-restore-resource" data-kind="'+item.type+'">恢复'+(item.type==='worldbook'?'世界书':item.type==='preset'?'预设':'正则 / 脚本')+'</button>').join('')+'<button class="btn btn-sm btn-ghost" type="button" data-action="bundle-clear-stage">清除待导入包</button></div>';
+                host.innerHTML='<div class="character-bundle-preview-head"><strong>'+escapeCardHtml(cardInfo.name)+'</strong><span>'+validated.length+' 项独立资源已通过结构检查</span></div>'+validated.map(item=>'<div class="character-bundle-preview-item"><strong>'+escapeCardHtml(item.type==='worldbook'?'独立世界书':item.type==='preset'?'独立预设':item.type==='regex'?'正则规则':item.type==='scripts'?'脚本':'正则 / 脚本')+'</strong><span>'+escapeCardHtml(item.name)+' · '+escapeCardHtml(item.summary)+'</span></div>').join('')+'<div class="character-bundle-import-actions"><button class="btn btn-sm btn-primary" type="button" data-action="bundle-import-card">导入角色卡</button>'+validated.map(item=>'<button class="btn btn-sm" type="button" data-action="bundle-restore-resource" data-kind="'+item.type+'">恢复'+(item.type==='worldbook'?'世界书':item.type==='preset'?'预设':item.type==='regex'?'正则规则':item.type==='scripts'?'脚本':'正则 / 脚本')+'</button>').join('')+'<button class="btn btn-sm btn-ghost" type="button" data-action="bundle-clear-stage">清除待导入包</button></div>';
             }
             showToast('资源包检查完成；尚未修改任何现有资源','success');
         }).catch(error=>{if(requestId===bundleImportSequence)showToast(error.message||'资源包读取失败','error')});
@@ -431,7 +457,7 @@
     }
 
     function restoreLastBundleBackup(kind){
-        if(!['worldbook','preset','extensions'].includes(kind))return;
+        if(!['worldbook','preset','regex','scripts','extensions'].includes(kind))return;
         const key=kind==='worldbook'?'another_world_pre_bundle_worldbook_backup':kind==='preset'?'another_world_pre_bundle_preset_backup':'another_world_pre_bundle_extensions_backup';
         const raw=localStorage.getItem(key);
         if(!raw){showToast('没有找到该工作区的恢复前备份','error');return}
@@ -465,23 +491,27 @@
     }
 
     function restoreStagedBundleResource(kind){
-        if(!stagedResourceBundle||!['worldbook','preset','extensions'].includes(kind))return;
+        if(!stagedResourceBundle||!['worldbook','preset','regex','scripts','extensions'].includes(kind))return;
         const payload=stagedResourceBundle.resources[kind];
-        if(!isObject(payload))throw new Error('资源包中不存在该资源。');
-        const label=kind==='worldbook'?'独立世界书':kind==='preset'?'独立预设':'正则 / 脚本';
-        if(kind==='extensions'){
+        if(kind==='regex'||kind==='scripts'){if(!Array.isArray(payload))throw new Error('资源包中不存在有效的'+kind+'数组。');}
+        else if(!isObject(payload))throw new Error('资源包中不存在该资源。');
+        const label=kind==='worldbook'?'独立世界书':kind==='preset'?'独立预设':kind==='regex'?'正则规则':kind==='scripts'?'脚本':'正则 / 脚本';
+        if(kind==='extensions'||kind==='regex'||kind==='scripts'){
             if(!isObject(payload)||(!Array.isArray(payload.regex_scripts)&&!Array.isArray(payload.scripts)))throw new Error('资源包中的正则 / 脚本结构无效。');
             if(!confirm('将用资源包中的正则 / 脚本替换当前预设对应部分，其他预设字段保持不变。是否继续？'))return;
             const backup={saved_at:new Date().toISOString(),items:{}};
             ['tavern_preset_editor_data','tavern_preset_editor_version','tavern_preset_editor_envelope','tavern_preset_editor_array_paths'].forEach(key=>backup.items[key]=localStorage.getItem(key));
             localStorage.setItem('another_world_pre_bundle_extensions_backup',JSON.stringify(backup));
             recordPresetEditHistory(false);
-            if(Array.isArray(presetData.regex_scripts))presetData.regex_scripts=JSON.parse(JSON.stringify(payload.regex_scripts||[]));
-            else if(Array.isArray(presetData.regexScripts))presetData.regexScripts=JSON.parse(JSON.stringify(payload.regex_scripts||[]));
-            else presetData.regex_scripts=JSON.parse(JSON.stringify(payload.regex_scripts||[]));
-            presetData.scripts=JSON.parse(JSON.stringify(payload.scripts||[]));
+            if(kind==='extensions'||kind==='regex'){
+                const regexPayload=kind==='regex'?payload:(payload.regex_scripts||[]);
+                if(Array.isArray(presetData.regex_scripts))presetData.regex_scripts=JSON.parse(JSON.stringify(regexPayload));
+                else if(Array.isArray(presetData.regexScripts))presetData.regexScripts=JSON.parse(JSON.stringify(regexPayload));
+                else presetData.regex_scripts=JSON.parse(JSON.stringify(regexPayload));
+            }
+            if(kind==='extensions'||kind==='scripts')presetData.scripts=JSON.parse(JSON.stringify(kind==='scripts'?payload:(payload.scripts||[])));
             refreshExtensionWorkspace();schedulePresetSave();updateToolbar();
-            showToast('正则 / 脚本已恢复；其他预设字段未修改','success');
+            showToast(label+'已恢复；其他预设字段未修改','success');
             return;
         }
         if(!confirm('即将用资源包中的'+label+'替换当前工作区内容。\n\n系统会先在本地保存一份恢复前备份。是否继续？'))return;
