@@ -449,3 +449,8 @@ The Regex and Scripts workspaces now provide controls to collapse or expand all 
 ### Extension tab keyboard navigation
 
 The Regex and Scripts tablist supports ArrowLeft / ArrowRight navigation and Home / End jumps. The active tab is the only tab in the normal tab sequence, with aria-selected and tabindex kept in sync.
+
+
+### Standalone image import and PNG normalization for character cards
+
+The character-card workspace accepts a separate image-only import path for creating a new V2 card from a cover image, and for attaching/replacing the cover on an already loaded card. Browser-decodable image formats are rasterized locally to PNG before being used as the card's export image; PNG metadata is then written by the existing chunk-preserving character-card exporter. Image decoding uses browser support (so HEIC/AVIF availability varies by browser), applies EXIF orientation when supported, preserves alpha where the source format provides it, and uses the first decoded frame for animated formats. Files above 100 MB or images above 40 megapixels are rejected to protect browser memory. This image-only flow does not attempt to parse character metadata from the image; use the regular PNG/JSON import action for existing character cards.
