@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const source = await readFile(new URL('../src/js/character-card.js', import.meta.url), 'utf8');
 const exposed = source.replace(/\}\)\(\);\s*$/, `
-    window.__test = { getCardData, parsePng, importCharacterCard, stageCharacterResourceBundle, restoreStagedBundleResource, restoreLastBundleBackup, exportCharacterResourceBundle, exportCharacterCardPng, updateCharacterCardField, applyCharacterCardRawJson, applyEmbeddedCardResourceJson, renderResourcePreview, linkCurrentCardResource, renderCharacterCardLinks, getCurrentCard: () => currentCard, setExportState: (card, key, png) => { currentCard = card; currentCardLinkKey = key; currentPngBuffer = png || null; currentCardFile = { name: 'synthetic.json', type: 'application/json' }; }, getStagedBundle: () => stagedResourceBundle };
+    window.__test = { getCardData, parsePng, importCharacterCard, createBlankCharacterCard, stageCharacterResourceBundle, restoreStagedBundleResource, restoreLastBundleBackup, exportCharacterResourceBundle, exportCharacterCardPng, updateCharacterCardField, applyCharacterCardRawJson, applyEmbeddedCardResourceJson, renderResourcePreview, linkCurrentCardResource, renderCharacterCardLinks, getCurrentCard: () => currentCard, setExportState: (card, key, png) => { currentCard = card; currentCardLinkKey = key; currentPngBuffer = png || null; currentCardFile = { name: 'synthetic.json', type: 'application/json' }; }, getStagedBundle: () => stagedResourceBundle };
 })();
 `);
 assert.notEqual(exposed, source, 'test seam must match the character-card IIFE');
@@ -519,4 +519,10 @@ test('resource bundles validate and restore regex and scripts independently', as
   api.restoreStagedBundleResource('scripts');
   assert.deepEqual(JSON.parse(JSON.stringify(context.presetData.scripts)), [{ name: 'new-script' }]);
   assert.deepEqual(JSON.parse(JSON.stringify(context.presetData.unknown)), { keep: true });
+});
+
+
+test('new character names remove the source image extension', () => {
+  assert.equal(api.createBlankCharacterCard('portrait.webp').name, 'portrait');
+  assert.equal(api.createBlankCharacterCard('my.character.jpg').name, 'my.character');
 });
