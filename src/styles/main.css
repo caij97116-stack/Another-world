@@ -800,4 +800,34 @@ textarea.auto-grow-textarea{
         position: relative;
         flex: 0 0 var(--bottom-nav-height);
     }
+
+    /* Treat touch devices using desktop-site mode as mobile too. */
+    .mobile-toggle {
+        display: flex !important;
+    }
+    .sidebar {
+        position: fixed !important;
+        top: var(--toolbar-height);
+        bottom: var(--bottom-nav-height);
+        left: 0;
+        right: auto;
+        width: min(82vw, 300px);
+        max-width: 300px;
+        height: auto;
+        min-height: 0 !important;
+        max-height: none;
+        transform: translateX(-105%);
+        z-index: 150;
+    }
+    .sidebar.mobile-open {
+        transform: translateX(0);
+    }
+    .sidebar-overlay {
+        position: fixed;
+        inset: var(--toolbar-height) 0 var(--bottom-nav-height);
+        z-index: 140;
+    }
+    .sidebar-overlay.show {
+        display: block;
+    }
 }
