@@ -1119,6 +1119,10 @@
     window.onCharacterCardImageChosen=async event=>{const input=event.target;const file=input.files&&input.files[0];input.value='';const forceNew=pendingImageImportMode!=='replace';pendingImageImportMode='new';try{await importCharacterCardImage(file,forceNew)}catch(error){showToast(error.message||'图片导入失败','error')}};
     window.exportCharacterCardJson=exportCharacterCardJson;
     window.scheduleCharacterCardDraftSave=scheduleCharacterCardDraftSave;
+    window.saveCharacterCardDraftNow=saveCharacterCardDraft;
+    window.addEventListener('pagehide',()=>{if(currentCard)saveCharacterCardDraft()});
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&currentCard)saveCharacterCardDraft()});
+
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restoreCharacterCardDraft,{once:true});
     else restoreCharacterCardDraft();
 
