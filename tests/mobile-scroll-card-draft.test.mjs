@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 const css = await readFile(new URL('../src/styles/main.css', import.meta.url), 'utf8');
 const card = await readFile(new URL('../src/js/character-card.js', import.meta.url), 'utf8');
 const events = await readFile(new URL('../src/js/dom-events.js', import.meta.url), 'utf8');
+const worldbook = await readFile(new URL('../src/js/worldbook.js', import.meta.url), 'utf8');
 
 test('mobile and touch browsers use document scrolling instead of trapped fixed-height panes', () => {
   assert.match(css, /@media\s*\(max-width:\s*860px\),\s*\(hover:\s*none\)\s*and\s*\(pointer:\s*coarse\)/);
@@ -41,4 +42,11 @@ test('structured fields and unfinished raw JSON edits schedule local draft saves
   assert.match(events, /#characterCardRawJson/);
   assert.match(events, /window\.scheduleCharacterCardDraftSave\(\)/);
   assert.match(events, /window\.updateCharacterCardField\(target\.dataset\.cardField,target\.value\)/);
+});
+
+
+test('worldbook list rerenders preserve the active entry scroll anchor', () => {
+  assert.match(worldbook, /const previousActiveTop=previousActiveCard\?previousActiveCard\.getBoundingClientRect\(\)\.top:null/);
+  assert.match(worldbook, /container\.scrollTop\+=nextActiveCard\.getBoundingClientRect\(\)\.top-previousActiveTop/);
+  assert.match(worldbook, /restoreListScrollAnchor\(\)/);
 });
