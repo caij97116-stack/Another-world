@@ -698,7 +698,7 @@
                     tx.onabort=()=>reject(tx.error||new Error('IndexedDB 写入已中止'));
                 });
                 const status=document.getElementById('characterCardEditStatus');
-                if(status)status.textContent='已自动保存在本地浏览器 · '+new Date(payload.savedAt).toLocaleTimeString();
+                if(status)status.textContent='本地草稿已保存（导出文件仍需手动导出） · '+new Date(payload.savedAt).toLocaleTimeString();
                 return true;
             }
         }catch(error){console.warn('角色卡 IndexedDB 自动保存失败：',error)}
@@ -706,7 +706,7 @@
             const fallback={...payload,fileBlob:null};
             localStorage.setItem(CARD_DRAFT_STORAGE_KEY,JSON.stringify(fallback));
             const status=document.getElementById('characterCardEditStatus');
-            if(status)status.textContent='角色卡数据已保存在本地浏览器（未缓存原图）';
+            if(status)status.textContent='角色卡文字数据已保存（浏览器未能缓存封面原图；请导出 PNG 备份）';
             return true;
         }catch(error){
             const status=document.getElementById('characterCardEditStatus');
