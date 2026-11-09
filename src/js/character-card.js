@@ -562,6 +562,74 @@
         updateCardSaveStatus();
     }
 
+    async function decodeImageFile(file){
+        if(!file||!String(file.type||'').startsWith('image/'))throw new Error('请选择有效的图片文件。');
+        if(file.size>MAX_FILE_BYTES)throw new Error('图片超过 100 MB，已停止读取。');
+        let bitmap=null,objectUrl=null;
+        try{
+            if(typeof createImageBitmap==='function'){
+                bitmap=await createImageBitmap(file,{imageOrientation:'from-image'});
+            }else{
+                objectUrl=URL.createObjectURL(file);
+                bitmap=await new Promise((resolve,reject)=>{
+                    const image=new Image();
+                    image.onload=()=>resolve(image);
+                    image.onerror=()=>reject(new Error('浏览器无法解码该图片格式。'));
+                    image.src=objectUrl;
+                });
+            }
+            const width=bitmap.width||bitmap.naturalWidth;
+            const height=bitmap.height||bitmap.naturalHeight;
+            if(!width||!height)throw new Error('图片尺寸无效。');
+            if(width*height>40000000)throw new Error('图片像素超过 4000 万，为避免浏览器内存不足，暂不处理。');
+            const canvas=document.createElement('canvas');
+            canvas.width=width;canvas.height=height;
+            const context=canvas.getContext('2d',{alpha:true});
+            if(!context)throw new Error('浏览器无法创建图片转换画布。');
+            context.drawImage(bitmap,0,0,width,height);
+            const pngBlob=await new Promise((resolve,reject)=>{
+                canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('PNG 转换失败，请尝试其他图片。')),'image/png');
+            });
+            if(pngBlob.size>MAX_FILE_BYTES)throw new Error('转换后的 PNG 超过 100 MB，已停止处理。');
+            return {blob:pngBlob,width,height};
+        }catch(error){
+            if(error&&/无法解码|像素超过|超过 100 MB|PNG 转换失败|尺寸无效|转换画布/.test(error.message||''))throw error;
+            throw new Error('浏览器暂时无法解码该图片格式（'+(file.type||'未知格式')+'）。可以先转换为 JPG、PNG 或 WebP 再导入。');
+        }finally{
+            if(bitmap&&typeof bitmap.close==='function')bitmap.close();
+            if(objectUrl)URL.revokeObjectURL(objectUrl);
+        }
+    }
+
+    function createBlankCharacterCard(name){
+        const safeName=String(name||'新角色').replace(/\\.[^.]+$/,'').trim()||'新角色';
+        const root={
+            spec:'chara_card_v2',spec_version:'2.0',
+            data:{
+                name:safeName,description:'',personality:'',scenario:'',first_mes:'',mes_example:'',
+                creator_notes:'',system_prompt:'',post_history_instructions:'',tags:[],
+                extensions:{}
+            }
+        };
+        return {...getCardData(root),container:'PNG',chunk:'新建角色卡'};
+    }
+
+    async function importCharacterCardImage(file){
+        if(!file)return;
+        const converted=await decodeImageFile(file);
+        const baseName=String(file.name||'新角色').replace(/\\.[^.]+$/,'').replace(/[\\/:*?"<>|]/g,'_').slice(0,100)||'新角色';
+        const pngFile=new File([converted.blob],baseName+'.png',{type:'image/png',lastModified:Date.now()});
+        const creating=!currentCard;
+        const parsed=creating?createBlankCharacterCard(baseName):getCardData(currentCard);
+        parsed.container='PNG';
+        parsed.chunk=creating?'新建角色卡':'已转换封面';
+        if(creating)currentCardLinkKey='';
+        renderCard(parsed,pngFile);
+        cardDirty= !creating;
+        updateCardSaveStatus();
+        showToast(creating?'已从图片创建角色卡，接下来可以填写角色资料':'图片已转换为 PNG 并设为角色卡封面','success');
+    }
+
     async function importCharacterCard(file){
         if(!file)return;
         if(file.size>MAX_FILE_BYTES) throw new Error('文件超过 100 MB，已停止读取。');
@@ -759,5 +827,7 @@
     window.importCharacterCard=importCharacterCard;
     window.triggerCharacterCardImport=triggerCharacterCardImport;
     window.onCharacterCardFileChosen=onCharacterCardFileChosen;
+    window.importCharacterCardImage=importCharacterCardImage;
+    window.onCharacterCardImageChosen=async event=>{const input=event.target;const file=input.files&&input.files[0];input.value='';try{await importCharacterCardImage(file)}catch(error){showToast(error.message||'图片导入失败','error')}};
     window.exportCharacterCardJson=exportCharacterCardJson;
 })();
