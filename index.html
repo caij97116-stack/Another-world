@@ -202,24 +202,26 @@
                             <h3>完整字段一览</h3>
                             <button class="panel-toggle" type="button" data-action="toggle-section" data-target="secOverview">折叠/展开</button>
                         </div>
-                        <div class="collapsible-body" id="secOverview">
+                        <div class="collapsible-body collapsed" id="secOverview">
                             <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px">按原预设顶层键顺序展示，确保没有内容被遗漏。复杂内容可在下方对应区块或「原始 JSON」中编辑。</p>
                             <div class="field-overview" id="fieldOverviewContainer"></div>
                         </div>
                     </div>
 
                     <div class="glass-panel-box">
-                        <div class="panel-header"><h3>基本信息</h3></div>
+                        <div class="panel-header"><h3>基本信息</h3><button class="panel-toggle" type="button" data-action="toggle-section" data-target="secBasicInfo">展开/收起</button></div>
+                        <div class="collapsible-body collapsed" id="secBasicInfo">
                         <div class="form-group"><label>预设名称</label><input type="text" id="p_name" class="form-control" placeholder="Preset 名称" data-input-action="sync-preset"></div>
                         <div class="form-grid">
                             <div class="form-group"><label>Max Tokens</label><input type="number" id="p_max_tokens" class="form-control" min="0" data-input-action="sync-preset"></div>
                             <div class="form-group"><label>Seed（-1 随机）</label><input type="number" id="p_seed" class="form-control" data-input-action="sync-preset"></div>
                         </div>
+                        </div>
                     </div>
 
                     <div class="glass-panel-box">
                         <div class="panel-header"><h3>采样参数</h3><button class="panel-toggle" type="button" data-action="toggle-section" data-target="secSampling">折叠/展开</button></div>
-                        <div class="collapsible-body" id="secSampling">
+                        <div class="collapsible-body collapsed" id="secSampling">
                         <div class="form-grid">
                             <div class="form-group"><label>Temperature</label><input type="number" id="p_temp" class="form-control" step="0.01" min="0" max="2" data-input-action="sync-preset"></div>
                             <div class="form-group"><label>Top P</label><input type="number" id="p_top_p" class="form-control" step="0.01" min="0" max="1" data-input-action="sync-preset"></div>
@@ -239,7 +241,7 @@
 
                     <div class="glass-panel-box">
                         <div class="panel-header"><h3>提示词</h3><button class="panel-toggle" type="button" data-action="toggle-section" data-target="secPrompts">折叠/展开</button></div>
-                        <div class="collapsible-body" id="secPrompts">
+                        <div class="collapsible-body collapsed" id="secPrompts">
                         <div class="form-group"><label>Main Prompt <span class="char-count" id="cnt_main">0 字</span></label><textarea id="p_main_prompt" class="form-control long-prompt-editor" rows="10" placeholder="主提示词..." data-input-action="sync-preset-counts"></textarea></div>
                         <div class="form-group"><label>Jailbreak Prompt <span class="char-count" id="cnt_jb">0 字</span></label><textarea id="p_jailbreak" class="form-control long-prompt-editor" rows="8" placeholder="Jailbreak..." data-input-action="sync-preset-counts"></textarea></div>
                         <div class="form-group"><label>System Prompt <span class="char-count" id="cnt_sys">0 字</span></label><textarea id="p_system" class="form-control long-prompt-editor" rows="8" placeholder="System..." data-input-action="sync-preset-counts"></textarea></div>
@@ -252,7 +254,7 @@
                                     <button class="panel-toggle" type="button" data-action="toggle-section" data-target="secPromptItems">折叠/展开</button>
                                 </div>
                             </div>
-                            <div class="collapsible-body" id="secPromptItems">
+                            <div class="collapsible-body collapsed" id="secPromptItems">
                                 <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px">以独立字段编辑名称、角色、标识符和长正文；高级 JSON 可展开查看。未识别字段会保留在原条目中，不会因普通编辑而丢失。</p>
                                 <div class="prompt-bulk-toolbar">
                                     <label class="prompt-bulk-select-all"><input type="checkbox" id="promptSelectAll"> 全选当前提示词</label>
@@ -276,7 +278,7 @@
                         </div>
                         <div class="glass-panel-box" style="margin-top:12px">
                             <div class="panel-header"><h3>提示词顺序配置（prompt_order）</h3><button class="panel-toggle" type="button" data-action="toggle-section" data-target="secPromptOrder">折叠/展开</button></div>
-                            <div class="collapsible-body" id="secPromptOrder">
+                            <div class="collapsible-body collapsed" id="secPromptOrder">
                                 <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px">保留原始 prompt_order 结构。修改后必须是合法 JSON；不修改时不会主动重写。</p>
                                 <textarea id="p_prompt_order" class="form-control" rows="8" spellcheck="false" placeholder="导入预设后显示 prompt_order JSON" data-change-action="apply-prompt-order"></textarea>
                                 <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:6px">
@@ -292,10 +294,12 @@
                     </div>
 
                     <div class="glass-panel-box">
-                        <div class="panel-header"><h3>开关</h3></div>
+                        <div class="panel-header"><h3>开关</h3><button class="panel-toggle" type="button" data-action="toggle-section" data-target="secSwitches">展开/收起</button></div>
+                        <div class="collapsible-body collapsed" id="secSwitches">
                         <div style="display:flex;flex-wrap:wrap;gap:14px">
                             <label class="switch-row"><input type="checkbox" id="p_stream" data-change-action="sync-preset"><span>Streaming</span></label>
                             <label class="switch-row"><input type="checkbox" id="p_nsfw" data-change-action="sync-preset"><span>NSFW</span></label>
+                        </div>
                         </div>
                     </div>
 
@@ -305,7 +309,7 @@
                             <h3>插入方式与导出</h3>
                             <button class="panel-toggle" type="button" data-action="toggle-section" data-target="secInsertExport">折叠/展开</button>
                         </div>
-                        <div class="collapsible-body" id="secInsertExport">
+                        <div class="collapsible-body collapsed" id="secInsertExport">
                             <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:10px">控制提示插入相关选项，以及导出时是否带上已禁用的正则/脚本。</p>
                             <div class="form-grid">
                                 <div class="form-group">
