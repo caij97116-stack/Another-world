@@ -32,7 +32,7 @@ const context = {
   presetData: { name: 'Original Preset', prompts: [{ identifier: 'old', content: 'before' }], originalExtra: { untouched: true } },
   presetVersion: 1, presetEnvelope: null, presetArrayPaths: {},
   selectedUids: new Set(), activeUid: 'old', selectMode: false,
-  pushHistory: () => {}, sanitizeEntry: entry => entry,
+  pushHistory: () => {}, recordPresetEditHistory: () => {}, sanitizeEntry: entry => entry,
   renderEntryList: () => {}, loadActiveEntry: () => {}, updateEntryCount: () => {},
   scheduleAutoSave: () => {}, updateToolbar: () => {}, renderPresetUI: () => {},
   refreshExtensionWorkspace: () => {}, schedulePresetSave: () => {},
