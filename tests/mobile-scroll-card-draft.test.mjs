@@ -66,3 +66,20 @@ test('preset prompt rerenders preserve the active prompt card viewport anchor', 
   assert.match(presetCore, /if\(workspaceScrolls\)workspace\.scrollTop\+=delta;\s*else window\.scrollBy\(0,delta\)/);
   assert.match(presetCore, /requestAnimationFrame\(restorePromptScrollAnchor\)/);
 });
+
+
+test('mobile page switches reset the old document scroll offset', () => {
+  assert.match(appCore, /if\(isCompactTouchLayout\(\)\)window\.scrollTo\(0,0\)/);
+  assert.match(css, /\.page \{ min-height: 0 !important; \}/);
+});
+
+test('character card greeting variants are extracted into editable lists', () => {
+  assert.match(card, /function renderCharacterCardGreetings\(data\)/);
+  assert.match(card, /alternate_greetings/);
+  assert.match(card, /group_only_greetings/);
+  assert.match(card, /function updateCharacterCardGreeting\(kind,index,value\)/);
+  assert.match(card, /function addCharacterCardGreeting\(\)/);
+  assert.match(card, /function removeCharacterCardGreeting\(kind,index\)/);
+  assert.match(events, /\[data-card-greeting\]/);
+  assert.match(html, /id="characterCardGreetings"/);
+});
