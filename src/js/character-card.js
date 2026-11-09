@@ -537,9 +537,9 @@
                 const content=typeof item.content==='string'?item.content:JSON.stringify(previewResourceValue(item.content),null,2);
                 return '<details class="character-resource-item"><summary><strong>'+escapeCardHtml(title)+'</strong><span>'+escapeCardHtml(enabled)+' · '+escapeCardHtml(keys)+'</span></summary><pre>'+escapeCardHtml(content||'（空内容）')+'</pre></details>';
             }).join(''):'<p class="tool-help">该内嵌世界书目前没有条目。</p>';
-            sections.push('<details class="character-resource-group" open><summary>内嵌世界书 <span>'+entries.length+' 条目</span></summary><div class="character-resource-body">'+(bookMeta?'<p class="tool-help">'+escapeCardHtml(bookMeta)+'</p>':'')+entryHtml+'</div></details>');
+            sections.push('<details class="character-resource-group" open><summary>内嵌世界书 <span>'+entries.length+' 条目</span></summary><div class="character-resource-body">'+(bookMeta?'<p class="tool-help">'+escapeCardHtml(bookMeta)+'</p>':'')+entryHtml+'<details class="character-card-embedded-editor"><summary>编辑内嵌世界书数据</summary><p class="tool-help">可编辑完整 character_book，包括全部条目、触发词、位置、深度与扩展字段。应用前会验证 JSON 和 entries 数组；不会影响独立世界书。</p><textarea id="characterCardBookJsonEditor" rows="12" spellcheck="false">'+escapeCardHtml(JSON.stringify(book,null,2))+'</textarea><button class="btn btn-sm btn-primary" type="button" data-action="apply-character-card-book-json">校验并应用内嵌世界书</button></details></div></details>');
         }else{
-            sections.push('<div class="character-resource-empty">未包含内嵌 character_book。</div>');
+            sections.push('<div class="character-resource-empty">未包含内嵌 character_book。可在高级 JSON 编辑中新增 character_book。</div>');
         }
 
         if(assets.length){
@@ -557,13 +557,37 @@
             const keys=Object.keys(extensions);
             const extensionHtml=keys.length?keys.map(key=>{
                 const value=JSON.stringify(previewResourceValue(extensions[key]),null,2);
-                return '<details class="character-resource-item"><summary><strong>'+escapeCardHtml(key)+'</strong><span>'+escapeCardHtml(Array.isArray(extensions[key])?'数组':extensions[key]===null?'null':typeof extensions[key])+'</span></summary><pre>'+escapeCardHtml(value??'null')+'</pre></details>';
+                const kind=/regex/i.test(key)?'正则相关':/script/i.test(key)?'脚本相关':'扩展字段';
+                return '<details class="character-resource-item"><summary><strong>'+escapeCardHtml(key)+'</strong><span>'+kind+' · '+escapeCardHtml(Array.isArray(extensions[key])?'数组':extensions[key]===null?'null':typeof extensions[key])+'</span></summary><pre>'+escapeCardHtml(value??'null')+'</pre></details>';
             }).join(''):'<p class="tool-help">extensions 对象为空。</p>';
-            sections.push('<details class="character-resource-group"><summary>扩展数据 <span>'+keys.length+' 个字段</span></summary><div class="character-resource-body">'+extensionHtml+'</div></details>');
+            sections.push('<details class="character-resource-group"><summary>扩展数据 <span>'+keys.length+' 个字段</span></summary><div class="character-resource-body">'+extensionHtml+'<details class="character-card-embedded-editor"><summary>编辑角色卡扩展数据</summary><p class="tool-help">这里保留角色卡原有扩展结构。若其中包含 regex_scripts、scripts 或其他插件字段，可在此完整查看和编辑；未知字段不会被丢弃。</p><textarea id="characterCardExtensionsJsonEditor" rows="12" spellcheck="false">'+escapeCardHtml(JSON.stringify(extensions,null,2))+'</textarea><button class="btn btn-sm btn-primary" type="button" data-action="apply-character-card-extensions-json">校验并应用扩展数据</button></details></div></details>');
         }else{
-            sections.push('<div class="character-resource-empty">没有检测到 extensions 对象。</div>');
+            sections.push('<div class="character-resource-empty">没有检测到 extensions 对象。可在高级 JSON 编辑中新增。</div>');
         }
         host.innerHTML=sections.join('');
+    }
+
+    function applyEmbeddedCardResourceJson(kind){
+        if(!currentCard||!currentCardFile)throw new Error('请先载入或创建角色卡。');
+        const config=kind==='worldbook'
+            ?{id:'characterCardBookJsonEditor',key:'character_book',label:'内嵌世界书'}
+            :{id:'characterCardExtensionsJsonEditor',key:'extensions',label:'扩展数据'};
+        const editor=document.getElementById(config.id);
+        if(!editor)throw new Error('找不到'+config.label+'编辑器。');
+        let parsed;
+        try{parsed=JSON.parse(editor.value)}catch(error){throw new Error(config.label+' JSON 语法错误：'+error.message)}
+        if(!isObject(parsed))throw new Error(config.label+'必须是 JSON 对象。');
+        if(kind==='worldbook'){
+            if(parsed.entries!==undefined&&!Array.isArray(parsed.entries))throw new Error('character_book.entries 必须是数组。');
+            if(Array.isArray(parsed.entries)&&parsed.entries.some(entry=>!isObject(entry)))throw new Error('世界书 entries 中的每一项都必须是对象。');
+        }
+        const data=isObject(currentCard.data)?currentCard.data:currentCard;
+        data[config.key]=parsed;
+        const card={...getCardData(currentCard),container:'PNG',chunk:'已编辑内嵌资源'};
+        renderCard(card,currentCardFile);
+        cardDirty=true;
+        updateCardSaveStatus();
+        showToast(config.label+'已校验并应用；原有未知字段均保留','success');
     }
 
     function renderCard(card,file){
