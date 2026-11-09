@@ -81,6 +81,8 @@ test('character card greeting variants are extracted into editable lists', () =>
   assert.match(card, /function updateCharacterCardGreeting\(kind,index,value\)/);
   assert.match(card, /function addCharacterCardGreeting\(\)/);
   assert.match(card, /function removeCharacterCardGreeting\(kind,index\)/);
+  assert.match(card, /开场白修改已同步到 JSON 编辑器/);
+  assert.match(card, /开场白列表已同步到 JSON 编辑器/);
   assert.match(events, /\[data-card-greeting\]/);
   assert.match(html, /id="characterCardGreetings"/);
 });
