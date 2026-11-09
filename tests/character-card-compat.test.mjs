@@ -491,3 +491,32 @@ test('regex and scripts can be linked and exported independently', async () => {
   assert.deepEqual(JSON.parse(JSON.stringify(bundle.resources.regex)), [{ id: 'rx', scriptName: 'Regex only', findRegex: 'a' }]);
   assert.deepEqual(JSON.parse(JSON.stringify(bundle.resources.scripts)), [{ name: 'Script only', content: 'inert sample' }]);
 });
+
+
+test('resource bundles validate and restore regex and scripts independently', async () => {
+  context.presetData = {
+    name: 'Restore Separate Extensions',
+    prompts: [{ identifier: 'keep', content: 'preserve prompt' }],
+    regex_scripts: [{ id: 'old-regex' }],
+    scripts: [{ name: 'old-script' }],
+    unknown: { keep: true }
+  };
+  const bundle = {
+    format: 'another-world-character-resource-bundle', format_version: 1,
+    manifest: { character: { name: 'Restore Card' }, resources: [
+      { type: 'regex', name: 'Regex pack', summary: '1 rule', fingerprint: fingerprint([{ id: 'new-regex' }]) },
+      { type: 'scripts', name: 'Script pack', summary: '1 script', fingerprint: fingerprint([{ name: 'new-script' }]) }
+    ] },
+    character_card: { spec: 'chara_card_v3', spec_version: '3.0', data: { name: 'Restore Card' } },
+    resources: { regex: [{ id: 'new-regex' }], scripts: [{ name: 'new-script' }] }
+  };
+  await stage(JSON.stringify(bundle));
+  assert.ok(api.getStagedBundle());
+  api.restoreStagedBundleResource('regex');
+  assert.deepEqual(JSON.parse(JSON.stringify(context.presetData.regex_scripts)), [{ id: 'new-regex' }]);
+  assert.deepEqual(JSON.parse(JSON.stringify(context.presetData.scripts)), [{ name: 'old-script' }]);
+  assert.deepEqual(JSON.parse(JSON.stringify(context.presetData.prompts)), [{ identifier: 'keep', content: 'preserve prompt' }]);
+  api.restoreStagedBundleResource('scripts');
+  assert.deepEqual(JSON.parse(JSON.stringify(context.presetData.scripts)), [{ name: 'new-script' }]);
+  assert.deepEqual(JSON.parse(JSON.stringify(context.presetData.unknown)), { keep: true });
+});
