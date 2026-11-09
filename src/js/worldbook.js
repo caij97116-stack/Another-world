@@ -238,6 +238,7 @@ function makeUniqueEntryUid(preferred){
             document.getElementById('field_key').value=listFieldText(entry.key);
             document.getElementById('field_keysecondary').value=listFieldText(entry.keysecondary);
             document.getElementById('field_content').value=entry.content||'';
+            if(typeof window.autoResizeLongPrompt==='function')window.autoResizeLongPrompt(document.getElementById('field_content'));
             document.getElementById('field_position').value=entry.position!==undefined?entry.position:0;
             document.getElementById('field_order').value=entry.order!==undefined?entry.order:100;
             document.getElementById('field_depth').value=entry.scanDepth!==undefined?entry.scanDepth:(entry.depth!==undefined?entry.depth:4);
