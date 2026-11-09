@@ -459,3 +459,8 @@ The character-card workspace accepts a separate image-only import path for creat
 ### Character-card linked resource inspection
 
 Character-card local associations now include independent worldbooks, presets, and a separate regex/scripts association. When the currently loaded resource fingerprint matches the saved association, the character-card workspace renders expandable read-only previews of worldbook entries, preset prompt items, regex rules, and script objects. Regex and scripts are shown as separate groups even though both originate from the active preset. The resource bundle exporter includes an `extensions` snapshot containing regex and script arrays; bundle restoration replaces only those arrays in the active preset and leaves other preset fields intact. A changed or unavailable active resource is not silently substituted: the UI reports the stale association and requires relinking before preview/export.
+
+
+### Unified character-card import entry
+
+The primary character-card import picker now accepts JSON cards and browser-decodable image files. JSON files are parsed as card data; PNG files with valid embedded `chara` / `ccv3` metadata are imported as existing cards; an ordinary PNG without card metadata is treated as a cover image and starts a blank V2 character card (or attaches the cover to the currently loaded card). Other supported image types follow the same local rasterization-to-PNG path. Corrupt PNG structure or invalid embedded metadata still produces an error rather than being silently treated as a new image. The separate image-only picker remains available for an explicit cover-only workflow.
