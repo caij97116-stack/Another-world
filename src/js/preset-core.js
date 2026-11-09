@@ -252,10 +252,8 @@ function isPresetPayloadObject(value){
         function autoResizeLongPrompt(element){
             if(!element)return;
             element.style.height='auto';
-            const maxHeight=Math.max(240,Math.floor((window.innerHeight||800)*0.72));
-            const nextHeight=Math.min(element.scrollHeight,maxHeight);
-            element.style.height=nextHeight+'px';
-            element.style.overflowY=element.scrollHeight>maxHeight?'auto':'hidden';
+            element.style.overflowY='hidden';
+            element.style.height=element.scrollHeight+'px';
         }
         function applyPromptFilters(){
             const container=document.getElementById('promptItemsContainer');
@@ -313,7 +311,7 @@ function isPresetPayloadObject(value){
                             <div class="prompt-item-meta">${content.length.toLocaleString()} 字 · ${escapeHtml(role)} · ${enabled?'已启用':'已禁用'}</div>
                         </div>
                         <div class="regex-card-actions">
-                            <button class="btn btn-sm" type="button" data-action="toggle-prompt-editor" data-index="${i}">展开编辑</button>
+                            <button class="btn btn-sm" type="button" data-action="toggle-prompt-editor" data-index="${i}" aria-expanded="false">展开条目</button>
                             <button class="btn btn-sm" type="button" data-action="duplicate-prompt-item" data-index="${i}">复制</button>
                             <button class="btn btn-sm" type="button" data-action="move-prompt-item" data-index="${i}" data-direction="-1" ${i===0?'disabled':''}>上移</button>
                             <button class="btn btn-sm" type="button" data-action="move-prompt-item" data-index="${i}" data-direction="1" ${i===list.length-1?'disabled':''}>下移</button>
@@ -341,7 +339,7 @@ function isPresetPayloadObject(value){
                         </div>
                         <div class="regex-field prompt-content-field">
                             <label>提示词正文 <span class="char-count" data-prompt-count="${i}">${content.length.toLocaleString()} 字</span></label>
-                            <textarea class="form-control prompt-content-editor" rows="14" spellcheck="false" placeholder="在这里编辑完整提示词内容……" data-input-action="update-prompt-item-field" data-index="${i}" data-field="content" ${!isObject?'disabled':''}>${escapeHtml(content)}</textarea>
+                            <textarea class="form-control prompt-content-editor auto-grow-textarea" rows="14" spellcheck="false" placeholder="在这里编辑完整提示词内容……" data-input-action="update-prompt-item-field" data-index="${i}" data-field="content" ${!isObject?'disabled':''}>${escapeHtml(content)}</textarea>
                         </div>
                         <details class="prompt-render-preview">
                             <summary>Markdown 与宏指令预览 <span class="prompt-preview-count">检测到 <b id="prompt-macro-count-${i}">0</b> 个宏</span></summary>
@@ -352,7 +350,7 @@ function isPresetPayloadObject(value){
                         <details class="prompt-advanced">
                             <summary>高级 JSON（保留未识别字段）</summary>
                             <p class="prompt-advanced-hint">适合编辑 role 以外的特殊字段。普通字段编辑不会删除这里未显示的扩展数据。</p>
-                            <textarea class="form-control raw-json" rows="8" spellcheck="false" data-change-action="update-prompt-item-json" data-index="${i}">${escapeHtml(JSON.stringify(item,null,2))}</textarea>
+                            <textarea class="form-control raw-json auto-grow-textarea" rows="8" spellcheck="false" data-change-action="update-prompt-item-json" data-index="${i}">${escapeHtml(JSON.stringify(item,null,2))}</textarea>
                         </details>
                     </div>
                 </article>`;
@@ -597,19 +595,13 @@ function isPresetPayloadObject(value){
         function togglePromptEditor(index){
             const card=document.querySelector('.prompt-item-card:nth-child('+(Number(index)+1)+')');
             if(!card)return;
-            const wasExpanded=card.classList.contains('prompt-editor-expanded');
-            document.querySelectorAll('.prompt-item-card.prompt-editor-expanded').forEach(item=>{
-                item.classList.remove('prompt-editor-expanded');
-                const control=item.querySelector('[data-action="toggle-prompt-editor"]');
-                if(control)control.textContent='展开编辑';
-            });
-            const expanded=!wasExpanded;
-            if(expanded){
-                card.classList.add('prompt-editor-expanded');
-                const control=card.querySelector('[data-action="toggle-prompt-editor"]');
-                if(control)control.textContent='收起编辑';
+            const expanded=card.classList.toggle('is-open');
+            const control=card.querySelector('[data-action="toggle-prompt-editor"]');
+            if(control){
+                control.textContent=expanded?'收起条目':'展开条目';
+                control.setAttribute('aria-expanded',String(expanded));
             }
-            document.body.classList.toggle('prompt-editor-open',expanded);
+            if(expanded)card.querySelectorAll('.auto-grow-textarea').forEach(autoResizeLongPrompt);
         }
         function updatePromptItemField(index,field,value){
             if(!presetData||!Array.isArray(presetData.prompts)||index<0||index>=presetData.prompts.length)return;
