@@ -721,3 +721,83 @@ textarea.auto-grow-textarea{
         min-height:200px;
     }
 }
+
+/*
+ * Mobile browser page scrolling.
+ * The desktop editor intentionally uses nested fixed-height panes. On phones,
+ * especially when "desktop site" is enabled, those nested panes can trap touch
+ * gestures. Let the document grow naturally and use the browser's page scroll.
+ */
+@media (max-width: 860px), (hover: none) and (pointer: coarse) {
+    html,
+    body {
+        height: auto !important;
+        min-height: 100%;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    body {
+        touch-action: pan-y;
+    }
+    .main-area {
+        height: auto !important;
+        min-height: calc(100dvh - var(--toolbar-height) - var(--bottom-nav-height));
+        overflow: visible !important;
+    }
+    .page {
+        position: relative !important;
+        inset: auto !important;
+        height: auto !important;
+        min-height: calc(100dvh - var(--toolbar-height) - var(--bottom-nav-height));
+        overflow: visible !important;
+    }
+    .page.active {
+        display: flex;
+        flex-direction: column;
+    }
+    .wb-container {
+        height: auto !important;
+        min-height: calc(100dvh - var(--toolbar-height) - var(--bottom-nav-height));
+        overflow: visible !important;
+        flex-direction: column;
+    }
+    .editor-workspace,
+    .preset-workspace,
+    .tool-workspace {
+        height: auto !important;
+        min-height: 0;
+        max-height: none !important;
+        flex: 0 0 auto !important;
+        overflow: visible !important;
+        overflow-y: visible !important;
+        overscroll-behavior: auto;
+        touch-action: pan-y;
+    }
+    .editor-workspace {
+        width: 100%;
+        padding-bottom: 28px;
+    }
+    .preset-workspace,
+    .tool-workspace {
+        padding-bottom: 30px;
+    }
+    .sidebar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        min-height: 100%;
+        overflow: hidden;
+        touch-action: pan-y;
+    }
+    .entry-list {
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+    }
+    .bottom-nav {
+        position: relative;
+        flex: 0 0 var(--bottom-nav-height);
+    }
+}
