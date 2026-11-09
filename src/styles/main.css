@@ -849,3 +849,9 @@ textarea.auto-grow-textarea{
 .character-greeting-field { margin:0; }
 .character-greeting-field>span { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .character-greetings-section .panel-header>div { min-width:0; }
+
+.character-card-section-summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 2px;color:var(--text-main);font-size:.84rem;font-weight:800;list-style-position:inside;}
+.character-card-section-summary span{color:var(--text-muted);font-size:.68rem;font-weight:500;text-align:right;}
+.character-card-fields-section>div,.character-card-greetings-section>.character-greetings-toolbar,.character-card-greetings-section>.character-card-greetings{padding-left:2px;padding-right:2px;}
+.character-greetings-toolbar{align-items:flex-start;}
+@media(max-width:600px){.character-greetings-toolbar{flex-direction:column;align-items:stretch}.character-greetings-toolbar .btn{width:100%;justify-content:center}}
