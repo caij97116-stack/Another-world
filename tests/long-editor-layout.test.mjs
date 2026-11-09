@@ -62,6 +62,6 @@ test('opening a collapsed advanced section recalculates long textareas', async (
 });
 
 test('worldbook and prompt editors start with a comfortable writing area', () => {
-  assert.match(cssSource, /#field_content,\s*\\.prompt-item-card \\.prompt-content-editor\{\s*min-height:360px/);
-  assert.match(cssSource, /@media\\(max-width:600px\\)\{[\s\\S]*?#field_content,\s*\\.prompt-item-card \\.prompt-content-editor\{\s*min-height:280px/);
+  assert.match(cssSource, /#field_content,\s*\.prompt-item-card\s+\.prompt-content-editor\s*\{\s*min-height:360px/);
+  assert.match(cssSource, /@media\s*\(max-width:600px\)\s*\{[\s\S]*?#field_content,\s*\.prompt-item-card\s+\.prompt-content-editor\s*\{\s*min-height:280px/);
 });
