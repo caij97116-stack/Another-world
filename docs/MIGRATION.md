@@ -464,3 +464,8 @@ Character-card local associations now include independent worldbooks, presets, a
 ### Unified character-card import entry
 
 The primary character-card import picker now accepts JSON cards and browser-decodable image files. JSON files are parsed as card data; PNG files with valid embedded `chara` / `ccv3` metadata are imported as existing cards; an ordinary PNG without card metadata is treated as a cover image and starts a blank V2 character card (or attaches the cover to the currently loaded card). Other supported image types follow the same local rasterization-to-PNG path. Corrupt PNG structure or invalid embedded metadata still produces an error rather than being silently treated as a new image. The separate image-only picker remains available for an explicit cover-only workflow.
+
+
+### Editable embedded character-card resources
+
+The embedded-resource panel now provides dedicated JSON editors for `data.character_book` and `data.extensions`, in addition to expandable read-only entry/field inspection. The character-book editor validates the object shape and optional `entries` array before applying; extension editing preserves the card's open-ended plugin fields, including any regex/script-related arrays present in the source. Applying either editor updates the in-memory card, refreshes the preview and raw JSON, and marks the card as modified. These are card-internal resources and remain separate from independent worldbook/preset data.
